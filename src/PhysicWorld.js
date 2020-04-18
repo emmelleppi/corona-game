@@ -46,10 +46,10 @@ function PhysicWorld(props) {
   }, [addCorona, mapBBoxes, isIntersect])
 
   return (
-    <Physics gravity={[0, -10, 0]} tolerance={0.0001} allowSleep={false} >
+    <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
       <PhysicBat />
       {coronas.map(({ id, position }) => <Corona key={id} id={id} position={position} />)}
-      <FirstPersonCamera callbacks={callbacks} position={[0, 10, 0]} />
+      <FirstPersonCamera callbacks={callbacks} position={[0, 30, 0]} />
       <Suspense fallback={null}>
         <Map />
       </Suspense>
