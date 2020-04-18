@@ -1,0 +1,36 @@
+{
+  "name": "template",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "main": "src/index.js",
+  "dependencies": {
+    "color-interpolate": "^1.0.5",
+    "lerp": "^1.0.3",
+    "postprocessing": "^6.13.2",
+    "react": "16.12.0",
+    "react-dom": "16.12.0",
+    "react-scripts": "3.0.1",
+    "react-spring": "8.0.27",
+    "react-three-fiber": "4.0.22",
+    "three": "0.115.0",
+    "use-cannon": "0.4.2",
+    "uuid": "^7.0.3",
+    "zustand": "^2.2.3"
+  },
+  "devDependencies": {
+    "typescript": "3.3.3"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
