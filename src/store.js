@@ -26,6 +26,7 @@ export const [useLife] = create(set => ({
 export const [useOutline] = create(set => ({
     outline: [],
     addOutline: x => set(state => ({ outline: [...state.outline, x] })),
+    removeOutline: x => set(state => ({ outline: state.outline.filter(({ uuid }) => x.uuid !== uuid) })),
 }))
 
 export const [useCorona] = create(set => ({

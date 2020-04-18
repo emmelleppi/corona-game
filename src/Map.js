@@ -28,7 +28,7 @@ function ConvexPolyBody(props) {
     type: "Static",
     position,
     collisionFilterGroup: COLLISION_GROUP.TILES,
-    collisionFilterMask: COLLISION_GROUP.BODY | COLLISION_GROUP.TILES,
+    collisionFilterMask: COLLISION_GROUP.BODY | COLLISION_GROUP.TILES | COLLISION_GROUP.CORONA,
   }))
 
   useEffect(() => {

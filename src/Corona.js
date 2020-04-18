@@ -37,6 +37,8 @@ function Corona(props) {
   const removeCorona = useCorona(s => s.removeCorona)
 
   const addOutline = useOutline(s => s.addOutline)
+  const removeOutline = useOutline(s => s.removeOutline)
+  
   useEffect(() => {
     addOutline(group.current);
   }, [addOutline, group]);
@@ -226,9 +228,9 @@ function Corona(props) {
 
   useEffect(() => {
     if (isDeath) {
-      set({ opacity: 0, onRest: () => removeCorona(id) })
+      set({ opacity: 0, config: config.molasses, onStart: () => removeOutline(group.current), onRest: () => removeCorona(id) })
     }
-  }, [isDeath, removeCorona])
+  }, [isDeath, removeCorona, group, removeOutline])
 
   useEffect(() => {
     updateOrientation()
