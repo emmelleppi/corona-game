@@ -26,12 +26,13 @@ function App() {
         camera={{ position:[0, 100, 0] }}
         // gl={{ antialias: false, alpha: true }}
         onCreated={({ gl }) => {
-          gl.toneMapping = THREE.Uncharted2ToneMapping
-          gl.outputEncoding = THREE.sRGBEncoding;
-          gl.setPixelRatio( window.devicePixelRatio );
+          // gl.toneMapping = THREE.Uncharted2ToneMapping
+          // gl.outputEncoding = THREE.sRGBEncoding;
+          // gl.setPixelRatio( window.devicePixelRatio );
         }}
         onClick={handleClick}
       >
+        <fogExp2 attach="fog" args={[0x333333, 0.08]} />
         <color attach="background" args={["#50A6E1"]} />
         <ambientLight intensity={1} />
         <PhysicWorld callbacks={callbacks} />
