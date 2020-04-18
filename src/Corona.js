@@ -282,10 +282,10 @@ function Corona(props) {
       <group ref={group} dispose={null} scale={[0.1, 0.1,0.1]} >
         <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={(seek && !attack)}/>
         <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={attacked && !seek} />
-        <mesh castShadow={!isDeath} receiveShadow={!isDeath} material={material} geometry={nodes.Cube_0.geometry} name="Cube_0" />
-        <mesh castShadow={!isDeath} receiveShadow={!isDeath} material={material} geometry={nodes.Cube_1.geometry} name="Cube_1" />
-        <mesh castShadow={!isDeath} receiveShadow={!isDeath} material={material} geometry={nodes.Cube_2.geometry} name="Cube_2" />
-        <mesh castShadow={!isDeath} receiveShadow={!isDeath} material={material} geometry={nodes.Cube_3.geometry} name="Cube_3" />
+        <mesh castShadow={!isDeath} material={material} geometry={nodes.Cube_0.geometry} name="Cube_0" />
+        <mesh castShadow={!isDeath} material={material} geometry={nodes.Cube_1.geometry} name="Cube_1" />
+        <mesh castShadow={!isDeath} material={material} geometry={nodes.Cube_2.geometry} name="Cube_2" />
+        <mesh castShadow={!isDeath} material={material} geometry={nodes.Cube_3.geometry} name="Cube_3" />
       </group>
     </>
   )

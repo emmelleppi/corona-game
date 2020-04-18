@@ -32,9 +32,21 @@ function App() {
         }}
         onClick={handleClick}
       >
+
         <fogExp2 attach="fog" args={[0x333333, 0.08]} />
         <color attach="background" args={["#50A6E1"]} />
-        <ambientLight intensity={1} />
+
+        <ambientLight intensity={0.8} />
+        <pointLight
+          color={"lightyellow"}
+          position={[0, 50, 0]}
+          intensity={0.3}
+          castShadow
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-bias={-0.0001}
+        />
+
         <PhysicWorld callbacks={callbacks} />
       </Canvas>
     </>
