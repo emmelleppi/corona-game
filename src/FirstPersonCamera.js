@@ -8,6 +8,9 @@ import Effects from "./Effects";
 import { COLLISION_GROUP, bodyRef, useLife } from "./store";
 
 const WALKING_STEP = 0.2;
+const JUMP_IMPULSE = 10;
+const VELOCITY = 40
+const BOOST_FACTOR = 3
 
 function FirstPersonCamera(props) {
   const { position, callbacks } = props;
@@ -72,6 +75,9 @@ function FirstPersonCamera(props) {
       }
       if (keyCode === 32) {
         jump.current = true;
+      }
+      if (keyCode === 16) {
+        keyCodeRef.current.push(keyCode);
       }
     },
     [keyCodeRef, jump]
@@ -151,8 +157,11 @@ function FirstPersonCamera(props) {
     y = Math.min(1, Math.max(y, -1));
 
     if (x !== 0 || y !== 0) {
+
+      const velocity = VELOCITY * (keyCodeRef.current.includes(16) ? BOOST_FACTOR : 1)
       
-      api.angularVelocity.set(30 * x, 0, 30 * y);
+      api.angularVelocity.set(velocity * x, 0, velocity * y);
+      
       if (walking.current === 0) {
         walking.current = WALKING_STEP;
       }
@@ -163,9 +172,9 @@ function FirstPersonCamera(props) {
 
     }
 
-    if (jump.current && mybody.current.position.y < 1) {
-      api.applyImpulse([5 * direction.x, 5, 5 * direction.z], [0, 0, 0]);
-      jump.current = false;
+    if (jump.current && mybody.current.position.y < 0.4) {
+      api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
+      jump.current = false
     }
 
     if (walking.current > 0) {
