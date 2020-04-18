@@ -63,7 +63,8 @@ function Sky() {
           args={[10, 32, 32, 0, Math.PI * 2, 1, 0.3]}
         />
         <meshToonMaterial
-        ref={materialRef}
+          ref={materialRef}
+          fog={false}
           side={THREE.BackSide}
           attach="material"
         />
