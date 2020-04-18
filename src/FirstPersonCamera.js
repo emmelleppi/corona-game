@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, Suspense, useMemo } from "react";
+import React, { useCallback, useEffect, useRef, Suspense, useMemo, useState } from "react";
 import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useLockConstraint, useDistanceConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
@@ -6,17 +6,20 @@ import { PointerLockControls } from "./PointerLockControls";
 import BaseballBat from "./BaseballBat";
 import Effects from "./Effects";
 import { COLLISION_GROUP, bodyRef, useLife } from "./store";
+import { useSpring, a, config } from 'react-spring/three';
 
 const WALKING_STEP = 0.2;
 const JUMP_IMPULSE = 10;
 const VELOCITY = 40
-const BOOST_FACTOR = 3
+const BOOST_FACTOR = 4
 
 function FirstPersonCamera(props) {
   const { position, callbacks } = props;
   const { scene, setDefaultCamera,  size } = useThree();
   
   const aspect = useMemo(() => new THREE.Vector2(size.width, size.height), [size])
+
+  const [boost, setBoost] = useState(false)
 
   const keyCodeRef = useRef([]);
   const controls = useRef();
@@ -25,6 +28,8 @@ function FirstPersonCamera(props) {
   const jump = useRef(false);
   const walking = useRef(0);
   
+  const [springProps, set] = useSpring(() => ({}))
+
   const { life, decrease } = useLife(s => s)
 
   const [mybody, api] = useSphere(() => ({
@@ -77,18 +82,21 @@ function FirstPersonCamera(props) {
         jump.current = true;
       }
       if (keyCode === 16) {
-        keyCodeRef.current.push(keyCode);
+        setBoost(true)
       }
     },
-    [keyCodeRef, jump]
+    [keyCodeRef, jump, setBoost]
   );
 
   const onDocumentKeyUp = useCallback(
     function onDocumentKeyUp(event) {
       const keyCode = event.which;
       keyCodeRef.current = keyCodeRef.current.filter(x => x !== keyCode);
+      if (keyCode === 16) {
+        setBoost(false)
+      }
     },
-    [keyCodeRef]
+    [keyCodeRef, setBoost]
   );
 
   const lockPointerLock = useCallback(
@@ -99,6 +107,15 @@ function FirstPersonCamera(props) {
     },
     [controls]
   );
+
+  useEffect(() => {
+    if (boost) {
+      set({ from: { fov: 60 }, to: { fov: 90 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix()  })
+    } else {
+      set({ from: { fov: 90 }, to: { fov: 60 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix()  })
+    }
+    ;
+  }, [boost])
 
   useEffect(() => {
     setDefaultCamera(camera.current);
@@ -158,7 +175,7 @@ function FirstPersonCamera(props) {
 
     if (x !== 0 || y !== 0) {
 
-      const velocity = VELOCITY * (keyCodeRef.current.includes(16) ? BOOST_FACTOR : 1)
+      const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
       
       api.angularVelocity.set(velocity * x, 0, velocity * y);
       
@@ -204,7 +221,7 @@ function FirstPersonCamera(props) {
 
   return (
     <>
-      <perspectiveCamera ref={camera} args={[45, aspect, .1, 300]}>
+      <a.perspectiveCamera ref={camera} args={[60, aspect, .1, 300]} {...springProps}>
         <Suspense fallback={null}>
           <BaseballBat
             callbacks={callbacks}
@@ -226,7 +243,7 @@ function FirstPersonCamera(props) {
           <planeBufferGeometry attach="geometry" args={[10,10]} />
           <meshBasicMaterial attach="material" color="red" opacity={1} transparent side={THREE.DoubleSide} />
         </mesh>
-      </perspectiveCamera>
+      </a.perspectiveCamera>
 
       <mesh ref={mybody} />
       <mesh ref={chestLock} />
