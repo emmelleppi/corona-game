@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "dependencies": {
     "color-interpolate": "^1.0.5",
+    "immer": "^6.0.3",
     "lerp": "^1.0.3",
     "postprocessing": "^6.13.2",
     "react": "16.12.0",
