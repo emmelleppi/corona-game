@@ -15,9 +15,9 @@ function PhysicWorld(props) {
 
   const { scene } = useThree()
 
-  const coronas = useCorona(s => s.coronas)
+  const { coronas, addCorona } = useCorona(s => s)
+
   const mapBBoxes = useMapBBoxes(s => s.mapBBoxes)
-  const addCorona = useCorona(s => s.addCorona)
 
   const isIntersect = useCallback(
     function isIntersect(position) {
@@ -48,7 +48,17 @@ function PhysicWorld(props) {
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
       <PhysicBat />
-      {coronas.map(({ id, position }) => <Corona key={id} id={id} position={position} />)}
+      {coronas.map(({ id, position, life, isDead, isAttacking, isSeeking }) => (
+        <Corona
+          key={id}
+          id={id}
+          position={position}
+          isDead={isDead}
+          life={life}
+          isAttacking={isAttacking}
+          isSeeking={isSeeking}
+        />
+      ))}
       <FirstPersonCamera callbacks={callbacks} position={[0, 30, 0]} />
       <Suspense fallback={null}>
         <Map />

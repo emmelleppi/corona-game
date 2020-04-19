@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useFrame } from "react-three-fiber";
 import { useBox } from "use-cannon";
-
 import * as THREE from "three";
 
-import { batRef, COLLISION_GROUP, useLife } from "./store"
+import { batRef, COLLISION_GROUP, useLife, useCorona } from "./store"
 
 
 function PhysicBat() {
+  const onCollide = useRef()
+
   const { decrease } = useLife(s => s)
+  const coronas = useCorona(s => s.coronas)
 
   const [mybody, api] = useBox(() => ({
     args: [0.03, 0.3, 0.03],
@@ -19,20 +21,32 @@ function PhysicBat() {
     angularDamping: 1,
     collisionFilterGroup: COLLISION_GROUP.BAT,
     collisionFilterMask: COLLISION_GROUP.CORONA,
-    onCollide: e => {
-      
-      const { body, contact } = e
-      
-      if (body?.userData?.type === COLLISION_GROUP.CORONA) {
+    onCollide: e => onCollide.current(e)
+  }));
 
-        const { impactVelocity } = contact
-        const absVelocity = Math.abs(impactVelocity)
-        decrease(absVelocity)
+  const handleCollide = useCallback(
+    function handleCollide(e) {
+      const { body, contact } = e
+      const { type, id } = body?.userData
+
+      if (type === COLLISION_GROUP.CORONA) {
+        const { isAttacking } = coronas.filter(item => item.id === id)
+        
+        if (isAttacking) {
+          console.log("bat")
+          const { impactVelocity } = contact
+          const absVelocity = Math.abs(impactVelocity)
+          decrease(absVelocity)
+        }
         
       }
+    },
+    [decrease, coronas]
+  )
 
-    }
-  }));
+  useEffect(() => {
+    onCollide.current = handleCollide
+  }, [onCollide, handleCollide])
 
   useFrame(() => {
     if (!batRef.current) return

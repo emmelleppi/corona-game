@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, Suspense, useMemo, useState } from "react";
 import { useThree, useFrame } from "react-three-fiber";
-import { useSphere, useLockConstraint, useDistanceConstraint, useCylinder, useParticle } from "use-cannon";
+import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
 import { PointerLockControls } from "./PointerLockControls";
 import BaseballBat from "./BaseballBat";
 import Effects from "./Effects";
-import { COLLISION_GROUP, bodyRef, useLife } from "./store";
+import { COLLISION_GROUP, bodyRef, useLife, useCorona } from "./store";
 import { useSpring, a, config } from 'react-spring/three';
 
 const WALKING_STEP = 0.2;
@@ -27,10 +27,12 @@ function FirstPersonCamera(props) {
   const light = useRef();
   const jump = useRef(false);
   const walking = useRef(0);
+  const onCollide = useRef()
   
   const [springProps, set] = useSpring(() => ({}))
 
   const { life, decrease } = useLife(s => s)
+  const coronas = useCorona(s => s.coronas)
 
   const [mybody, api] = useSphere(() => ({
     mass: 1,
@@ -48,26 +50,33 @@ function FirstPersonCamera(props) {
     args: [0.2, 0.1, 0.5, 32],
     collisionFilterGroup: COLLISION_GROUP.CHEST,
     collisionFilterMask: COLLISION_GROUP.CORONA,
-    onCollide: e => {
-      
-      const { body, contact } = e
-      
-      if (body?.userData?.type === COLLISION_GROUP.CORONA) {
-        
-        const { impactVelocity } = contact
-        const absVelocity = Math.abs(impactVelocity)
-        decrease(absVelocity)
-
-      }
-
-    }
+    onCollide: e => onCollide.current(e)
   }), bodyRef);
   
-  const [chestLock, chestLockApi] = useParticle(() => ({
-    mass: 0,
-  }));
+  const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
   useLockConstraint(chest, chestLock)
+
+  const handleCollide = useCallback(
+    function handleCollide(e) {
+      const { body, contact } = e
+
+      const { type, id } = body?.userData
+      
+      if (type === COLLISION_GROUP.CORONA) {
+
+        const { isAttacking } = coronas.filter(item => item.id === id)
+        
+        if (isAttacking) {
+          console.log("person")
+          const { impactVelocity } = contact
+          const absVelocity = Math.abs(impactVelocity)
+          decrease(absVelocity)
+        }
+      }
+    },
+    [decrease, coronas]
+  )
 
   const onDocumentKeyDown = useCallback(
     function onDocumentKeyDown(event) {
@@ -116,6 +125,10 @@ function FirstPersonCamera(props) {
     }
     ;
   }, [boost])
+
+  useEffect(() => {
+    onCollide.current = handleCollide
+  }, [onCollide, handleCollide])
 
   useEffect(() => {
     setDefaultCamera(camera.current);
@@ -239,8 +252,8 @@ function FirstPersonCamera(props) {
           shadow-mapSize-height={2048}
           shadow-bias={-0.0001}
         />
-        <mesh position={[0,0,-1]} rotation={[Math.PI/2,0,0]}>
-          <planeBufferGeometry attach="geometry" args={[10,10]} />
+        <mesh position={[0, 0, -1]} rotation={[Math.PI/2, 0, 0]}>
+          <planeBufferGeometry attach="geometry" args={[10, 10]} />
           <meshBasicMaterial attach="material" color="red" opacity={1} transparent side={THREE.DoubleSide} />
         </mesh>
       </a.perspectiveCamera>

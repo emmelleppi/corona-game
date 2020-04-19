@@ -9,7 +9,7 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { a, useSpring } from "react-spring/three";
 import * as THREE from "three";
 
-import { batRef, batGroupRef, isAttackingRef, useOutline, useLife } from "./store"
+import { batRef, batGroupRef, useOutline, useLife, usePlayerAttack } from "./store"
 
 const batMovements = {
   init: {
@@ -43,6 +43,7 @@ function BaseballBat(props) {
   const [attacked, setAttacked] = useState(false)
 
   const addOutline = useOutline(s => s.addOutline)
+  const { setAttacking, resetAttacking } = usePlayerAttack(s => s)
   const life = useLife(s => s.life)
 
   const fiveTone = useLoader(THREE.TextureLoader, "/fiveTone.jpg")
@@ -101,14 +102,14 @@ function BaseballBat(props) {
     time.current += 1;
 
     if (time.current === init.t) {
-      isAttackingRef.current = true
+      setAttacking()
       batGroupRef.current.rotation.x = Math.PI/2;
       batGroupRef.current.rotation.y = 0;
       set({...init.spring});
     } else if (time.current === half.t) {
       set({...half.spring});
     } else if (time.current === end.t) {
-      isAttackingRef.current = false
+      resetAttacking()
       set({...end.spring});
     } else if (time.current > idle.t) {
       batGroupRef.current.rotation.x = Math.PI/2 + Math.cos(time.current / 10) / 6
