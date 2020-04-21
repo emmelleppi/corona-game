@@ -1,11 +1,36 @@
 import React, { useCallback, useRef, useEffect, useMemo, Suspense } from "react";
-import { Canvas } from "react-three-fiber";
-import * as THREE from "three";
+import { Canvas, useFrame } from "react-three-fiber";
 
 import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
 
 import "./styles.css";
+
+function Lights() {
+  const ref = useRef()
+
+  useFrame(({ clock }) => {
+    const time = clock.getElapsedTime()
+    ref.current.position.x = 70 * Math.sin(time)
+    ref.current.position.z = 70 * Math.cos(time)
+  })
+
+  return (
+    <spotLight
+      ref={ref}
+      color={"red"}
+      position={[0, 50, 0]}
+      intensity={0.8}
+      angle={Math.PI / 4}
+      decay={2}
+      penumbra={0.8}
+      castShadow
+      shadow-mapSize-width={1024 / 2}
+      shadow-mapSize-height={1024 / 2}
+      shadow-bias={-0.0001}
+    />
+  )
+}
 
 function App() {
   const callbacks = useRef([]);
@@ -23,13 +48,9 @@ function App() {
     <>
       <Canvas
         shadowMap
+        colorManagement
         camera={{ position:[0, 100, 0] }}
-        // gl={{ antialias: false, alpha: true }}
-        onCreated={({ gl }) => {
-          // gl.toneMapping = THREE.Uncharted2ToneMapping
-          // gl.outputEncoding = THREE.sRGBEncoding;
-          // gl.setPixelRatio( window.devicePixelRatio );
-        }}
+        onCreated={({ gl }) => gl.setPixelRatio( window.devicePixelRatio )}
         onClick={handleClick}
       >
 
@@ -37,17 +58,23 @@ function App() {
         <color attach="background" args={["#50A6E1"]} />
 
         <ambientLight intensity={0.8} />
-        <pointLight
+        <spotLight
           color={"lightyellow"}
-          position={[0, 50, 0]}
-          intensity={0.3}
+          position={[0, 30, 0]}
+          intensity={1}
+          angle={Math.PI/4}
           castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
+          shadow-mapSize-width={1024 / 2}
+          shadow-mapSize-height={1024 / 2}
           shadow-bias={-0.0001}
         />
+        <Lights />
 
         <PhysicWorld callbacks={callbacks} />
+              
+        <Suspense fallback={null} >
+          <Effects />
+        </Suspense>
       </Canvas>
     </>
   );
