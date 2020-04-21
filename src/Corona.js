@@ -6,27 +6,28 @@ import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { useLoader, useFrame, useResource } from 'react-three-fiber'
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { useSphere, useParticle, useConeTwistConstraint } from 'use-cannon';
+import { useSphere, useParticle, useLockConstraint, useConeTwistConstraint } from 'use-cannon';
 import { useSpring, a, config } from 'react-spring/three';
 import * as THREE from "three";
+import lerp from "lerp"
 
 import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from "./store"
 import { getRandomUnity } from './utils';
 import Exclamation from './Exclamation';
 import Pow from './Pow';
 
-const ATTACK_DURATION = 50
-const Y_BIAS = 1.1
+const ATTACK_DURATION = 10
+const Y_BIAS = .6
 
 function Corona(props) {
   const { id, position, isDead, isAttacking, isSeeking } = props
-
   const [isUnderAttack, setIsUnderAttack] = useState(false)
-  
+
   const onCollide = useRef()
   const group = useRef()
   const time = useRef(0)
   const velocity = useRef()
+  const attackPosition = useRef()
   const orientation = useRef()
   const raycast = useRef(new THREE.Raycaster())
 
@@ -38,13 +39,11 @@ function Corona(props) {
     setSeeking,
     resetSeeking,
   } = useCorona(s => s)
+
   const isPlayerAttacking = usePlayerAttack(s => s.isAttacking)
-
+  
   const { addOutline, removeOutline } = useOutline(s => s)
-
-  useEffect(() => {
-    addOutline(group.current);
-  }, [addOutline, group]);
+  useEffect(() => void addOutline(group.current), [addOutline, group]);
 
   const { nodes } = useLoader(GLTFLoader, '/corona.glb',
     loader => {
@@ -54,14 +53,10 @@ function Corona(props) {
     }
   )
 
-  const fiveTone = useLoader(THREE.TextureLoader, "/fiveTone.jpg")
-  fiveTone.minFilter = THREE.NearestFilter;
-  fiveTone.magFilter = THREE.NearestFilter
-
   const [mybody, mybodyApi] = useSphere(() => ({
     args: 0.2,
     mass: .1,
-    position,
+    position: [position[0], position[1] + Y_BIAS ,position[2]],
     material: { friction: 0, restitution: 0 },
     linearDamping: 0.1,
     angularDamping: 0.1,
@@ -72,20 +67,15 @@ function Corona(props) {
   
   const [lock, lockApi] = useParticle(() => ({
     args: [0.05, 0.2, 0.5, 16],
-    mass: 0,
     position: [position[0], position[1] + Y_BIAS ,position[2]],
     material: { friction: 0, restitution: 0.2 },
     linearDamping: 0.1,
     angularDamping: 0.1,
-    type:"Kinetic"
+    type: "Kinetic"
   }))
 
-  const [ , , { disable }] = useConeTwistConstraint(lock, mybody, {
-    pivotA: [0, 0, 0],
-    pivotB: [0, .5, 0],
-    twistAngle: .1,
-  })
-  
+  const [ , , { disable }] = useLockConstraint(mybody,lock)
+
   const handleCollide = useCallback(
     function handleCollide(e) {
       
@@ -100,12 +90,10 @@ function Corona(props) {
       
       if (isPlayerAttacking && body?.userData?.type === COLLISION_GROUP.BAT) {
         
-        console.log("corona")
-
         const absVelocity = Math.abs(impactVelocity)
-        
         decreaseLife(id, absVelocity)
         setIsUnderAttack(s => { if (!s) return true })
+
       }
 
     },
@@ -121,6 +109,7 @@ function Corona(props) {
   )
   
   const [springProps, set] = useSpring(() => ({ opacity: 1, config: config.molasses }))
+
   const [resourceRef, material] = useResource()
 
   const getIntersects = useCallback(
@@ -170,15 +159,19 @@ function Corona(props) {
       const line = new THREE.Line3(mybody.current.position, bodyRef.current.position)
       const distance = line.distance()
 
-      if (isSeeking && !isAttacking && distance < 1) {
-
-        resetSeeking(id)
-        setAttacking(id)
+      if (distance < 1) {
+        if (isSeeking) {
+          resetSeeking(id)
+        }
+        if (!isAttacking) {
+          setAttacking(id)
+          attackPosition.current = [bodyRef.current.position.clone(), mybody.current.position.clone()]
+          time.current = 0
+        }
 
       } else if (distance >= 1 && distance < 4) {
         
         if (isAttacking) {
-          setSeeking(id)
           resetAttacking(id)
         }
 
@@ -188,7 +181,7 @@ function Corona(props) {
         raycast.current.set(mybody.current.position, dir)
         const intersect = raycast.current.intersectObjects(scene.children);
 
-        if (intersect[0]?.object?.userData?.type === COLLISION_GROUP.CHEST) {
+        if (intersect[0]?.object?.userData?.type === COLLISION_GROUP.CHEST && !isSeeking) {
           setSeeking(id)
         }
 
@@ -206,16 +199,29 @@ function Corona(props) {
 
   const handleAttack = useCallback(
     function handleAttack() {
-      if (time.current === ATTACK_DURATION) {
-        const dir = new THREE.Vector3()
-        dir.subVectors(bodyRef.current.position, mybody.current.position).normalize();
-        mybodyApi.applyImpulse([dir.x, 0, dir.z], [0,0,0])
-        time.current = 0
+      if (!attackPosition.current) return
+
+      if (time.current < ATTACK_DURATION * 2) {
+
+        const { x, y, z } = attackPosition.current[time.current < ATTACK_DURATION ? 0 : 1]
+        lockApi.position.set(
+          lerp(lock.current.position.x, x, 0.2),
+          lerp(lock.current.position.y, y, 0.2),
+          lerp(lock.current.position.z, z, 0.2)
+        )
+        
+      }
+      if (time.current === ATTACK_DURATION * 4) {
+          resetAttacking(id)
+
+        // attackPosition.current = [bodyRef.current.position.clone(), mybody.current.position.clone()]
+        // time.current = 0
+
       }
 
       time.current += 1
     },
-    [time]
+    [time, resetAttacking, id]
   )
   
   useEffect(() => {
@@ -245,13 +251,8 @@ function Corona(props) {
   }, [isUnderAttack, setIsUnderAttack])
 
   useFrame(({ scene }) => {
-    group.current.position.x = mybody.current.position.x
-    group.current.position.y = mybody.current.position.y
-    group.current.position.z = mybody.current.position.z
-    
-    group.current.rotation.x = mybody.current.rotation.x
-    group.current.rotation.y = mybody.current.rotation.y
-    group.current.rotation.z = mybody.current.rotation.z
+    group.current.position.copy(mybody.current.position)
+    group.current.rotation.copy(mybody.current.rotation)
 
     if (!isDead) {
 
@@ -259,7 +260,7 @@ function Corona(props) {
   
       if (isAttacking) {
         handleAttack()
-      }else if (isSeeking) {
+      } else if (isSeeking) {
         seekBody()
       } else {
         updatePosition(scene)
@@ -273,9 +274,8 @@ function Corona(props) {
       <a.meshToonMaterial
         transparent
         color={isDead ? 0xff0000 : 0x469963}
-        shininess={1}
-        specular={0}
-        gradientMap={fiveTone}
+        shininess={0.3}
+        specular={0xaaaaaa}
         ref={resourceRef}
         {...springProps}
        />

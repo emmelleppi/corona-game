@@ -24,7 +24,6 @@ function FirstPersonCamera(props) {
   const keyCodeRef = useRef([]);
   const controls = useRef();
   const camera = useRef();
-  const light = useRef();
   const jump = useRef(false);
   const walking = useRef(0);
   const onCollide = useRef()
@@ -65,10 +64,11 @@ function FirstPersonCamera(props) {
       
       if (type === COLLISION_GROUP.CORONA) {
 
-        const { isAttacking } = coronas.filter(item => item.id === id)
+        const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
+
+        console.log(coronas?.filter(item => item.id === id))
         
         if (isAttacking) {
-          console.log("person")
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
           decrease(absVelocity)
@@ -225,8 +225,6 @@ function FirstPersonCamera(props) {
       mybody.current.position.z
     );
 
-    light.current.target = camera.current;
-    
     if (walking.current > 2 * Math.PI) {
       walking.current = 0;
     }
@@ -242,16 +240,6 @@ function FirstPersonCamera(props) {
             rotation={[0, 0, 0]}
           />
         </Suspense>
-        <pointLight
-          ref={light}
-          color={"lightyellow"}
-          position={[0, 0, 0.1]}
-          intensity={0.5}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-bias={-0.0001}
-        />
         <mesh position={[0, 0, -1]} rotation={[Math.PI/2, 0, 0]}>
           <planeBufferGeometry attach="geometry" args={[10, 10]} />
           <meshBasicMaterial attach="material" color="red" opacity={1} transparent side={THREE.DoubleSide} />
@@ -264,10 +252,6 @@ function FirstPersonCamera(props) {
         <cylinderBufferGeometry attach="geometry" args={[0.15, 0.05, 0.5, 32]} />
         <meshBasicMaterial attach="material" transparent opacity={0} />
       </mesh>
-      
-      <Suspense fallback={null} >
-        <Effects />
-      </Suspense>
     </>
   );
 }

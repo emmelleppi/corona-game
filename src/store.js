@@ -42,8 +42,12 @@ export const [useCorona] = create(set => ({
     decreaseLife: (id, x) => set(state => produce(state, draft => {
         draft.coronas.forEach(item => {
             if (item.id === id) {
-                item.life -= x
-                item.isDead = item.life < 0
+                item.life -= x / 2
+                if (item.life < 0) {
+                    item.isDead = true
+                    item.isSeeking = false
+                    item.isAttacking = false
+                }
             }
         })
         return draft
@@ -51,6 +55,7 @@ export const [useCorona] = create(set => ({
     setAttacking: id => set(state => produce(state, draft => {
         draft.coronas.forEach(item => {
             if (item.id === id) {
+                console.log("setAttacking",id)
                 item.isAttacking = true
             }
         })
@@ -59,6 +64,7 @@ export const [useCorona] = create(set => ({
     resetAttacking: id => set(state => produce(state, draft => {
         draft.coronas.forEach(item => {
             if (item.id === id) {
+                console.log("resetAttacking",id)
                 item.isAttacking = false
             }
         })
