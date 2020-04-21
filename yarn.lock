@@ -918,7 +918,7 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.3.1", "@babel/runtime@^7.3.4", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.3.1", "@babel/runtime@^7.3.4", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
   version "7.9.2"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.9.2.tgz#d90df0583a3a252f09aaa619665367bae518db06"
   integrity sha512-NE2DtOdufG7R5vnfQUTehdTfNycfUANEtCa9PssN9O/xmTzP4E08UI797ixaei6hBEVL9BI/PsdJS5x7mWoB9Q==
@@ -1156,10 +1156,10 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
-"@juggle/resize-observer@^3.1.1":
-  version "3.1.2"
-  resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.1.2.tgz#e2b4ee9e50ac36e957e34031055f5ddc8494a9e2"
-  integrity sha512-Yao5AFq8HKHsyLCLZn15BybqN67cdbgDbVDnnaN54IUaffkwDHj0VMgBp1C/IxOsFsNltsI7LdnW4GEHmQarLQ==
+"@juggle/resize-observer@^3.1.3":
+  version "3.1.3"
+  resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.1.3.tgz#d7373eb9a1afc371342b8cf1a07e34368f3d65d7"
+  integrity sha512-y7qc6SzZBlSpx8hEDfV0S9Cx6goROX/vBhS2Ru1Q78Jp1FlCMbxp7UcAN90rLgB3X8DSMBgDFxcmoG/VfdAhFA==
 
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
@@ -7942,15 +7942,15 @@ react-promise-suspense@^0.3.2:
   dependencies:
     fast-deep-equal "^2.0.1"
 
-react-reconciler@0.25.0:
-  version "0.25.0"
-  resolved "https://registry.yarnpkg.com/react-reconciler/-/react-reconciler-0.25.0.tgz#0b3e895b20c4b5dec8de7a2b0098d25ff5503150"
-  integrity sha512-58eTJHDnzOZsoORRub8bmQ0bM7APVfeZN8vZMt8Zbhq9EnUYlFWFxztH00Jv0vHr897u8ZvnWEaOm/tkzfz7WA==
+react-reconciler@0.25.1:
+  version "0.25.1"
+  resolved "https://registry.yarnpkg.com/react-reconciler/-/react-reconciler-0.25.1.tgz#f9814d59d115e1210762287ce987801529363aaa"
+  integrity sha512-R5UwsIvRcSs3w8n9k3tBoTtUHdVhu9u84EG7E5M0Jk9F5i6DA1pQzPfUZd6opYWGy56MJOtV3VADzy6DRwYDjw==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     prop-types "^15.6.2"
-    scheduler "^0.19.0"
+    scheduler "^0.19.1"
 
 react-scripts@3.0.1:
   version "3.0.1"
@@ -8020,19 +8020,19 @@ react-spring@8.0.27:
     "@babel/runtime" "^7.3.1"
     prop-types "^15.5.8"
 
-react-three-fiber@4.0.22:
-  version "4.0.22"
-  resolved "https://registry.yarnpkg.com/react-three-fiber/-/react-three-fiber-4.0.22.tgz#a0604ab0b581f2671859c222276a50159e9feb13"
-  integrity sha512-sAf/9WV5r3j3FIPXOV0vkv40jgqGSYxIIMF5prZp9nS6gHOWWiXkS+HeD6uO1QU4it/GnrGWLGd0cqoT8Ba2hQ==
+react-three-fiber@4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/react-three-fiber/-/react-three-fiber-4.1.0.tgz#d898dfae132300d8e84043c1e50179d3fcd58e51"
+  integrity sha512-EPYY8WJuDYasFCJT2bSrv0VJwyRMD6C2QO3iWaVvxDhCz+/VyBo7zzAuA3Nan7ojmve+xWGd2Kv9W9bSAqv81w==
   dependencies:
-    "@babel/runtime" "^7.8.7"
-    "@juggle/resize-observer" "^3.1.1"
+    "@babel/runtime" "^7.9.2"
+    "@juggle/resize-observer" "^3.1.3"
     react-merge-refs "^1.0.0"
     react-promise-suspense "^0.3.2"
-    react-reconciler "0.25.0"
+    react-reconciler "0.25.1"
     react-use-measure "^2.0.0"
     resize-observer-polyfill "^1.5.1"
-    scheduler "0.19.0"
+    scheduler "0.19.1"
     tiny-emitter "^2.1.0"
     utility-types "^3.10.0"
 
@@ -8482,10 +8482,10 @@ saxes@^3.1.9:
   dependencies:
     xmlchars "^2.1.1"
 
-scheduler@0.19.0:
-  version "0.19.0"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.19.0.tgz#a715d56302de403df742f4a9be11975b32f5698d"
-  integrity sha512-xowbVaTPe9r7y7RUejcK73/j8tt2jfiyTednOvHbA8JoClvMYCp+r8QegLwK/n8zWQAtZb1fFnER4XLBZXrCxA==
+scheduler@0.19.1, scheduler@^0.19.1:
+  version "0.19.1"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.19.1.tgz#4f3e2ed2c1a7d65681f4c854fa8c5a1ccb40f196"
+  integrity sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -8494,14 +8494,6 @@ scheduler@^0.18.0:
   version "0.18.0"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.18.0.tgz#5901ad6659bc1d8f3fdaf36eb7a67b0d6746b1c4"
   integrity sha512-agTSHR1Nbfi6ulI0kYNK0203joW2Y5W4po4l+v03tOoiJKpTBbxpNhWDvqc/4IcOw+KLmSiQLTasZ4cab2/UWQ==
-  dependencies:
-    loose-envify "^1.1.0"
-    object-assign "^4.1.1"
-
-scheduler@^0.19.0:
-  version "0.19.1"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.19.1.tgz#4f3e2ed2c1a7d65681f4c854fa8c5a1ccb40f196"
-  integrity sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
