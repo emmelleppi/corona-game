@@ -55,11 +55,11 @@ function Corona(props) {
 
   const [mybody, mybodyApi] = useSphere(() => ({
     args: 0.2,
-    mass: .1,
+    mass: 0.2,
     position: [position[0], position[1] + Y_BIAS ,position[2]],
-    material: { friction: 0, restitution: 0 },
-    linearDamping: 0.1,
-    angularDamping: 0.1,
+    // material: { friction: 0, restitution: 0 },
+    // linearDamping: 0.1,
+    // angularDamping: 0.1,
     collisionFilterGroup: COLLISION_GROUP.CORONA,
     collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
     onCollide: e => onCollide.current(e)
@@ -234,7 +234,7 @@ function Corona(props) {
 
       const dir = new THREE.Vector3()
       dir.subVectors(bodyRef.current.position, mybody.current.position).normalize();
-      mybodyApi.applyImpulse([-dir.x, -3, -dir.z], [0,0,0])
+      mybodyApi.applyLocalImpulse([-3 * dir.x, -3, -3 * dir.z], [1,1,1])
 
       set({ opacity: 0, config: config.molasses, onStart: () => removeOutline(group.current), onRest: () => removeCorona(id) })
     }
