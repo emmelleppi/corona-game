@@ -4,26 +4,42 @@ import { extend, useThree, useFrame } from "react-three-fiber";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
+import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass";
+import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
+import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
 
-import { useOutline } from "./store";
+import { useOutline, lifeApi } from "./store";
 
 const OUTLINE_COLOR = 0xffffff;
 
 extend({
   EffectComposer,
   RenderPass,
-  OutlinePass
+  OutlinePass,
+  GlitchPass,
+  FilmPass,
+  ShaderPass,
+
 });
 
 function Effects() {
   const { scene, gl, size, camera } = useThree()
-  
+
   const aspect = useMemo(() => new THREE.Vector2(size.width, size.height), [size])
-  
+
   const composer = useRef();
   const outline = useRef();
-  
+  const glitch = useRef();
+
   const outlineObjs = useOutline(state => state.outline);
+
+  const currLife = React.useRef(100)
+
+  useEffect(() => {
+    glitch.current.factor = 0;
+  }, [glitch])
 
   useEffect(() => {
     if (outline.current) {
@@ -35,6 +51,25 @@ function Effects() {
       outline.current.overlayMaterial.blending = THREE.SubtractiveBlending
       outline.current.selectedObjects = outlineObjs;
     }
+
+    let timeout
+
+    lifeApi.subscribe(({ life }) => {
+
+      if (life < currLife) {
+        glitch.current.factor = 1;
+      }
+
+      timeout = setTimeout(() => {
+        glitch.current.factor = 0;
+      }, 100)
+
+    })
+
+    return () => {
+      clearTimeout(timeout)
+    }
+
   }, [outlineObjs, outline]);
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [size])
@@ -48,6 +83,10 @@ function Effects() {
         attachArray="passes"
         args={[aspect, scene, camera]}
       />
+      <glitchPass attachArray="passes" renderToScreen factor={0} ref={glitch} />
+      <filmPass attachArray="passes" args={[0.35, 0.025, 648, false]} />
+      <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
+      <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0015} />
     </effectComposer>
   );
 }
