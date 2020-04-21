@@ -46,10 +46,6 @@ function BaseballBat(props) {
   const { setAttacking, resetAttacking } = usePlayerAttack(s => s)
   const life = useLife(s => s.life)
 
-  const fiveTone = useLoader(THREE.TextureLoader, "/fiveTone.jpg")
-  fiveTone.minFilter = THREE.NearestFilter;
-  fiveTone.magFilter = THREE.NearestFilter
-  
   const { nodes } = useLoader(
     GLTFLoader,
     "/baseball_bat.glb",
@@ -102,18 +98,26 @@ function BaseballBat(props) {
     time.current += 1;
 
     if (time.current === init.t) {
+
       setAttacking()
       batGroupRef.current.rotation.x = Math.PI/2;
       batGroupRef.current.rotation.y = 0;
       set({...init.spring});
+
     } else if (time.current === half.t) {
+      
       set({...half.spring});
+
     } else if (time.current === end.t) {
+      
       resetAttacking()
       set({...end.spring});
+
     } else if (time.current > idle.t) {
+      
       batGroupRef.current.rotation.x = Math.PI/2 + Math.cos(time.current / 10) / 6
       batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
+
     }
   });
 
@@ -121,24 +125,19 @@ function BaseballBat(props) {
     <>
       <meshToonMaterial
         color={attacked ? 0xff4545 : 0x888888}
-        gradientMap={fiveTone}
-        shininess={1}
-        specular={0}
+        shininess={0.3}
+        specular={0xaaaaaa}
         ref={metalResourceRef}
        />
       <meshToonMaterial
         color={attacked ? 0x740000 : 0x222222}
-        gradientMap={fiveTone}
-        shininess={1}
-        specular={0}
+        shininess={0.3}
+        specular={0x888888}
         ref={handleResourceRef}
        />
 
       <group ref={batGroupRef} {...allTheRest} rotation={[Math.PI/2, 0, 0]} dispose={null}>
-        <a.group
-          scale={[0.02, 0.12, 0.02]}
-          {...spring}
-        >
+        <a.group scale={[0.02, 0.12, 0.02]} {...spring} >
           <mesh position={[0, 2.5, 0]} ref={batRef} />
           <mesh material={metalMaterial} geometry={nodes.Cylinder_1.geometry} />
           <mesh material={handleMaterial} geometry={nodes.Cylinder_0.geometry} />

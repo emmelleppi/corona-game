@@ -15,7 +15,7 @@ function PhysicBat() {
   const [mybody, api] = useBox(() => ({
     args: [0.03, 0.3, 0.03],
     type: "Kinematic",
-    mass: 10,
+    mass: 1,
     material: { friction: 1, restitution: 1 },
     linearDamping: 1,
     angularDamping: 1,
@@ -30,10 +30,9 @@ function PhysicBat() {
       const { type, id } = body?.userData
 
       if (type === COLLISION_GROUP.CORONA) {
-        const { isAttacking } = coronas.filter(item => item.id === id)
+        const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
         
         if (isAttacking) {
-          console.log("bat")
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
           decrease(absVelocity)

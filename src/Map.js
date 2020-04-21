@@ -54,32 +54,20 @@ function Map() {
   const [innerMaterialRef, innerMaterial] = useResource()
   const [outerMaterialRef, outerMaterial] = useResource()
 
-  const [textureNorm, textureRough, fiveTone] = useLoader(THREE.TextureLoader, ["/water_norm.jpg","/water_rough.jpg", "/fiveTone.jpg"])
-  fiveTone.minFilter = THREE.NearestFilter;
-  fiveTone.magFilter = THREE.NearestFilter
-
   return (
     <>
       <meshToonMaterial
         ref={innerMaterialRef}
         attach="material"
-        shininess={1}
-        specular={0}
-        roughness={1}
-        roughnessMap={textureRough}
-        normalMap={textureNorm}
-        gradientMap={fiveTone}
+        shininess={0.3}
+        specular={0xaaaaaa}
         color={0xdddddd}
       />
       <meshToonMaterial
         ref={outerMaterialRef}
         attach="material"
-        shininess={1}
-        specular={0}
-        roughness={1}
-        roughnessMap={textureRough}
-        normalMap={textureNorm}
-        gradientMap={fiveTone}
+        shininess={0.3}
+        specular={0xaaaaaa}
         color={0xcc5ea6}
       />
 
