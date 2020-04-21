@@ -34,7 +34,7 @@ function Lights() {
 
 function App() {
   const callbacks = useRef([]);
-  
+
   const handleClick = useCallback(
     function handleClick(e) {
       if (callbacks.current) {
@@ -49,20 +49,20 @@ function App() {
       <Canvas
         shadowMap
         colorManagement
-        camera={{ position:[0, 100, 0] }}
-        onCreated={({ gl }) => gl.setPixelRatio( window.devicePixelRatio )}
+        camera={{ position: [0, 100, 0] }}
+        onCreated={({ gl }) => gl.setPixelRatio(window.devicePixelRatio)}
         onClick={handleClick}
       >
 
         <fogExp2 attach="fog" args={[0x333333, 0.08]} />
-        <color attach="background" args={["#50A6E1"]} />
+        <color attach="background" args={["#23213D"]} />
 
         <ambientLight intensity={0.8} />
         <spotLight
           color={"lightyellow"}
           position={[0, 30, 0]}
           intensity={1}
-          angle={Math.PI/4}
+          angle={Math.PI / 4}
           castShadow
           shadow-mapSize-width={1024 / 2}
           shadow-mapSize-height={1024 / 2}
@@ -71,7 +71,7 @@ function App() {
         <Lights />
 
         <PhysicWorld callbacks={callbacks} />
-              
+
         <Suspense fallback={null} >
           <Effects />
         </Suspense>

@@ -54,8 +54,8 @@ function BaseballBat(props) {
       dracoLoader.setDecoderPath("/draco-gltf/");
       loader.setDRACOLoader(dracoLoader);
     }
-    );
-    
+  );
+
   const [spring, set] = useSpring(() => ({
     ...batMovements.end.spring,
     config: { mass: 1, tension: 210, friction: 10 }
@@ -100,22 +100,22 @@ function BaseballBat(props) {
     if (time.current === init.t) {
 
       setAttacking()
-      batGroupRef.current.rotation.x = Math.PI/2;
+      batGroupRef.current.rotation.x = Math.PI / 2;
       batGroupRef.current.rotation.y = 0;
-      set({...init.spring});
+      set({ ...init.spring });
 
     } else if (time.current === half.t) {
-      
-      set({...half.spring});
+
+      set({ ...half.spring });
 
     } else if (time.current === end.t) {
-      
+
       resetAttacking()
-      set({...end.spring});
+      set({ ...end.spring });
 
     } else if (time.current > idle.t) {
-      
-      batGroupRef.current.rotation.x = Math.PI/2 + Math.cos(time.current / 10) / 6
+
+      batGroupRef.current.rotation.x = Math.PI / 2 + Math.cos(time.current / 10) / 6
       batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
 
     }
@@ -124,19 +124,19 @@ function BaseballBat(props) {
   return (
     <>
       <meshToonMaterial
-        color={attacked ? 0xff4545 : 0x888888}
+        color={attacked ? 0x76747E : 0xB8B5C3}
         shininess={0.3}
         specular={0xaaaaaa}
         ref={metalResourceRef}
-       />
+      />
       <meshToonMaterial
-        color={attacked ? 0x740000 : 0x222222}
+        color={attacked ? 0x740000 : 0x454194}
         shininess={0.3}
         specular={0x888888}
         ref={handleResourceRef}
-       />
+      />
 
-      <group ref={batGroupRef} {...allTheRest} rotation={[Math.PI/2, 0, 0]} dispose={null}>
+      <group ref={batGroupRef} {...allTheRest} rotation={[Math.PI / 2, 0, 0]} dispose={null}>
         <a.group scale={[0.02, 0.12, 0.02]} {...spring} >
           <mesh position={[0, 2.5, 0]} ref={batRef} />
           <mesh material={metalMaterial} geometry={nodes.Cylinder_1.geometry} />

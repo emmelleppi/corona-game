@@ -41,7 +41,7 @@ function Corona(props) {
   } = useCorona(s => s)
 
   const isPlayerAttacking = usePlayerAttack(s => s.isAttacking)
-  
+
   const { addOutline, removeOutline } = useOutline(s => s)
   useEffect(() => void addOutline(group.current), [addOutline, group]);
 
@@ -56,7 +56,7 @@ function Corona(props) {
   const [mybody, mybodyApi] = useSphere(() => ({
     args: 0.2,
     mass: 0.2,
-    position: [position[0], position[1] + Y_BIAS ,position[2]],
+    position: [position[0], position[1] + Y_BIAS, position[2]],
     // material: { friction: 0, restitution: 0 },
     // linearDamping: 0.1,
     // angularDamping: 0.1,
@@ -64,21 +64,21 @@ function Corona(props) {
     collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
     onCollide: e => onCollide.current(e)
   }))
-  
+
   const [lock, lockApi] = useParticle(() => ({
     args: [0.05, 0.2, 0.5, 16],
-    position: [position[0], position[1] + Y_BIAS ,position[2]],
+    position: [position[0], position[1] + Y_BIAS, position[2]],
     material: { friction: 0, restitution: 0.2 },
     linearDamping: 0.1,
     angularDamping: 0.1,
     type: "Kinetic"
   }))
 
-  const [ , , { disable }] = useLockConstraint(mybody,lock)
+  const [, , { disable }] = useLockConstraint(mybody, lock)
 
   const handleCollide = useCallback(
     function handleCollide(e) {
-      
+
       const { contact, body } = e
       const { impactVelocity, ni } = contact
 
@@ -87,9 +87,9 @@ function Corona(props) {
         mybody.current.rotation.y + ni[1],
         mybody.current.rotation.z + ni[2]
       )
-      
+
       if (isPlayerAttacking && body?.userData?.type === COLLISION_GROUP.BAT) {
-        
+
         const absVelocity = Math.abs(impactVelocity)
         decreaseLife(id, absVelocity)
         setIsUnderAttack(s => { if (!s) return true })
@@ -103,11 +103,11 @@ function Corona(props) {
   const updateOrientation = useCallback(
     function updateOrientation() {
       velocity.current = new THREE.Vector2(getRandomUnity(), getRandomUnity()).normalize()
-      orientation.current =  new THREE.Vector3(velocity.current.x, 0, velocity.current.y).normalize()
+      orientation.current = new THREE.Vector3(velocity.current.x, 0, velocity.current.y).normalize()
     },
     [velocity, orientation]
   )
-  
+
   const [springProps, set] = useSpring(() => ({ opacity: 1, config: config.molasses }))
 
   const [resourceRef, material] = useResource()
@@ -117,7 +117,7 @@ function Corona(props) {
 
       raycast.current.set(position, orientation)
       const intersects = raycast.current.intersectObjects(scene.children);
-      
+
       return intersects.filter(({ object }) => collisionArray.includes(object?.userData?.type))
     }, [raycast])
 
@@ -128,13 +128,13 @@ function Corona(props) {
         new THREE.Vector3(
           mybody.current.position.x + velocity.current.x / 25,
           mybody.current.position.y,
-          mybody.current.position.z  + velocity.current.y / 25
+          mybody.current.position.z + velocity.current.y / 25
         ),
         new THREE.Vector3(0, -1, 0),
         scene,
         [COLLISION_GROUP.TILES]
       )
-      
+
       if (bodies?.[0]?.distance < 0.5 || tiles?.length === 0) {
         updateOrientation()
       } else {
@@ -148,7 +148,7 @@ function Corona(props) {
     function seekBody() {
       const dir = new THREE.Vector3()
       dir.subVectors(bodyRef.current.position, mybody.current.position).normalize();
-      
+
       lockApi.position.set(lock.current.position.x + dir.x / 40, position[1] + Y_BIAS, lock.current.position.z + dir.z / 40)
     },
     [bodyRef, mybody, lockApi]
@@ -170,14 +170,14 @@ function Corona(props) {
         }
 
       } else if (distance >= 1 && distance < 4) {
-        
+
         if (isAttacking) {
           resetAttacking(id)
         }
 
         const dir = new THREE.Vector3()
         dir.subVectors(bodyRef.current.position, mybody.current.position).normalize();
-        
+
         raycast.current.set(mybody.current.position, dir)
         const intersect = raycast.current.intersectObjects(scene.children);
 
@@ -209,10 +209,10 @@ function Corona(props) {
           lerp(lock.current.position.y, y, 0.2),
           lerp(lock.current.position.z, z, 0.2)
         )
-        
+
       }
       if (time.current === ATTACK_DURATION * 4) {
-          resetAttacking(id)
+        resetAttacking(id)
 
         // attackPosition.current = [bodyRef.current.position.clone(), mybody.current.position.clone()]
         // time.current = 0
@@ -223,7 +223,7 @@ function Corona(props) {
     },
     [time, resetAttacking, id]
   )
-  
+
   useEffect(() => {
     onCollide.current = handleCollide
   }, [onCollide, handleCollide])
@@ -234,7 +234,7 @@ function Corona(props) {
 
       const dir = new THREE.Vector3()
       dir.subVectors(bodyRef.current.position, mybody.current.position).normalize();
-      mybodyApi.applyLocalImpulse([-3 * dir.x, -3, -3 * dir.z], [1,1,1])
+      mybodyApi.applyLocalImpulse([-3 * dir.x, -3, -3 * dir.z], [1, 1, 1])
 
       set({ opacity: 0, config: config.molasses, onStart: () => removeOutline(group.current), onRest: () => removeCorona(id) })
     }
@@ -257,7 +257,7 @@ function Corona(props) {
     if (!isDead) {
 
       checkProximityToBody(scene)
-  
+
       if (isAttacking) {
         handleAttack()
       } else if (isSeeking) {
@@ -269,22 +269,22 @@ function Corona(props) {
 
   })
 
-  return  (
+  return (
     <>
       <a.meshToonMaterial
         transparent
-        color={isDead ? 0xff0000 : 0x469963}
+        color={isDead ? 0xff0000 : 0x1E9983}
         shininess={0.3}
         specular={0xaaaaaa}
         ref={resourceRef}
         {...springProps}
-       />
+      />
 
       <mesh ref={lock} />
       <mesh ref={mybody} userData={{ type: COLLISION_GROUP.CORONA, id }} />
-      
-      <group ref={group} dispose={null} scale={[0.1, 0.1,0.1]} >
-        <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={(isSeeking && !isAttacking)}/>
+
+      <group ref={group} dispose={null} scale={[0.1, 0.1, 0.1]} >
+        <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={(isSeeking && !isAttacking)} />
         <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={isUnderAttack && !isSeeking} />
         <mesh castShadow material={material} geometry={nodes.Cube_0.geometry} name="Cube_0" />
         <mesh castShadow material={material} geometry={nodes.Cube_1.geometry} name="Cube_1" />

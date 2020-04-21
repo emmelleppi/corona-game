@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 const TEXT = ["STAY", "THE", "FUCK", "HOME!"];
 const WIDTH = Math.pow(2, 10);
-const CANVAS_BG_COLOR = "#111";
+const CANVAS_BG_COLOR = "#23213D";
 
 function Sky() {
   const time = useRef(0);
@@ -22,7 +22,7 @@ function Sky() {
     const ctx = canvas.getContext("2d");
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.fillStyle = CANVAS_BG_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 

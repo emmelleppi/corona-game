@@ -34,7 +34,7 @@ function ConvexPolyBody(props) {
   useEffect(() => {
     const box = new THREE.Box3();
     mapbody.current.geometry.computeBoundingBox();
-    box.copy( mapbody.current.geometry.boundingBox ).applyMatrix4( mapbody.current.matrixWorld );
+    box.copy(mapbody.current.geometry.boundingBox).applyMatrix4(mapbody.current.matrixWorld);
     addMapBBoxes(box)
   }, [])
 
@@ -61,14 +61,14 @@ function Map() {
         attach="material"
         shininess={0.3}
         specular={0xaaaaaa}
-        color={0xdddddd}
+        color={0xffffff}
       />
       <meshToonMaterial
         ref={outerMaterialRef}
         attach="material"
         shininess={0.3}
         specular={0xaaaaaa}
-        color={0xcc5ea6}
+        color={0x5C3841}
       />
 
       <mesh receiveShadow material={innerMaterial} geometry={nodes.Curve001.geometry} name="Curve001" userData={{ type: COLLISION_GROUP.TILES }} />
