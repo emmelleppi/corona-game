@@ -166,23 +166,19 @@ function FirstPersonCamera(props) {
     onDocumentKeyDown,
     onDocumentKeyUp
   ]);
-  const raycast = useRef(new THREE.Raycaster())
+  // const raycast = useRef(new THREE.Raycaster())
 
   useFrame(() => {
     let x = 0;
     let y = 0;
 
-    raycast.current.set(
-      mybody.current.position,
-      new THREE.Vector3(
-        mybody.current.position.x,
-        mybody.current.position.y - 2,
-        mybody.current.position.z
-      )
-    )
-    const intersects = raycast.current.intersectObjects(scene.children)
-    const isGrounded = intersects.length > 0
-    console.log("grounded => ", isGrounded, intersects[0])
+    // raycast.current.set(
+    //   mybody.current.position,
+    //   new THREE.Vector3(0, -1, 0)
+    // )
+    // raycast.current.far = 0.1
+    // const intersects = raycast.current.intersectObjects(scene.children)
+    // const isGrounded = intersects.length > 0
 
     camera.current.updateMatrixWorld();
 
