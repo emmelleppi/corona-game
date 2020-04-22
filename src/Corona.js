@@ -15,6 +15,7 @@ import useSound from 'use-sound'
 
 import HitSfx from './sounds/Hit.wav'
 import HitSfx2 from './sounds/Hit_2.wav'
+import alertSfx from './sounds/Alert.wav'
 
 import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from "./store"
 import { getRandomUnity } from './utils';
@@ -28,7 +29,7 @@ function PhyCorona(props) {
   const { id, position, isDead, isAttacking, isSeeking } = props
 
   const [isUnderAttack, setIsUnderAttack] = useState(false)
-  
+
   const time = useRef(0)
   const velocity = useRef()
   const attackPosition = useRef()
@@ -49,7 +50,7 @@ function PhyCorona(props) {
 
   const [playHitSfx, hitSfxMeta] = useSound(HitSfx)
   const [playHitSfx2, hitSfx2Meta] = useSound(HitSfx2)
-  
+
   const [mybody, mybodyApi] = useSphere(() => ({
     args: 0.2,
     mass: 0.2,
@@ -131,6 +132,16 @@ function PhyCorona(props) {
     },
     [raycast, mybody, orientation, lockApi, updateOrientation, velocity]
   )
+
+  const [playAlertSfx] = useSound(alertSfx)
+
+  React.useEffect(() => {
+
+    if (isSeeking) {
+      playAlertSfx()
+    }
+
+  }, [isSeeking, playAlertSfx])
 
   const seekBody = useCallback(
     function seekBody() {
@@ -260,7 +271,7 @@ const Corona = forwardRef((props, ref) => {
   const { id, isDead, isAttacking, isSeeking, isUnderAttack, removeCorona } = props
 
   const { addOutline, removeOutline } = useOutline(s => s)
-  
+
   const { nodes } = useLoader(GLTFLoader, '/corona.glb',
     loader => {
       const dracoLoader = new DRACOLoader();
@@ -268,11 +279,11 @@ const Corona = forwardRef((props, ref) => {
       loader.setDRACOLoader(dracoLoader);
     }
   )
-  
+
   const [springProps, set] = useSpring(() => ({ opacity: 1, config: config.molasses }))
-  
+
   const [resourceRef, material] = useResource()
-  
+
   useEffect(() => void addOutline(group.current), [addOutline, group]);
   useEffect(() => {
     if (isDead) {
@@ -281,9 +292,13 @@ const Corona = forwardRef((props, ref) => {
     }
   }, [isDead])
 
-  useFrame(() => {
+  const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
+
+  useFrame(({ clock }) => {
     group.current.position.copy(ref.current.position)
     group.current.rotation.copy(ref.current.rotation)
+
+    group.current.position.y = group.current.position.y + (Math.sin((clock.elapsedTime * clock.elapsedTime) * 0.6 + rand.current * 10) * 0.1)
   })
 
   return (
@@ -299,7 +314,7 @@ const Corona = forwardRef((props, ref) => {
 
       <group ref={group} dispose={null} scale={[0.1, 0.1, 0.1]} >
         <Suspense fallback={null}>
-          <Exclamation position={[0,2.5,0]} scale={[2,2,1]} visible={(isSeeking && !isAttacking)}/>
+          <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={(isSeeking && !isAttacking)} />
           <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={isUnderAttack && !isSeeking} />
         </Suspense>
         <mesh castShadow material={material} geometry={nodes.Cube_0.geometry} name="Cube_0" />
