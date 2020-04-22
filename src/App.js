@@ -91,15 +91,16 @@ function App() {
         <fogExp2 attach="fog" args={[0x333333, 0.08]} />
 
         <ambientLight intensity={0.8} />
-        {/* <spotLight
+        <spotLight
           color={"lightyellow"}
-          position={[0, 30, 0]}
+          position={[0, 20, 0]}
+          distance={60}
           intensity={1}
           angle={Math.PI / 4}
           shadow-mapSize-width={1024 / 2}
           shadow-mapSize-height={1024 / 2}
           shadow-bias={-0.0001}
-        /> */}
+        />
         <Lights />
 
         <PhysicWorld callbacks={callbacks} />
