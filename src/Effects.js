@@ -56,7 +56,7 @@ function Effects() {
     lifeApi.subscribe(({ life }) => {
       console.log(life, glitch.current.factor,currLife.current)
       if (life < currLife.current) {
-        glitch.current.factor = 1;
+        glitch.current.factor = 0.5;
         currLife.current = life
       }
 
@@ -81,7 +81,7 @@ function Effects() {
         args={[aspect, scene, camera]}
       />
       <glitchPass attachArray="passes" renderToScreen ref={glitch} />
-      <filmPass attachArray="passes" args={[0.35, 0.025, 648, false]} />
+      <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />
       <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
       <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0015} />
     </effectComposer>

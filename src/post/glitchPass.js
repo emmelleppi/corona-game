@@ -25,11 +25,11 @@ var DigitalGlitch = {
     amount: { value: 0.08 },
     angle: { value: 0.02 },
     seed: { value: 0.02 },
-    seed_x: { value: 0.02 }, //-1,1
-    seed_y: { value: 0.02 }, //-1,1
-    distortion_x: { value: 0.5 },
-    distortion_y: { value: 0.6 },
-    col_s: { value: 0.05 }
+    seed_x: { value: 1.00 }, //-1,1
+    seed_y: { value: 1.00 }, //-1,1
+    distortion_x: { value: 1.0 },
+    distortion_y: { value: 1.0 },
+    col_s: { value: 0.01 }
   },
 
   vertexShader: `varying vec2 vUv;
