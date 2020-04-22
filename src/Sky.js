@@ -2,8 +2,9 @@ import React, { useRef, useState, useEffect } from "react"
 import { useFrame, useUpdate } from "react-three-fiber";
 import * as THREE from "three";
 
-const TEXT = ["STAY", "THE", "FUCK", "HOME!"];
+const TEXT = ["KILL", "THE", "CORONA", "STAY", "THE", "FUCK", "HOME!"];
 const WIDTH = Math.pow(2, 10);
+const HEIGHT = WIDTH * 2;
 const CANVAS_BG_COLOR = "#23213D";
 
 function Sky() {
@@ -15,7 +16,7 @@ function Sky() {
 
   useEffect(() => {
     canvas.width = WIDTH;
-    canvas.height = WIDTH;
+    canvas.height = HEIGHT;
   }, [canvas]);
 
   const materialRef = useUpdate(material => {
@@ -26,18 +27,24 @@ function Sky() {
     ctx.fillStyle = CANVAS_BG_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // draws debug grid
+    // ctx.lineWidth = 20;
+    // ctx.strokeStyle = "green";
+    // ctx.strokeRect(0, 0, canvas.width / 2, canvas.height / 2)
+    // ctx.strokeRect(canvas.width / 2, canvas.height / 2, canvas.width, canvas.height)
+
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    ctx.fillStyle = "yellow";
+    ctx.fillStyle = "#D95B9A";
 
-    ctx.strokeStyle = 'red';
+    ctx.strokeStyle = '#673366';
     ctx.lineWidth = 10;
 
     ctx.font = "300px Bangers";
 
-    ctx.fillText(TEXT[text], WIDTH / 2, WIDTH / 2);
-    ctx.strokeText(TEXT[text], WIDTH / 2, WIDTH / 2);
+    ctx.fillText(TEXT[text], WIDTH / 2, HEIGHT / 2);
+    ctx.strokeText(TEXT[text], WIDTH / 2, HEIGHT / 2);
 
     const canvasTexture = new THREE.CanvasTexture(canvas)
     canvasTexture.wrapS = THREE.RepeatWrapping;
@@ -56,11 +63,11 @@ function Sky() {
   });
 
   return (
-    <group position={[0, -12, 0]} scale={[6, 6, 6]}>
+    <group position={[0, 20, 0]} scale={[6, 6, 6]}>
       <mesh ref={ref}>
         <sphereBufferGeometry
           attach="geometry"
-          args={[10, 32, 32, 0, Math.PI * 2, 1, 0.3]}
+          args={[20, 32, 32]}
         />
         <meshToonMaterial
           ref={materialRef}
