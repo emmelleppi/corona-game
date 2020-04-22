@@ -13,8 +13,8 @@ import lerp from "lerp"
 
 import useSound from 'use-sound'
 
-import HitSfx from './sounds/Hit.wav'
-import HitSfx2 from './sounds/Hit_2.wav'
+import HitSfx from './sounds/Player_Hit.wav'
+import HitSfx2 from './sounds/Player_Hit_2.wav'
 import alertSfx from './sounds/Alert.wav'
 
 import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from "./store"
@@ -48,8 +48,8 @@ function PhyCorona(props) {
 
   const isPlayerAttacking = usePlayerAttack(s => s.isAttacking)
 
-  const [playHitSfx, hitSfxMeta] = useSound(HitSfx)
-  const [playHitSfx2, hitSfx2Meta] = useSound(HitSfx2)
+  const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
+  const [playHitSfx, hitSfxMeta] = useSound(rand.current > 5 ? HitSfx : HitSfx2)
 
   const [mybody, mybodyApi] = useSphere(() => ({
     args: 0.2,
@@ -84,7 +84,9 @@ function PhyCorona(props) {
       )
 
       if (isPlayerAttacking && body?.userData?.type === COLLISION_GROUP.BAT) {
+
         const absVelocity = Math.abs(impactVelocity)
+        playHitSfx()
         decreaseLife(id, absVelocity)
         setIsUnderAttack(s => { if (!s) return true })
       }
