@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 const TEXT = ["KILL", "THE", "CORONA", "STAY", "THE", "FUCK", "HOME!"];
 const WIDTH = Math.pow(2, 10);
-const HEIGHT = WIDTH * 4;
+const HEIGHT = WIDTH * 2;
 const CANVAS_BG_COLOR = "#23213D";
 
 function Sky() {
@@ -16,7 +16,7 @@ function Sky() {
 
   useEffect(() => {
     canvas.width = WIDTH;
-    canvas.height = WIDTH * 4;
+    canvas.height = HEIGHT;
   }, [canvas]);
 
   const materialRef = useUpdate(material => {
@@ -26,6 +26,12 @@ function Sky() {
 
     ctx.fillStyle = CANVAS_BG_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // draws debug grid
+    // ctx.lineWidth = 20;
+    // ctx.strokeStyle = "green";
+    // ctx.strokeRect(0, 0, canvas.width / 2, canvas.height / 2)
+    // ctx.strokeRect(canvas.width / 2, canvas.height / 2, canvas.width, canvas.height)
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -57,11 +63,11 @@ function Sky() {
   });
 
   return (
-    <group position={[0, 8, 0]} scale={[8, 8, 8]}>
+    <group position={[0, 20, 0]} scale={[6, 6, 6]}>
       <mesh ref={ref}>
         <sphereBufferGeometry
           attach="geometry"
-          args={[10, 6, 6]}
+          args={[20, 32, 32]}
         />
         <meshToonMaterial
           ref={materialRef}
