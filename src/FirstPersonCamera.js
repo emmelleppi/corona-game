@@ -37,6 +37,8 @@ function FirstPersonCamera(props) {
 
   const [springProps, set] = useSpring(() => ({}))
 
+  const jumps = useRef(0)
+
   const { life, decrease } = useLife(s => s)
   const coronas = useCorona(s => s.coronas)
 
@@ -171,6 +173,8 @@ function FirstPersonCamera(props) {
     let x = 0;
     let y = 0;
 
+    const isGrounded = mybody.current.position.y < 0.2 && mybody.current.position.y > 0
+
     camera.current.updateMatrixWorld();
 
     const direction = new THREE.Vector3();
@@ -196,25 +200,44 @@ function FirstPersonCamera(props) {
 
     if (x !== 0 || y !== 0) {
 
-      const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
+      let multiplier = 1
 
-      api.angularVelocity.set(velocity * x, 0, velocity * y);
 
-      if (walking.current === 0) {
-        walking.current = WALKING_STEP;
+
+      if (isGrounded) {
+        if (boost) {
+          multiplier = BOOST_FACTOR
+        }
+
+        const velocity = VELOCITY * multiplier
+
+        api.angularVelocity.set(velocity * x, 0, velocity * y);
+
+        if (walking.current === 0) {
+          walking.current = WALKING_STEP;
+        }
       }
 
-    } else if (walking.current > 0) {
-
-      api.angularVelocity.set(0, 0, 0);
-
     }
 
-    if (jump.current && mybody.current.position.y < 0.4) {
+    if (jump.current && jumps.current < 2) {
       api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
       playJumpSfx();
+      jumps.current += 1
+    }
+
+    // reset jumps when on the ground
+    if (isGrounded) {
+      jumps.current = 0;
+    }
+
+    if (mybody.current.position.y < -10) {
+      api.position.set(0, 30, 0)
+      jumps.current = 3
       jump.current = false
     }
+
+    jump.current = false
 
     if (walking.current > 0) {
       walking.current += WALKING_STEP;
