@@ -54,7 +54,7 @@ function Effects() {
     let timeout
 
     lifeApi.subscribe(({ life }) => {
-      console.log(life, glitch.current.factor,currLife.current)
+      
       if (life < currLife.current) {
         glitch.current.factor = 0.5;
         currLife.current = life
