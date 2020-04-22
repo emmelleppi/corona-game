@@ -4,7 +4,7 @@ import { extend, useThree, useFrame } from "react-three-fiber";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
-import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass";
+import { GlitchPass } from "./post/glitchPass";
 import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
@@ -21,7 +21,6 @@ extend({
   GlitchPass,
   FilmPass,
   ShaderPass,
-
 });
 
 function Effects() {
@@ -55,21 +54,19 @@ function Effects() {
     let timeout
 
     lifeApi.subscribe(({ life }) => {
-
-      if (life < currLife) {
+      console.log(life, glitch.current.factor,currLife.current)
+      if (life < currLife.current) {
         glitch.current.factor = 1;
+        currLife.current = life
       }
 
       timeout = setTimeout(() => {
         glitch.current.factor = 0;
-      }, 100)
+      }, 300)
 
     })
 
-    return () => {
-      clearTimeout(timeout)
-    }
-
+    return () => clearTimeout(timeout)
   }, [outlineObjs, outline]);
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [size])
@@ -83,7 +80,7 @@ function Effects() {
         attachArray="passes"
         args={[aspect, scene, camera]}
       />
-      <glitchPass attachArray="passes" renderToScreen factor={0} ref={glitch} />
+      <glitchPass attachArray="passes" renderToScreen ref={glitch} />
       <filmPass attachArray="passes" args={[0.35, 0.025, 648, false]} />
       <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
       <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0015} />
