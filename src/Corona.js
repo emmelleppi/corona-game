@@ -11,6 +11,11 @@ import { useSpring, a, config } from 'react-spring/three';
 import * as THREE from "three";
 import lerp from "lerp"
 
+import useSound from 'use-sound'
+
+import HitSfx from './sounds/Hit.wav'
+import HitSfx2 from './sounds/Hit_2.wav'
+
 import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from "./store"
 import { getRandomUnity } from './utils';
 import Exclamation from './Exclamation';
@@ -42,6 +47,9 @@ function PhyCorona(props) {
 
   const isPlayerAttacking = usePlayerAttack(s => s.isAttacking)
 
+  const [playHitSfx, hitSfxMeta] = useSound(HitSfx)
+  const [playHitSfx2, hitSfx2Meta] = useSound(HitSfx2)
+  
   const [mybody, mybodyApi] = useSphere(() => ({
     args: 0.2,
     mass: 0.2,
@@ -180,6 +188,8 @@ function PhyCorona(props) {
   const handleAttack = useCallback(
     function handleAttack() {
       if (!attackPosition.current) return
+
+
 
       if (time.current < ATTACK_DURATION * 2) {
 

@@ -4,10 +4,14 @@ import { useBox } from "use-cannon";
 import * as THREE from "three";
 
 import { batRef, COLLISION_GROUP, useLife, useCorona } from "./store"
+import useSound from "use-sound";
+
+import playerHitSfx from './sounds/Player_Hit.wav'
 
 
 function PhysicBat() {
   const onCollide = useRef()
+  const [playPlayerHitSfx] = useSound(playerHitSfx)
 
   const { decrease } = useLife(s => s)
   const coronas = useCorona(s => s.coronas)
@@ -31,13 +35,13 @@ function PhysicBat() {
 
       if (type === COLLISION_GROUP.CORONA) {
         const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
-        
+
         if (isAttacking) {
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
           decrease(absVelocity)
         }
-        
+
       }
     },
     [decrease, coronas]
@@ -53,8 +57,8 @@ function PhysicBat() {
     const position = new THREE.Vector3();
     const quaternion = new THREE.Quaternion();
     const euler = new THREE.Euler();
-    
-    batRef.current.matrixWorld.decompose( position, quaternion, {} );
+
+    batRef.current.matrixWorld.decompose(position, quaternion, {});
     euler.setFromQuaternion(quaternion)
 
     api.position.set(

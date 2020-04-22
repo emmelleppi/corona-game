@@ -4,6 +4,8 @@ import { Canvas, useFrame } from "react-three-fiber";
 import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
 
+import Hud from './Hud'
+
 import "./styles.css";
 
 function Lights() {
@@ -105,6 +107,7 @@ function App() {
 
           <Effects />
         </Canvas>
+        <Hud />
       </Suspense>
     </>
   );

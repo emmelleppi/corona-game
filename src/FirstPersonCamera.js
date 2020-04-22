@@ -7,6 +7,10 @@ import BaseballBat from "./BaseballBat";
 import Effects from "./Effects";
 import { COLLISION_GROUP, bodyRef, useLife, useCorona } from "./store";
 import { useSpring, a, config } from 'react-spring/three';
+import useSound from 'use-sound'
+
+import jumpSfx from './sounds/Jump.wav'
+import boostSfx from './sounds/Sprint.wav'
 
 const WALKING_STEP = 0.2;
 const JUMP_IMPULSE = 10;
@@ -15,8 +19,11 @@ const BOOST_FACTOR = 4
 
 function FirstPersonCamera(props) {
   const { position, callbacks } = props;
-  const { scene, setDefaultCamera,  size } = useThree();
-  
+  const { scene, setDefaultCamera, size } = useThree();
+
+  const [playJumpSfx] = useSound(jumpSfx)
+  const [playBoostSfx] = useSound(boostSfx)
+
   const aspect = useMemo(() => new THREE.Vector2(size.width, size.height), [size])
 
   const [boost, setBoost] = useState(false)
@@ -27,7 +34,7 @@ function FirstPersonCamera(props) {
   const jump = useRef(false);
   const walking = useRef(0);
   const onCollide = useRef()
-  
+
   const [springProps, set] = useSpring(() => ({}))
 
   const { life, decrease } = useLife(s => s)
@@ -51,7 +58,7 @@ function FirstPersonCamera(props) {
     collisionFilterMask: COLLISION_GROUP.CORONA,
     onCollide: e => onCollide.current(e)
   }), bodyRef);
-  
+
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
   useLockConstraint(chest, chestLock)
@@ -61,13 +68,13 @@ function FirstPersonCamera(props) {
       const { body, contact } = e
 
       const { type, id } = body?.userData
-      
+
       if (type === COLLISION_GROUP.CORONA) {
 
         const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
 
         console.log(coronas?.filter(item => item.id === id))
-        
+
         if (isAttacking) {
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
@@ -119,9 +126,10 @@ function FirstPersonCamera(props) {
 
   useEffect(() => {
     if (boost) {
-      set({ from: { fov: 60 }, to: { fov: 90 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix()  })
+      playBoostSfx()
+      set({ from: { fov: 60 }, to: { fov: 90 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix() })
     } else {
-      set({ from: { fov: 90 }, to: { fov: 60 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix()  })
+      set({ from: { fov: 90 }, to: { fov: 60 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix() })
     }
     ;
   }, [boost])
@@ -189,21 +197,22 @@ function FirstPersonCamera(props) {
     if (x !== 0 || y !== 0) {
 
       const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
-      
+
       api.angularVelocity.set(velocity * x, 0, velocity * y);
-      
+
       if (walking.current === 0) {
         walking.current = WALKING_STEP;
       }
 
-    } else if (walking.current > 0){
-      
+    } else if (walking.current > 0) {
+
       api.angularVelocity.set(0, 0, 0);
 
     }
 
     if (jump.current && mybody.current.position.y < 0.4) {
       api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
+      playJumpSfx();
       jump.current = false
     }
 
@@ -216,12 +225,12 @@ function FirstPersonCamera(props) {
       mybody.current.position.y + .4,
       mybody.current.position.z
     )
-    
+
     camera.current.position.set(
       mybody.current.position.x,
       mybody.current.position.y +
-        0.5 +
-        (0.05 * (1 - Math.cos(walking.current))) / 2,
+      0.5 +
+      (0.05 * (1 - Math.cos(walking.current))) / 2,
       mybody.current.position.z
     );
 
@@ -229,6 +238,7 @@ function FirstPersonCamera(props) {
       walking.current = 0;
     }
   });
+
 
   return (
     <>
@@ -240,7 +250,7 @@ function FirstPersonCamera(props) {
             rotation={[0, 0, 0]}
           />
         </Suspense>
-        <mesh position={[0, 0, -1]} rotation={[Math.PI/2, 0, 0]}>
+        <mesh position={[0, 0, -1]} rotation={[Math.PI / 2, 0, 0]}>
           <planeBufferGeometry attach="geometry" args={[10, 10]} />
           <meshBasicMaterial attach="material" color="red" opacity={1} transparent side={THREE.DoubleSide} />
         </mesh>
