@@ -298,7 +298,11 @@ const Corona = forwardRef((props, ref) => {
     group.current.position.copy(ref.current.position)
     group.current.rotation.copy(ref.current.rotation)
 
-    group.current.position.y = group.current.position.y + (Math.sin((clock.elapsedTime * clock.elapsedTime) * 0.6 + rand.current * 10) * 0.1)
+    const multiplier = isSeeking ? 2 : 1
+
+    group.current.position.y = group.current.position.y + (
+      Math.sin((clock.elapsedTime * clock.elapsedTime) * 0.6 + rand.current * 5) * 0.1 * multiplier
+    )
   })
 
   return (
