@@ -6,14 +6,11 @@ const WIDTH = 200
 const HEIGHT = 200
 
 function Exclamation(props) {
-  const [canvas] = useState(document.createElement("canvas"));
-
-  useEffect(() => {
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
-  }, [canvas]);
 
   const materialRef = useUpdate(material => {
+    const canvas = document.createElement("canvas")
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
     const ctx = canvas.getContext("2d");
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -22,7 +19,7 @@ function Exclamation(props) {
     ctx.textBaseline = "middle";
     
     ctx.fillStyle = "red";
-    
+
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 10;
     
@@ -32,17 +29,17 @@ function Exclamation(props) {
 
     material.map = new THREE.CanvasTexture(canvas)
 
-  }, [canvas])
+  }, [])
 
   return (
     <sprite {...props} >
-        <spriteMaterial
-            ref={materialRef}
-            attach="material"
-            color={0xffffff}
-            transparent
-            alphaTest={0.5}
-        />
+      <spriteMaterial
+        ref={materialRef}
+        attach="material"
+        color={0xffffff}
+        transparent
+        alphaTest={0.5}
+      />
     </sprite>
   );
 }
