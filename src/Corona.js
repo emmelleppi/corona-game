@@ -269,8 +269,10 @@ function PhyCorona(props) {
 }
 
 const Corona = forwardRef((props, ref) => {
-  const group = useRef()
   const { id, isDead, isAttacking, isSeeking, isUnderAttack, removeCorona } = props
+  
+  const group = useRef()
+  const rotationGroup = useRef()
 
   const { addOutline, removeOutline } = useOutline(s => s)
 
@@ -298,13 +300,11 @@ const Corona = forwardRef((props, ref) => {
 
   useFrame(({ clock }) => {
     group.current.position.copy(ref.current.position)
-    group.current.rotation.copy(ref.current.rotation)
+    rotationGroup.current.rotation.copy(ref.current.rotation)
 
-    const multiplier = isSeeking ? 2 : 1
+    const multiplier = 10 * (isSeeking ? 2 : 1)
 
-    group.current.position.y = group.current.position.y + (
-      Math.sin((clock.elapsedTime * clock.elapsedTime) * 0.6 + rand.current * 5) * 0.1 * multiplier
-    )
+    group.current.position.y += 0.1 * (Math.sin((clock.getElapsedTime() % (2 * Math.PI)) * multiplier + rand.current * 5))
   })
 
   return (
@@ -323,10 +323,12 @@ const Corona = forwardRef((props, ref) => {
           <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={(isSeeking && !isAttacking)} />
           <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={isUnderAttack && !isSeeking} />
         </Suspense>
-        <mesh castShadow material={material} geometry={nodes.Cube_0.geometry} name="Cube_0" />
-        <mesh castShadow material={material} geometry={nodes.Cube_1.geometry} name="Cube_1" />
-        <mesh castShadow material={material} geometry={nodes.Cube_2.geometry} name="Cube_2" />
-        <mesh castShadow material={material} geometry={nodes.Cube_3.geometry} name="Cube_3" />
+        <group ref={rotationGroup} >
+          <mesh castShadow material={material} geometry={nodes.Cube_0.geometry} name="Cube_0" />
+          <mesh castShadow material={material} geometry={nodes.Cube_1.geometry} name="Cube_1" />
+          <mesh castShadow material={material} geometry={nodes.Cube_2.geometry} name="Cube_2" />
+          <mesh castShadow material={material} geometry={nodes.Cube_3.geometry} name="Cube_3" />
+        </group>
       </group>
     </>
   )
