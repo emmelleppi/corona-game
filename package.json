@@ -16,6 +16,7 @@
     "react-three-fiber": "4.1.0",
     "styled-components": "^5.1.0",
     "three": "0.115.0",
+    "three-plain-animator": "^1.0.2",
     "use-cannon": "0.4.2",
     "use-sound": "^1.0.1",
     "uuid": "^7.0.3",
