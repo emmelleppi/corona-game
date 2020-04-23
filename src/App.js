@@ -76,40 +76,38 @@ function App() {
   );
 
   return (
-    <>
-      <Suspense fallback={"LOADING"} >
-        <Canvas
-          shadowMap
-          colorManagement
-          camera={{ position: [0, 100, 0] }}
-          onCreated={({ gl }) => gl.setPixelRatio(window.devicePixelRatio)}
-          onClick={handleClick}
-        >
+    <Suspense fallback={"LOADING"} >
+      <Canvas
+        shadowMap
+        colorManagement
+        camera={{ position: [0, 100, 0] }}
+        onCreated={({ gl }) => gl.setPixelRatio(window.devicePixelRatio)}
+        onClick={handleClick}
+      >
 
-          <fogExp2 attach="fog" args={[0x333333, 0.08]} />
+        <fogExp2 attach="fog" args={[0x333333, 0.08]} />
 
-          <ambientLight intensity={0.8} />
-          <spotLight
-            color={"lightyellow"}
-            position={[0, 32, 0]}
-            distance={100}
-            intensity={1}
-            angle={Math.PI / 4}
-            castShadow
-            shadow-mapSize-width={1024 / 2}
-            shadow-mapSize-height={1024 / 2}
-            shadow-bias={-0.0001}
-          />
-          <Lights />
+        <ambientLight intensity={0.8} />
+        <spotLight
+          color={"lightyellow"}
+          position={[0, 32, 0]}
+          distance={100}
+          intensity={1}
+          angle={Math.PI / 4}
+          castShadow
+          shadow-mapSize-width={1024 / 2}
+          shadow-mapSize-height={1024 / 2}
+          shadow-bias={-0.0001}
+        />
+        <Lights />
 
-          <PhysicWorld callbacks={callbacks} />
+        <PhysicWorld callbacks={callbacks} />
 
 
-          <Effects />
-        </Canvas>
-        <Hud />
-      </Suspense>
-    </>
+        <Effects />
+      </Canvas>
+      <Hud />
+    </Suspense>
   );
 }
 
