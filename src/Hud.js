@@ -1,11 +1,13 @@
-import React from 'react'
-import styled from "styled-components/macro"
+import React, { Suspense, useState } from "react";
+import { useFrame, useThree, createPortal } from "react-three-fiber";
+import * as THREE from "three";
+import "styled-components/macro"
 
+import Pow from "./Pow";
 import { useLife } from "./store";
-
 import speed from './speed.jpg'
 
-function Hud() {
+function DomHud() {
 
     const { life } = useLife()
 
@@ -49,6 +51,34 @@ function Hud() {
         </div>
     )
 
+}
+
+function Hud() {
+    const { aspect } = useThree();
+    const distance = 15;
+
+    const [scene] = useState(() => new THREE.Scene())
+    const [camera] = useState(() => {
+        const cam = new THREE.OrthographicCamera(
+        -distance * aspect,
+        distance * aspect,
+        distance,
+        -distance,
+        0.1,
+        100
+        );
+        return cam;
+    });			
+    useFrame(({ gl }) => void ((gl.autoClear = false), gl.clearDepth(), gl.render(scene, camera)), 10)
+
+    return createPortal(
+        <>
+        <Suspense fallback={null}>
+            <Pow position={[-25, -12, -1]} scale={[4,4,4]} />
+        </Suspense>
+        </>,
+        scene
+    );
 }
 
 export default Hud
