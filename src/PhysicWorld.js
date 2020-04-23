@@ -3,7 +3,6 @@ import { Physics } from "use-cannon";
 
 import FirstPersonCamera from "./FirstPersonCamera";
 import Map from "./Map";
-import PhysicBat from "./PhysicBat";
 import CoronaManager from './CoronaManager'
 
 function PhysicWorld(props) {
@@ -11,7 +10,6 @@ function PhysicWorld(props) {
 
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
-      <PhysicBat />
       <CoronaManager />
       <FirstPersonCamera callbacks={callbacks} position={[0, 30, 0]} />
       <Suspense fallback={null}>

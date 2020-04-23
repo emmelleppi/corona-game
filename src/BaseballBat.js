@@ -7,27 +7,30 @@ import { useLoader, useFrame, useResource } from "react-three-fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { a, useSpring } from "react-spring/three";
+import { useBox } from "use-cannon";
 import * as THREE from "three";
+import useSound from "use-sound";
 
-import { batRef, batGroupRef, useOutline, useLife, usePlayerAttack } from "./store"
+import { useOutline, useLife, usePlayerAttack, useCorona, COLLISION_GROUP } from "./store"
+import playerHitSfx from './sounds/Player_Hit.wav'
 
 const batMovements = {
   init: {
     t: 1,
     spring: {
       rotation: [Math.PI, -Math.PI / 12, -Math.PI],
-      position: [0.3, 0.3, 0.1]
+      position: [0.1, 0.1, 0.1]
     }
   },
   half: {
-    t: 15,
+    t: 5,
     spring: {
       rotation: [(-Math.PI * 2) / 6, Math.PI / 8, -Math.PI],
       position: [-0.5, -0.5, 0.2]
     }
   },
   end: {
-    t: 25,
+    t: 15,
     spring: {
       rotation: [Math.PI / 2, -Math.PI / 24, -Math.PI],
       position: [0, 0, 0]
@@ -36,10 +39,61 @@ const batMovements = {
   idle: { t: 90 }
 }
 
-function BaseballBat(props) {
-  const { callbacks, ...allTheRest } = props;
+function PhyBaseballBat(props) {
+  const onCollide = useRef()
+  const [playPlayerHitSfx] = useSound(playerHitSfx)
 
+  const { decrease } = useLife(s => s)
+  const coronas = useCorona(s => s.coronas)
+
+  const [mybody, api] = useBox(() => ({
+    args: [0.03, 0.3, 0.03],
+    type: "Kinematic",
+    mass: 1,
+    material: { friction: 1, restitution: 1 },
+    linearDamping: 1,
+    angularDamping: 1,
+    collisionFilterGroup: COLLISION_GROUP.BAT,
+    collisionFilterMask: COLLISION_GROUP.CORONA,
+    onCollide: e => onCollide.current(e)
+  }));
+
+  const handleCollide = useCallback(
+    function handleCollide(e) {
+      const { body, contact } = e
+      const { type, id } = body?.userData
+
+      if (type === COLLISION_GROUP.CORONA) {
+        const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
+
+        if (isAttacking) {
+          const { impactVelocity } = contact
+          const absVelocity = Math.abs(impactVelocity)
+          decrease(absVelocity)
+        }
+
+      }
+    },
+    [decrease, coronas]
+  )
+
+  useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
+
+  return (
+    <>
+      <mesh ref={mybody} userData={{ type: COLLISION_GROUP.BAT }} />
+      <BaseballBat api={api} {...props} />
+    </>
+  )
+}
+
+function BaseballBat(props) {
+  const { callbacks, api, ...allTheRest } = props;
+
+  const batRef = useRef()
+  const batGroupRef = useRef()
   const time = useRef(batMovements.idle.t);
+
   const [attacked, setAttacked] = useState(false)
 
   const addOutline = useOutline(s => s.addOutline)
@@ -56,28 +110,24 @@ function BaseballBat(props) {
     }
   );
 
-  const [spring, set] = useSpring(() => ({
+  const [spring, set, stop] = useSpring(() => ({
     ...batMovements.end.spring,
     config: { mass: 1, tension: 210, friction: 10 }
   }));
 
   const handleClick = useCallback(
     function handleClick() {
-      if (time.current > 0 && time.current < batMovements.half.t) {
-        time.current = batMovements.half.t - 1;
-      } else {
-        time.current = 0;
+      if (time.current > batMovements.end.t) {
+        time.current = 0
       }
     },
-    [time]
+    [time, stop]
   )
 
   const [metalResourceRef, metalMaterial] = useResource()
   const [handleResourceRef, handleMaterial] = useResource()
 
-  useEffect(() => {
-    setAttacked(true)
-  }, [life])
+  useEffect(() => void setAttacked(true), [life])
 
   useEffect(() => {
     if (attacked) {
@@ -85,13 +135,9 @@ function BaseballBat(props) {
     }
   }, [attacked])
 
-  useEffect(() => {
-    callbacks.current.push(handleClick);
-  }, [callbacks]);
+  useEffect(() => void callbacks.current.push(handleClick), [callbacks]);
 
-  useEffect(() => {
-    addOutline(batGroupRef.current);
-  }, [addOutline, batGroupRef]);
+  useEffect(() => void addOutline(batGroupRef.current), [addOutline, batGroupRef]);
 
   useFrame(() => {
     const { init, half, end, idle } = batMovements
@@ -119,6 +165,16 @@ function BaseballBat(props) {
       batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
 
     }
+    
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const euler = new THREE.Euler();
+  
+    batRef.current.matrixWorld.decompose(position, quaternion, {});
+    euler.setFromQuaternion(quaternion)
+  
+    api.position.set(position.x, position.y, position.z);
+    api.rotation.set(euler.x, euler.y, euler.z);
   });
 
   return (
@@ -148,4 +204,4 @@ function BaseballBat(props) {
   );
 }
 
-export default BaseballBat
+export default PhyBaseballBat

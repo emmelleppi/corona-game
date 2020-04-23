@@ -1,66 +1,55 @@
-import React, { useCallback, useRef, useEffect, useMemo, Suspense } from "react";
-import { Canvas, useFrame } from "react-three-fiber";
+import React, { useCallback, useRef, useEffect, useMemo, Suspense, useState } from "react";
+import { Canvas, useFrame, useThree, createPortal } from "react-three-fiber";
+import * as THREE from "three";
 
 import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
-
-import Hud from './Hud'
+import Lights from "./Lights";
+import Pow from "./Pow";
 
 import "./styles.css";
 
-function Lights() {
-  const lights = useRef([])
-  const redTarget = useRef()
-  const blueTarget = useRef()
-  const group = useRef()
+function Hud() {
+  const { aspect } = useThree();
+  const distance = 15;
 
-  const setLight = React.useCallback((i, ref) => {
-    lights.current[i] = ref
-  })
+  const [scene] = useState(() => new THREE.Scene())
+  const [camera] = useState(() => {
+    const cam = new THREE.OrthographicCamera(
+      -distance * aspect,
+      distance * aspect,
+      distance,
+      -distance,
+      0.1,
+      100
+    );
+    return cam;
+  });
+  useFrame(({ gl }) => void ((gl.autoClear = false), gl.clearDepth(), gl.render(scene, camera)), 10)
 
-  useFrame(({ clock }) => {
-    const time = clock.getElapsedTime()
-    group.current.rotation.y = time / 2
-    group.current.position.y += Math.sin(time) / 10
-  })
-
-  return (
+  return createPortal(
     <>
+      <Suspense fallback={null}>
+        <Pow position={[-25, -12, -1]} scale={[4, 4, 4]} />
+      </Suspense>
+    </>,
+    scene
+  );
+}
 
-      <group ref={group} position={[0, 40, 0]}>
-        <mesh ref={redTarget} position={[10, 0, 10]}></mesh>
-        <mesh ref={blueTarget} position={[-10, 0, -10]}></mesh>
-      </group>
+function Main(props) {
+  const { callbacks } = props
+  const { scene } = useThree();
 
-      <directionalLight
-        color={"red"}
-        position={[0, 50, 0]}
-        intensity={0.6}
-        angle={Math.PI / 16}
-        decay={10}
-        target={redTarget.current}
-        penumbra={1}
-        shadow-mapSize-width={1024 / 2}
-        shadow-mapSize-height={1024 / 2}
-        shadow-bias={-0.0001}
-      />
-
-      <directionalLight
-        color={"blue"}
-        position={[0, 50, 0]}
-        intensity={0.6}
-        angle={Math.PI / 16}
-        decay={10}
-        target={blueTarget.current}
-        penumbra={1}
-
-        shadow-mapSize-width={1024 / 2}
-        shadow-mapSize-height={1024 / 2}
-        shadow-bias={-0.0001}
-      />
-
-    </>
-  )
+  return createPortal(
+    <>
+      <fog attach="fog" args={[0x333333, 0.08]} />
+      <Lights />
+      <PhysicWorld callbacks={callbacks} />
+      <Effects />
+    </>,
+    scene
+  );
 }
 
 function App() {
@@ -76,38 +65,20 @@ function App() {
   );
 
   return (
-    <Suspense fallback={"LOADING"} >
-      <Canvas
-        shadowMap
-        colorManagement
-        camera={{ position: [0, 100, 0] }}
-        onCreated={({ gl }) => gl.setPixelRatio(window.devicePixelRatio)}
-        onClick={handleClick}
-      >
-
-        <fogExp2 attach="fog" args={[0x333333, 0.08]} />
-
-        <ambientLight intensity={0.8} />
-        <spotLight
-          color={"lightyellow"}
-          position={[0, 32, 0]}
-          distance={100}
-          intensity={1}
-          angle={Math.PI / 4}
-          castShadow
-          shadow-mapSize-width={1024 / 2}
-          shadow-mapSize-height={1024 / 2}
-          shadow-bias={-0.0001}
-        />
-        <Lights />
-
-        <PhysicWorld callbacks={callbacks} />
-
-
-        <Effects />
-      </Canvas>
-      <Hud />
-    </Suspense>
+    <>
+      <Suspense fallback={"LOADING"} >
+        <Canvas
+          // shadowMap
+          colorManagement
+          camera={{ position: [0, 100, 0] }}
+          onCreated={({ gl }) => gl.setPixelRatio(window.devicePixelRatio)}
+          onClick={handleClick}
+        >
+          <Main callbacks={callbacks} />
+          <Hud />
+        </Canvas>
+      </Suspense>
+    </>
   );
 }
 
