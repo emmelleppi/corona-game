@@ -36,9 +36,7 @@ function Effects() {
 
   const currLife = React.useRef(100)
 
-  useEffect(() => {
-    glitch.current.factor = 0;
-  }, [glitch])
+  useEffect(() => void (glitch.current.factor = 0), [glitch])
 
   useEffect(() => {
     if (outline.current) {
@@ -70,7 +68,7 @@ function Effects() {
   }, [outlineObjs, outline]);
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [size])
-  useFrame(() => composer.current.render(), 1)
+  useFrame(({ gl }) => void ((gl.autoClear = true), composer.current.render()), 1)
 
   return (
     <effectComposer ref={composer} args={[gl]}>
@@ -81,7 +79,7 @@ function Effects() {
         args={[aspect, scene, camera]}
       />
       <glitchPass attachArray="passes" renderToScreen ref={glitch} />
-      <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />
+      <filmPass attachArray="passes" args={[0.25, 0.025, 648, false]} />
       <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
       <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0015} />
     </effectComposer>
