@@ -253,11 +253,7 @@ function FirstPersonCamera(props) {
     <>
       <a.perspectiveCamera ref={camera} args={[60, aspect, .1, 300]} {...springProps}>
         <Suspense fallback={null}>
-          <BaseballBat
-            callbacks={callbacks}
-            position={[0.1, -0.3, -0.5]}
-            rotation={[0, 0, 0]}
-          />
+          <BaseballBat callbacks={callbacks} position={[0.1, -0.3, -0.5]} rotation={[0, 0, 0]} />
         </Suspense>
         <mesh position={[0, 0, -1]} rotation={[Math.PI / 2, 0, 0]}>
           <planeBufferGeometry attach="geometry" args={[10, 10]} />

@@ -3,9 +3,7 @@ import create from 'zustand'
 import { v4 as uuid } from 'uuid';
 import produce from "immer"
 
-export const batRef = createRef()
 export const bodyRef = createRef()
-export const batGroupRef = createRef()
 
 export const COLLISION_GROUP = {
     CORONA: 1,

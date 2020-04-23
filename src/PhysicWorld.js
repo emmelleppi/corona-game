@@ -4,7 +4,6 @@ import * as THREE from "three";
 
 import FirstPersonCamera from "./FirstPersonCamera";
 import Map from "./Map";
-import PhysicBat from "./PhysicBat";
 import Corona from "./Corona";
 import { useCorona, useMapBBoxes, COLLISION_GROUP } from "./store";
 import { useThree } from "react-three-fiber";
@@ -47,7 +46,6 @@ function PhysicWorld(props) {
 
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
-      <PhysicBat />
       {coronas.map(({ id, position, life, isDead, isAttacking, isSeeking }) => (
         <Corona
           key={id}
