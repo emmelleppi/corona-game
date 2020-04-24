@@ -2,15 +2,21 @@ import React, { useCallback, useEffect, useRef, Suspense, useMemo, useState } fr
 import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
+import { Vector3 } from 'three'
 import { PointerLockControls } from "./PointerLockControls";
 import BaseballBat from "./BaseballBat";
 import Effects from "./Effects";
-import { COLLISION_GROUP, bodyRef, useLife, useCorona } from "./store";
+import { COLLISION_GROUP, bodyApi, useLife, useCorona } from "./store";
 import { useSpring, a, config } from 'react-spring/three';
 import useSound from 'use-sound'
 
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
+import lerp from "lerp";
+import * as easing from './utility/easing'
+
+(function () { Math.clamp = function (a, b, c) { return Math.max(b, Math.min(c, a)); } })();
+
 
 const WALKING_STEP = 0.2;
 const JUMP_IMPULSE = 10;
@@ -58,7 +64,6 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
     collisionFilterMask: COLLISION_GROUP.CORONA,
     onCollide: e => onCollide.current(e)
   }), ref);
-  // }), bodyRef);
 
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
@@ -126,12 +131,10 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
   useEffect(() => {
     if (boost) {
       playBoostSfx()
-      set({ from: { fov: 60 }, to: { fov: 90 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix() })
-    } else {
-      set({ from: { fov: 90 }, to: { fov: 60 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix() })
     }
-    ;
   }, [boost])
+
+  useEffect(() => void (bodyApi.current = api), [bodyApi, api])
 
   useEffect(() => {
     onCollide.current = handleCollide
@@ -170,7 +173,6 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
   useFrame(() => {
     let x = 0;
     let y = 0;
-
     // raycast.current.set(
     //   mybody.current.position,
     //   new THREE.Vector3(0, -1, 0)
@@ -246,6 +248,19 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
       walking.current = 0;
     }
   });
+
+  const handleV = React.useCallback((varr) => {
+    const v = Math.floor(new Vector3(...varr).length() * 10) / 10
+    const fov = lerp(70, 90, easing.easeOutQuad(v / 12))
+
+    camera.current.fov = fov
+    camera.current.updateProjectionMatrix()
+
+    // set({ from: { fov: 60 }, to: { fov: 90 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix() })
+  }, [set])
+  useEffect(() => {
+    api.velocity.subscribe(handleV)
+  }, [api.velocity])
 
   useFrame(() => {
     mybody.current.layers.enable(1)

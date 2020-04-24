@@ -49,8 +49,6 @@ const Renderer = forwardRef((props, ref) => {
         const multiplier = (isSeeking ? 2 : 1)
 
         group.current.position.y += 0
-
-        console.log(corona)
     })
 
     return (
