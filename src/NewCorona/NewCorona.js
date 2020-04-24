@@ -5,17 +5,17 @@ import * as THREE from 'three'
 import Renderer from './Renderer'
 import PhysicsBody from './PhysBody'
 import { getRandomUnity } from '../utility/math'
-import { Vector3 } from 'three'
 
 class Corona {
 
     constructor({ id, position, scene, group }) {
-        this.scene = scene
         this.id = id
-        this.position = new Vector3(...position)
-        this.direction = new Vector3(getRandomUnity(), 0, getRandomUnity())
+        this.scene = scene
+        
+        this.position = new THREE.Vector3(...position)
+        this.direction = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
 
-        this.moveSpeed = 400
+        this.moveSpeed = 0.05
 
         this.raycaster = new THREE.Raycaster()
 
@@ -23,6 +23,7 @@ class Corona {
         this.group = group
 
         this.isSeeking = false
+        this.isGrounded = true
     }
 
     // draws helpers
@@ -42,69 +43,79 @@ class Corona {
 
         this.lookAround()
         this.move()
+        if (this.isSeeking) {
+        } else {
+        }
+    }
+
+    updateDirection() {
+        if (this.isSeeking) {
+            const direction = new THREE.Vector3()
+            direction.subVectors(this.player.position, this.position)
+                .setY(0)
+                .normalize()
+                .multiplyScalar(this.moveSpeed)
+            this.direction = direction
+        } else {
+            this.direction = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize().multiplyScalar(this.moveSpeed)
+        }
     }
 
     // move to solid ground
     move() {
+        const newPosition = this.position.clone()
+        newPosition.add(this.direction)
 
-        const move = new Vector3()
+        this.checkGround(newPosition)
 
-        move.copy(this.direction)
-        move.multiplyScalar(this.moveSpeed)
-
-        const newPosition = new Vector3()
-
-        newPosition.copy(this.position)
-        newPosition.add(move)
-
-        this.position.copy(newPosition)
-
-        this.raycaster.set(
-            newPosition,
-            new THREE.Vector3(0, -1, 0)
-        )
-        this.raycaster.far = 10
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true)
-        const isGrounded = intersects.length > 0
-
+        if (!this.isGrounded) {
+            this.updateDirection()
+        } else {
+            this.position.copy(newPosition)
+        }
     }
 
     // raycasts for other corona or player
     lookAround() {
-
-        const geometry = new THREE.CircleGeometry(1, 32);
+        const geometry = new THREE.CircleGeometry(1, 8);
 
         for (let i = geometry.vertices.length - 1; i >= 0; i--) {
             const v = geometry.vertices[i]
 
-            this.raycaster.set(
-                this.position,
-                new Vector3(v.x, 0, v.y)
-            )
+            this.raycaster.set( this.position, new THREE.Vector3(v.x, 0, v.y))
 
-            this.raycaster.far = 2
+            this.raycaster.far = 5
 
-            const intersects = this.raycaster.intersectObjects([this.player], true)
+            const intersects = this.raycaster.intersectObjects([this.player])
 
-            if (intersects.length > 0) {
+            if (intersects.length > 0 && !this.isSeeking) {
                 this.isSeeking = true
+                this.updateDirection()
                 continue
+            } else {
+                if (i === 0) {
+                    this.isSeeking = false
+                }
             }
-
         }
-
-
     }
 
+    seek() {
+    }
+
+    checkGround(position) {
+        this.raycaster.set(position, new THREE.Vector3(this.direction.x, -1, this.direction.z))
+        this.raycaster.far = 10
+
+        const intersects = this.raycaster.intersectObjects(this.scene.children)
+        
+        this.isGrounded = intersects.length > 0
+    }
 }
 
-
-function NewCorona({
-    id,
-    position,
-    player
-}) {
-
+function NewCorona(props) {
+    const { id, position, player } = props
+    
     const { scene } = useThree()
 
     const transform = useRef()
@@ -120,20 +131,17 @@ function NewCorona({
 
     useFrame(({ clock }) => {
         thisCorona.current.update({ clock })
-
-        transform.current.position.copy(
-            thisCorona.current.position
-        )
+        transform.current.position.copy(thisCorona.current.position)
     })
 
     return (
         <group ref={transform}>
-            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <meshBasicMaterial attach="material" wireframe />
-                <circleGeometry attach="geometry" rotateY={Math.PI} args={[2, 32]} />
+            <mesh>
+                <sphereBufferGeometry attach="geometry" args={[0.2, 8, 8]} />
+                <meshBasicMaterial attach="material" color="red" />
             </mesh>
-            <PhysicsBody corona={thisCorona.current} />
-            <Renderer corona={thisCorona.current} />
+            {/* <PhysicsBody ref={thisCorona} />
+            <Renderer ref={thisCorona} /> */}
         </group>
     )
 

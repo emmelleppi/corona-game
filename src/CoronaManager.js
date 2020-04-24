@@ -2,10 +2,11 @@ import React, { Suspense, useEffect, useCallback, useRef } from "react";
 import * as THREE from "three";
 import { useThree } from "react-three-fiber";
 
-import Corona from "./Corona";
+import Corona from "./NewCorona";
 import { useCorona, useMapBBoxes, COLLISION_GROUP } from "./store";
 
-const NUMBER_OF_SPAWNS = 15
+const NUMBER_OF_SPAWNS = 10
+const NUMBER_OF_MAP_BBOX = 15
 
 function CoronaManager({ player }) {
 
@@ -24,7 +25,7 @@ function CoronaManager({ player }) {
         }, [raycast, scene])
 
     useEffect(() => {
-        if (mapBBoxes.length === NUMBER_OF_SPAWNS) {
+        if (mapBBoxes.length === NUMBER_OF_MAP_BBOX) {
             const positions = []
 
             do {
@@ -35,7 +36,7 @@ function CoronaManager({ player }) {
                 if (isIntersect([x, 1, z])) {
                     positions.push([x, 0.5, z])
                 }
-            } while (positions.length < 10)
+            } while (positions.length < NUMBER_OF_SPAWNS)
 
             positions.forEach(addCorona)
         }

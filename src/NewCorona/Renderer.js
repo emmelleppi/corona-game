@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, Suspense } from 'react'
+import React, { useRef, useEffect, Suspense, forwardRef } from 'react'
 import { useLoader, useResource, useFrame } from 'react-three-fiber'
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
@@ -10,7 +10,8 @@ import Pow from '../Pow';
 import { useSpring, a, config } from 'react-spring/three';
 
 
-function Renderer({ corona }) {
+const Renderer = forwardRef((props, ref) => {
+    const { corona } = props
 
     const { isDead, isSeeking, isAttacking, isUnderAttack } = corona
 
@@ -78,6 +79,6 @@ function Renderer({ corona }) {
         </>
     )
 
-}
+})
 
 export default Renderer

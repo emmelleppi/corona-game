@@ -8,9 +8,8 @@ import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from
 
 const Y_BIAS = .6
 
-function PhysicsBody({ corona }) {
-
-    const { id, position } = corona
+const PhysicsBody = forwardRef((props, ref) => {
+    const { id, position, physicsBody, collider } = ref
 
     const [myBody, myBodyApi] = useSphere(() => ({
         args: 0.2,
@@ -30,10 +29,12 @@ function PhysicsBody({ corona }) {
         type: "Kinetic"
     }))
 
+    const [, , { disable }] = useLockConstraint(myBody, lock)
+
     useEffect(() => {
-        corona.physicsBody = lock.currents
-        corona.collider = myBody.current
-    }, [])
+        physicsBody = lock.currents
+        collider = myBody.current
+    }, [physicsBody, collider, lock, myBody])
 
     return (
         <>
@@ -41,8 +42,6 @@ function PhysicsBody({ corona }) {
             <mesh ref={myBody} userData={{ type: COLLISION_GROUP.CORONA, id }} />
         </>
     )
-
-
-}
+})
 
 export default PhysicsBody

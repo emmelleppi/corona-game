@@ -73,8 +73,6 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
 
         const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
 
-        console.log(coronas?.filter(item => item.id === id))
-
         if (isAttacking) {
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
@@ -143,10 +141,7 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
 
     const canvas = document.getElementsByTagName("canvas")[0];
     controls.current = new PointerLockControls(camera.current, canvas);
-    canvas.addEventListener("click", () => {
-      console.log('click')
-      lockPointerLock()
-    }, false);
+    canvas.addEventListener("click", () => lockPointerLock(), false);
 
     const obj = controls.current.getObject();
     scene.add(obj);

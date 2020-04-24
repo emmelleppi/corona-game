@@ -56,7 +56,6 @@ export const [useCorona] = create(set => ({
     setAttacking: id => set(state => produce(state, draft => {
         draft.coronas.forEach(item => {
             if (item.id === id) {
-                console.log("setAttacking", id)
                 item.isAttacking = true
             }
         })
@@ -65,7 +64,6 @@ export const [useCorona] = create(set => ({
     resetAttacking: id => set(state => produce(state, draft => {
         draft.coronas.forEach(item => {
             if (item.id === id) {
-                console.log("resetAttacking", id)
                 item.isAttacking = false
             }
         })

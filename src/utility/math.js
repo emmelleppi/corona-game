@@ -1,6 +1,3 @@
 export function getRandomUnity() {
-    const rand = Math.random()
-    if (rand < 0.333) return -1
-    if (rand > 0.666) return 1
-    return 0
-  }
+  return Math.random() * (Math.random() > 0.5 ? -1 : 1)
+}
