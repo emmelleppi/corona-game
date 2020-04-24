@@ -46,7 +46,7 @@ function App() {
           onClick={handleClick}
         >
           <Main callbacks={callbacks} />
-          <Hud />
+          {/* <Hud /> */}
         </Canvas>
       </Suspense>
     </>

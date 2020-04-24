@@ -8,10 +8,12 @@ import CoronaManager from './CoronaManager'
 function PhysicWorld(props) {
   const { callbacks } = props;
 
+  const playerRef = React.useRef()
+
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
-      <CoronaManager />
-      <FirstPersonCamera callbacks={callbacks} position={[0, 30, 0]} />
+      <CoronaManager player={playerRef} />
+      <FirstPersonCamera ref={playerRef} callbacks={callbacks} position={[0, 30, 0]} />
       <Suspense fallback={null}>
         <Map />
       </Suspense>

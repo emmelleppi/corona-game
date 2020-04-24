@@ -33,9 +33,10 @@ export const [useOutline] = create(set => ({
     removeOutline: x => set(state => ({ outline: state.outline.filter(({ uuid }) => x.uuid !== uuid) })),
 }))
 
+let ci = 0;
 export const [useCorona] = create(set => ({
     coronas: [],
-    addCorona: position => set(state => ({ coronas: [...state.coronas, { id: uuid(), position, life: 1, isAttacking: false, isSeeking: false, isDead: false }] })),
+    addCorona: position => set(state => ({ coronas: [...state.coronas, { id: ci++, position, life: 1, isAttacking: false, isSeeking: false, isDead: false }] })),
     removeCorona: id => set(state => ({ coronas: state.coronas.filter(x => x.id !== id) })),
     decreaseLife: (id, x) => set(state => produce(state, draft => {
         draft.coronas.forEach(item => {
