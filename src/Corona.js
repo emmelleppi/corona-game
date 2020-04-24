@@ -29,16 +29,16 @@ const PhyCorona = forwardRef(
 
   function PhyCorona(props, bodyRef) {
     const { id, position, isDead, isAttacking, isSeeking } = props
-  
+
     const [isUnderAttack, setIsUnderAttack] = useState(false)
-  
+
     const time = useRef(0)
     const velocity = useRef()
     const attackPosition = useRef()
     const orientation = useRef()
     const onCollide = useRef()
     const raycast = useRef(new THREE.Raycaster())
-  
+
     const {
       removeCorona,
       decreaseLife,
@@ -47,14 +47,14 @@ const PhyCorona = forwardRef(
       setSeeking,
       resetSeeking,
     } = useCorona(s => s)
-  
+
     const isPlayerAttacking = usePlayerAttack(s => s.isAttacking)
-  
+
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
-  
+
     const [playHitSfx, hitSfxMeta] = useSound(rand.current > 5 ? HitSfx : HitSfx2)
     const [playAlertSfx] = useSound(alertSfx)
-  
+
     const [coronaBody, coronaBodyApi] = useSphere(() => ({
       args: 0.2,
       mass: 0.2,
@@ -63,7 +63,7 @@ const PhyCorona = forwardRef(
       collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
       onCollide: e => onCollide.current(e)
     }))
-  
+
     const [lock, lockApi] = useParticle(() => ({
       args: [0.05, 0.2, 0.5, 16],
       position: [position[0], position[1] + Y_BIAS, position[2]],
@@ -72,33 +72,33 @@ const PhyCorona = forwardRef(
       angularDamping: 0.1,
       type: "Kinetic"
     }))
-  
+
     const [, , { disable }] = useLockConstraint(coronaBody, lock)
-  
+
     const handleCollide = useCallback(
       function handleCollide(e) {
-  
+
         const { contact, body } = e
         const { impactVelocity, ni } = contact
-  
+
         coronaBodyApi.rotation.set(
           coronaBody.current.rotation.x + ni[0],
           coronaBody.current.rotation.y + ni[1],
           coronaBody.current.rotation.z + ni[2]
         )
-  
+
         if (isPlayerAttacking && body?.userData?.type === COLLISION_GROUP.BAT) {
-  
+
           const absVelocity = Math.abs(impactVelocity)
           playHitSfx()
           decreaseLife(id, absVelocity)
           setIsUnderAttack(s => { if (!s) return true })
         }
-  
+
       },
       [id, coronaBody, coronaBodyApi, isPlayerAttacking, disable, decreaseLife]
     )
-  
+
     const updateOrientation = useCallback(
       function updateOrientation() {
         velocity.current = new THREE.Vector2(getRandomUnity(), getRandomUnity()).normalize()
@@ -106,16 +106,16 @@ const PhyCorona = forwardRef(
       },
       [velocity, orientation]
     )
-  
+
     const getIntersects = useCallback(
       function getIntersects(position, orientation, scene, collisionArray) {
-  
+
         raycast.current.set(position, orientation)
         const intersects = raycast.current.intersectObjects(scene.children);
-  
+
         return intersects.filter(({ object }) => collisionArray.includes(object?.userData?.type))
       }, [raycast])
-  
+
     const updatePosition = useCallback(
       function updatePosition(scene) {
         const bodies = getIntersects(coronaBody.current.position, orientation.current, scene, [COLLISION_GROUP.BODY, COLLISION_GROUP.CORONA])
@@ -129,7 +129,7 @@ const PhyCorona = forwardRef(
           scene,
           [COLLISION_GROUP.TILES]
         )
-  
+
         if (bodies?.[0]?.distance < 0.5 || tiles?.length === 0) {
           updateOrientation()
         } else {
@@ -138,25 +138,27 @@ const PhyCorona = forwardRef(
       },
       [raycast, coronaBody, orientation, lockApi, updateOrientation, velocity]
     )
-  
+
     const seekBody = useCallback(
       function seekBody() {
         const dir = new THREE.Vector3()
         dir.subVectors(bodyRef.current.position, coronaBody.current.position).normalize();
-  
+
         lockApi.position.set(lock.current.position.x + dir.x / 40, position[1] + Y_BIAS, lock.current.position.z + dir.z / 40)
       },
       [bodyRef, coronaBody, lockApi]
     )
-    
+
     const checkProximityToBody = useCallback(
       function checkProximityToBody(p) {
+        if (!coronaBody.current) return
         if (isDead) return
-  
+
+
         const [x, y, z] = p
         const line = new THREE.Line3(new THREE.Vector3(x, y, z), coronaBody.current.position)
         const distance = line.distance()
-  
+
         if (distance < 1) {
           if (isSeeking) {
             resetSeeking(id)
@@ -166,9 +168,9 @@ const PhyCorona = forwardRef(
             attackPosition.current = [bodyRef.current.position.clone(), coronaBody.current.position.clone()]
             time.current = 0
           }
-  
+
         } else if (distance >= 1 && distance < 4) {
-  
+
           if (isAttacking) {
             resetAttacking(id)
           }
@@ -186,50 +188,53 @@ const PhyCorona = forwardRef(
       },
       [id, raycast, isSeeking, setSeeking, resetSeeking, setAttacking, resetAttacking, isAttacking, isDead]
     )
-  
+
     const handleAttack = useCallback(
       function handleAttack() {
         if (!attackPosition.current) return
-  
+
         if (time.current < ATTACK_DURATION * 2) {
-  
+
           const { x, y, z } = attackPosition.current[time.current < ATTACK_DURATION ? 0 : 1]
           lockApi.position.set(
             lerp(lock.current.position.x, x, 0.2),
             lerp(lock.current.position.y, y, 0.2),
             lerp(lock.current.position.z, z, 0.2)
           )
-  
+
         }
         if (time.current === ATTACK_DURATION * 4) {
           resetAttacking(id)
         }
-  
+
         time.current += 1
       },
       [time, resetAttacking, id]
     )
-  
+
     useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
     useEffect(() => void (isSeeking && playAlertSfx()), [isSeeking, playAlertSfx])
     useEffect(() => void updateOrientation(), [updateOrientation])
     useEffect(() => void (isUnderAttack && setTimeout(() => setIsUnderAttack(false), 300)), [isUnderAttack, setIsUnderAttack])
-    useEffect(() => bodyApi.current.position.subscribe(checkProximityToBody), [bodyApi, checkProximityToBody])
-  
+
+    useEffect(() => {
+      bodyApi.current.position.subscribe(checkProximityToBody)
+    }, [bodyApi, checkProximityToBody])
+
     useEffect(() => {
       if (isDead) {
         disable()
-  
+
         const dir = new THREE.Vector3()
         dir.subVectors(bodyRef.current.position, coronaBody.current.position).normalize();
         coronaBodyApi.applyLocalImpulse([-3 * dir.x, -3, -3 * dir.z], [1, 1, 1])
       }
     }, [isDead, bodyRef, coronaBody, coronaBodyApi])
-  
-    
+
+
     useFrame(({ scene }) => {
       if (!isDead) {
-  
+
         if (isAttacking) {
           handleAttack()
         } else if (isSeeking) {
@@ -239,7 +244,7 @@ const PhyCorona = forwardRef(
         }
       }
     })
-  
+
     return (
       <>
         <mesh ref={lock} />
@@ -254,7 +259,7 @@ const PhyCorona = forwardRef(
 
 const Corona = forwardRef((props, ref) => {
   const { id, isDead, isAttacking, isSeeking, isUnderAttack, removeCorona } = props
-  
+
   const group = useRef()
   const rotationGroup = useRef()
   const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
