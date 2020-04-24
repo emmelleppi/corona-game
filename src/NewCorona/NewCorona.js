@@ -4,7 +4,7 @@ import * as THREE from 'three'
 
 import Renderer from './Renderer'
 import PhysicsBody from './PhysBody'
-import { getRandomUnity } from '../utils'
+import { getRandomUnity } from '../utility/math'
 import { Vector3 } from 'three'
 
 class Corona {
@@ -110,14 +110,6 @@ function NewCorona({
     const transform = useRef()
     const thisCorona = useRef(new Corona({ id, position, scene }))
 
-    useFrame(({ clock }) => {
-        thisCorona.current.update({ clock })
-
-        transform.current.position.copy(
-            thisCorona.current.position
-        )
-    })
-
     useEffect(() => {
 
         thisCorona.current.group = transform.current
@@ -125,6 +117,14 @@ function NewCorona({
         thisCorona.current.awake()
 
     }, [])
+
+    useFrame(({ clock }) => {
+        thisCorona.current.update({ clock })
+
+        transform.current.position.copy(
+            thisCorona.current.position
+        )
+    })
 
     return (
         <group ref={transform}>
