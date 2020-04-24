@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import * as THREE from "three";
 import { useUpdate } from "react-three-fiber";
 
@@ -28,7 +28,6 @@ function Exclamation(props) {
     ctx.strokeText("!", WIDTH / 2, WIDTH / 2);
 
     material.map = new THREE.CanvasTexture(canvas)
-
   }, [])
 
   return (

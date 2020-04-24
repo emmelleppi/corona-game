@@ -18,7 +18,7 @@ import HitSfx2 from './sounds/Player_Hit_2.wav'
 import alertSfx from './sounds/Alert.wav'
 
 import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from "./store"
-import { getRandomUnity } from './utils';
+import { getRandomUnity } from './utility/math';
 import Exclamation from './Exclamation';
 import Pow from './Pow';
 

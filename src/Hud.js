@@ -3,7 +3,6 @@ import { useFrame, useThree, createPortal } from "react-three-fiber";
 import * as THREE from "three";
 import "styled-components/macro"
 
-import Pow from "./Pow";
 import SpeedLines from "./hud/SpeedLines";
 import { useLife } from "./store";
 
@@ -89,9 +88,7 @@ function Hud() {
         <>
             <Suspense fallback={null}>
                 <ambientLight intensity={1} />
-
                 <SpeedLines />
-                <Pow position={[-25, -12, -1]} scale={[4, 4, 4]} />
             </Suspense>
         </>,
         scene

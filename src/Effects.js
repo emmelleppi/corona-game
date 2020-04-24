@@ -10,7 +10,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
 
-import { useOutline, lifeApi } from "./store";
+import { useOutline, lifeApi, INITIAL_LIFE } from "./store";
 
 const OUTLINE_COLOR = 0xffffff;
 
@@ -31,10 +31,9 @@ function Effects() {
   const composer = useRef();
   const outline = useRef();
   const glitch = useRef();
+  const currLife = React.useRef(INITIAL_LIFE)
 
   const outlineObjs = useOutline(state => state.outline);
-
-  const currLife = React.useRef(100)
 
   useEffect(() => void (glitch.current.factor = 0), [glitch])
 
@@ -48,7 +47,9 @@ function Effects() {
       outline.current.overlayMaterial.blending = THREE.SubtractiveBlending
       outline.current.selectedObjects = outlineObjs;
     }
+  }, [outlineObjs, outline]);
 
+  useEffect(() => {
     let timeout
 
     lifeApi.subscribe(({ life }) => {
@@ -65,7 +66,7 @@ function Effects() {
     })
 
     return () => clearTimeout(timeout)
-  }, [outlineObjs, outline]);
+  }, [lifeApi, glitch, currLife])
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [size])
   useFrame(({ gl }) => void ((gl.autoClear = true), composer.current.render()), 1)
@@ -79,9 +80,9 @@ function Effects() {
         args={[aspect, scene, camera]}
       />
       <glitchPass attachArray="passes" renderToScreen ref={glitch} />
-      <filmPass attachArray="passes" args={[0.25, 0.025, 648, false]} />
+      <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />
       <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
-      <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0015} />
+      <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0005} />
     </effectComposer>
   );
 }

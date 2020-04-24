@@ -3,6 +3,8 @@ import create from 'zustand'
 import { v4 as uuid } from 'uuid';
 import produce from "immer"
 
+export const INITIAL_LIFE = 100
+
 export const bodyRef = createRef()
 
 export const COLLISION_GROUP = {
@@ -15,10 +17,10 @@ export const COLLISION_GROUP = {
 }
 
 export const [useLife, lifeApi] = create(set => ({
-    life: 100,
+    life: INITIAL_LIFE,
     increase: x => set(state => ({ life: state.life + x })),
     decrease: x => set(state => ({ life: state.life - x / 10 })),
-    reset: () => set({ life: 100 })
+    reset: () => set({ life: INITIAL_LIFE })
 }))
 
 export const [usePlayerAttack] = create(set => ({
