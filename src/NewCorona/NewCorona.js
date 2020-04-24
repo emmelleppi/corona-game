@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, forwardRef } from 'react'
 import { useFrame, useThree } from 'react-three-fiber'
 import * as THREE from 'three'
+import { Vector3 } from 'three'
 
 import Renderer from './Renderer'
 import PhysicsBody from './PhysBody'
@@ -11,7 +12,7 @@ class Corona {
     constructor({ id, position, scene, group }) {
         this.id = id
         this.scene = scene
-        
+
         this.position = new THREE.Vector3(...position)
         this.direction = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
 
@@ -28,14 +29,16 @@ class Corona {
 
     // draws helpers
     awake() {
-        // const geometry = new THREE.CircleGeometry(1, 32);
+        if (this.debug) {
+            const geometry = new THREE.CircleGeometry(1, 32);
 
-        // for (let i = geometry.vertices.length - 1; i >= 0; i--) {
-        //     const v = geometry.vertices[i]
+            for (let i = geometry.vertices.length - 1; i >= 0; i--) {
+                const v = geometry.vertices[i]
 
-        //     this.group.add(new THREE.ArrowHelper(new Vector3(v.x, 0, v.y), new Vector3(0, 0, 0), 2, 0xff0000));
+                this.group.add(new THREE.ArrowHelper(new Vector3(v.x, 0, v.y), new Vector3(0, 0, 0), 2, 0xff0000));
 
-        // }
+            }
+        }
     }
 
     update({ clock }) {
@@ -67,7 +70,7 @@ class Corona {
         newPosition.add(this.direction)
 
         this.checkGround(newPosition)
-        
+
         if (!this.isGrounded) {
             this.updateDirection()
         } else {
@@ -82,7 +85,7 @@ class Corona {
         for (let i = geometry.vertices.length - 1; i >= 0; i--) {
             const v = geometry.vertices[i]
 
-            this.raycaster.set( this.position, new THREE.Vector3(v.x, 0, v.y))
+            this.raycaster.set(this.position, new THREE.Vector3(v.x, 0, v.y))
             this.raycaster.far = 20
 
             const intersects = this.raycaster.intersectObjects([this.player])
@@ -109,14 +112,14 @@ class Corona {
         this.raycaster.far = 10
 
         const intersects = this.raycaster.intersectObjects(this.scene.children)
-        
+
         this.isGrounded = intersects.length > 0
     }
 }
 
 const NewCorona = forwardRef((props, player) => {
     const { id, position } = props
-    
+
     const { scene } = useThree()
 
     const transform = useRef()
@@ -127,9 +130,9 @@ const NewCorona = forwardRef((props, player) => {
         thisCorona.current.player = player.current
         thisCorona.current.group = transform.current
         thisCorona.current.awake()
-        
+
     }, [])
-    
+
     useFrame(({ clock }) => {
         thisCorona.current.update({ clock })
         transform.current.position.copy(thisCorona.current.position)
@@ -141,8 +144,7 @@ const NewCorona = forwardRef((props, player) => {
                 <sphereBufferGeometry attach="geometry" args={[0.2, 8, 8]} />
                 <meshBasicMaterial attach="material" color="red" />
             </mesh>
-            {/* <PhysicsBody ref={thisCorona} />
-            <Renderer ref={thisCorona} /> */}
+            <Renderer corona={thisCorona} />
         </group>
     )
 
