@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, forwardRef } from 'react'
 import { useFrame, useThree } from 'react-three-fiber'
 import * as THREE from 'three'
 
@@ -55,7 +55,7 @@ class Corona {
                 .setY(0)
                 .normalize()
                 .multiplyScalar(this.moveSpeed)
-            this.direction = direction
+            this.direction = direction.clone()
         } else {
             this.direction = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize().multiplyScalar(this.moveSpeed)
         }
@@ -67,7 +67,7 @@ class Corona {
         newPosition.add(this.direction)
 
         this.checkGround(newPosition)
-
+        
         if (!this.isGrounded) {
             this.updateDirection()
         } else {
@@ -83,13 +83,14 @@ class Corona {
             const v = geometry.vertices[i]
 
             this.raycaster.set( this.position, new THREE.Vector3(v.x, 0, v.y))
-
-            this.raycaster.far = 5
+            this.raycaster.far = 20
 
             const intersects = this.raycaster.intersectObjects([this.player])
 
-            if (intersects.length > 0 && !this.isSeeking) {
-                this.isSeeking = true
+            if (intersects.length > 0) {
+                if (!this.isSeeking) {
+                    this.isSeeking = true
+                }
                 this.updateDirection()
                 continue
             } else {
@@ -113,8 +114,8 @@ class Corona {
     }
 }
 
-function NewCorona(props) {
-    const { id, position, player } = props
+const NewCorona = forwardRef((props, player) => {
+    const { id, position } = props
     
     const { scene } = useThree()
 
@@ -123,12 +124,12 @@ function NewCorona(props) {
 
     useEffect(() => {
 
-        thisCorona.current.group = transform.current
         thisCorona.current.player = player.current
+        thisCorona.current.group = transform.current
         thisCorona.current.awake()
-
+        
     }, [])
-
+    
     useFrame(({ clock }) => {
         thisCorona.current.update({ clock })
         transform.current.position.copy(thisCorona.current.position)
@@ -145,6 +146,6 @@ function NewCorona(props) {
         </group>
     )
 
-}
+})
 
 export default NewCorona

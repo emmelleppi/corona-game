@@ -47,7 +47,7 @@ function CoronaManager({ player }) {
             <Corona
                 key={id}
                 id={id}
-                player={player}
+                ref={player}
                 position={position}
                 isDead={isDead}
                 life={life}

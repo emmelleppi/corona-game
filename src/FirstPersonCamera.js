@@ -57,7 +57,8 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
     collisionFilterGroup: COLLISION_GROUP.CHEST,
     collisionFilterMask: COLLISION_GROUP.CORONA,
     onCollide: e => onCollide.current(e)
-  }), bodyRef);
+  }), ref);
+  // }), bodyRef);
 
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
@@ -263,12 +264,7 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
         </mesh>
       </a.perspectiveCamera>
 
-      <mesh ref={mybody}>
-        <mesh ref={ref}>
-          <boxGeometry attach="geometry" args={[2, 2, 2]} />
-          <meshBasicMaterial attach="material" wireframe />
-        </mesh>
-      </mesh>
+      <mesh ref={mybody} />
       <mesh ref={chestLock} />
       <mesh ref={chest} userData={{ type: COLLISION_GROUP.CHEST }} >
         <cylinderBufferGeometry attach="geometry" args={[0.15, 0.05, 0.5, 32]} />
