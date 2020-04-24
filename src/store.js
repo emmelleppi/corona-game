@@ -6,6 +6,7 @@ import produce from "immer"
 export const INITIAL_LIFE = 100
 
 export const bodyRef = createRef()
+export const bodyApi = createRef()
 
 export const COLLISION_GROUP = {
     CORONA: 1,

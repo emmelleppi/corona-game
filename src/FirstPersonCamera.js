@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { PointerLockControls } from "./PointerLockControls";
 import BaseballBat from "./BaseballBat";
 import Effects from "./Effects";
-import { COLLISION_GROUP, bodyRef, useLife, useCorona } from "./store";
+import { COLLISION_GROUP, bodyApi, useLife, useCorona } from "./store";
 import { useSpring, a, config } from 'react-spring/three';
 import useSound from 'use-sound'
 
@@ -58,7 +58,6 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
     collisionFilterMask: COLLISION_GROUP.CORONA,
     onCollide: e => onCollide.current(e)
   }), ref);
-  // }), bodyRef);
 
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
@@ -133,6 +132,8 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
     ;
   }, [boost])
 
+  useEffect(() => void (bodyApi.current = api), [bodyApi, api])
+
   useEffect(() => {
     onCollide.current = handleCollide
   }, [onCollide, handleCollide])
@@ -170,7 +171,6 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
   useFrame(() => {
     let x = 0;
     let y = 0;
-
     // raycast.current.set(
     //   mybody.current.position,
     //   new THREE.Vector3(0, -1, 0)
