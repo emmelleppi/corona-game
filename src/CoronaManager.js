@@ -2,7 +2,7 @@ import React, { Suspense, useEffect, useCallback, useRef } from "react";
 import * as THREE from "three";
 import { useThree } from "react-three-fiber";
 
-import Corona from "./NewCorona";
+import Corona from "./Corona";
 import { useCorona, useMapBBoxes, COLLISION_GROUP } from "./store";
 
 const NUMBER_OF_SPAWNS = 10

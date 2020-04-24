@@ -44,6 +44,7 @@ class Corona {
     update({ clock }) {
         this.deltaTime = clock.getDelta()
 
+        this.checkForPlayer()
         this.lookAround()
         this.move()
         if (this.isSeeking) {
@@ -57,7 +58,7 @@ class Corona {
             direction.subVectors(this.player.position, this.position)
                 .setY(0)
                 .normalize()
-                .multiplyScalar(this.moveSpeed)
+                .multiplyScalar(this.moveSpeed * 1.5)
             this.direction = direction.clone()
         } else {
             this.direction = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize().multiplyScalar(this.moveSpeed)
@@ -78,6 +79,21 @@ class Corona {
         }
     }
 
+    checkForPlayer() {
+        const distance = this.position.distanceTo(this.player.position)
+
+        if (distance < 10) {
+            if (!this.isSeeking) {
+                this.isSeeking = true
+            }
+            this.updateDirection()
+        } else {
+            if (this.isSeeking) {
+                this.isSeeking = false
+            }
+        }
+    }
+
     // raycasts for other corona or player
     lookAround() {
         const geometry = new THREE.CircleGeometry(1, 8);
@@ -91,15 +107,7 @@ class Corona {
             const intersects = this.raycaster.intersectObjects([this.player])
 
             if (intersects.length > 0) {
-                if (!this.isSeeking) {
-                    this.isSeeking = true
-                }
-                this.updateDirection()
-                continue
-            } else {
-                if (i === 0) {
-                    this.isSeeking = false
-                }
+
             }
         }
     }
@@ -126,13 +134,12 @@ const NewCorona = forwardRef((props, player) => {
     const thisCorona = useRef(new Corona({ id, position, scene }))
 
     useEffect(() => {
-
         thisCorona.current.player = player.current
         thisCorona.current.group = transform.current
         thisCorona.current.awake()
-
-    }, [])
-
+        
+    }, [thisCorona, player, transform])
+    
     useFrame(({ clock }) => {
         thisCorona.current.update({ clock })
         transform.current.position.copy(thisCorona.current.position)
@@ -145,6 +152,8 @@ const NewCorona = forwardRef((props, player) => {
                 <meshBasicMaterial attach="material" color="red" />
             </mesh>
             <Renderer corona={thisCorona} />
+            {/* <PhysicsBody ref={thisCorona} /> */}
+            {/* <Renderer ref={thisCorona} /> */}
         </group>
     )
 
