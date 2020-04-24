@@ -2,12 +2,12 @@ import React, { Suspense, useEffect, useCallback, useRef } from "react";
 import * as THREE from "three";
 import { useThree } from "react-three-fiber";
 
-import Corona from "./Corona";
+import Corona from "./NewCorona";
 import { useCorona, useMapBBoxes, COLLISION_GROUP } from "./store";
 
 const NUMBER_OF_SPAWNS = 15
 
-function CoronaManager() {
+function CoronaManager({ player }) {
 
     const { coronas, addCorona } = useCorona(s => s)
     const mapBBoxes = useMapBBoxes(s => s.mapBBoxes)
@@ -33,7 +33,7 @@ function CoronaManager() {
                 const z = bbox.min.z + (bbox.max.z - bbox.min.z) * Math.random()
 
                 if (isIntersect([x, 1, z])) {
-                    positions.push([x, 0, z])
+                    positions.push([x, 0.5, z])
                 }
             } while (positions.length < 10)
 
@@ -46,6 +46,7 @@ function CoronaManager() {
             <Corona
                 key={id}
                 id={id}
+                player={player}
                 position={position}
                 isDead={isDead}
                 life={life}

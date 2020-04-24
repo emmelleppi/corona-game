@@ -17,7 +17,7 @@ const JUMP_IMPULSE = 10;
 const VELOCITY = 40
 const BOOST_FACTOR = 4
 
-function FirstPersonCamera(props) {
+const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref) {
   const { position, callbacks } = props;
   const { scene, setDefaultCamera, size } = useThree();
 
@@ -143,7 +143,10 @@ function FirstPersonCamera(props) {
 
     const canvas = document.getElementsByTagName("canvas")[0];
     controls.current = new PointerLockControls(camera.current, canvas);
-    canvas.addEventListener("click", lockPointerLock, false);
+    canvas.addEventListener("click", () => {
+      console.log('click')
+      lockPointerLock()
+    }, false);
 
     const obj = controls.current.getObject();
     scene.add(obj);
@@ -248,6 +251,10 @@ function FirstPersonCamera(props) {
     }
   });
 
+  useFrame(() => {
+    mybody.current.layers.enable(1)
+  })
+
 
   return (
     <>
@@ -261,7 +268,12 @@ function FirstPersonCamera(props) {
         </mesh>
       </a.perspectiveCamera>
 
-      <mesh ref={mybody} />
+      <mesh ref={mybody}>
+        <mesh ref={ref}>
+          <boxGeometry attach="geometry" args={[2, 2, 2]} />
+          <meshBasicMaterial attach="material" wireframe />
+        </mesh>
+      </mesh>
       <mesh ref={chestLock} />
       <mesh ref={chest} userData={{ type: COLLISION_GROUP.CHEST }} >
         <cylinderBufferGeometry attach="geometry" args={[0.15, 0.05, 0.5, 32]} />
@@ -269,6 +281,6 @@ function FirstPersonCamera(props) {
       </mesh>
     </>
   );
-}
+})
 
 export default FirstPersonCamera;
