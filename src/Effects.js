@@ -35,7 +35,7 @@ function Effects() {
 
   useEffect(() => void (glitch.current.factor = 0), [glitch])
 
-  useEffect(() => outlineApi.subscribe(({ outline: outlineObjs }) => void (outline.current.selectedObjects = outlineObjs)), [outlineApi, outline]);
+  useEffect(() => outlineApi.subscribe(({ outline: outlineObjs }) => void (outline.current.selectedObjects = outlineObjs)), [outline]);
 
   useEffect(() => {
     let timeout
@@ -54,9 +54,9 @@ function Effects() {
     })
 
     return () => clearTimeout(timeout)
-  }, [lifeApi, glitch, currLife])
+  }, [glitch, currLife])
 
-  useEffect(() => void composer.current.setSize(size.width, size.height), [size])
+  useEffect(() => void composer.current.setSize(size.width, size.height), [composer,size])
   useFrame(({ gl }) => void ((gl.autoClear = true), composer.current.render()), 1)
 
   return (

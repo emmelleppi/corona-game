@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import * as THREE from "three";
 import { useThree, useLoader } from "react-three-fiber";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";

@@ -1,6 +1,4 @@
-import { createRef } from "react";
 import create from 'zustand'
-import { v4 as uuid } from 'uuid';
 import produce from "immer"
 
 export const INITIAL_LIFE = 100

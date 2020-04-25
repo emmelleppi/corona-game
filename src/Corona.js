@@ -92,7 +92,7 @@ const ATTACK_DURATION = 10
         }
 
       },
-      [id, coronaBody, coronaBodyApi, isPlayerAttacking, disable, decreaseLife]
+      [id, coronaBody, coronaBodyApi, isPlayerAttacking, decreaseLife, playHitSfx]
     )
 
     const updateOrientation = useCallback(
@@ -131,7 +131,7 @@ const ATTACK_DURATION = 10
           lockApi.position.set(lock.current.position.x + velocity.current.x / 50, position[1] , lock.current.position.z + velocity.current.y / 50)
         }
       },
-      [coronaBody, lockApi, updateOrientation, velocity]
+      [getIntersects, lock, position, coronaBody, lockApi, updateOrientation, velocity]
     )
 
     const seekBody = useCallback(
@@ -146,7 +146,6 @@ const ATTACK_DURATION = 10
 
     const checkProximityToBody = useCallback(
       function checkProximityToBody(p) {
-        if (!coronaBody.current) return
         if (isDead) return
 
         const [x, y, z] = p
@@ -181,7 +180,7 @@ const ATTACK_DURATION = 10
           }
         }
       },
-      [id, raycast, isSeeking, setSeeking, resetSeeking, setAttacking, resetAttacking, isAttacking, isDead]
+      [coronaBody, position, id, isSeeking, setSeeking, resetSeeking, setAttacking, resetAttacking, isAttacking, isDead]
     )
 
     const handleAttack = useCallback(
@@ -205,7 +204,7 @@ const ATTACK_DURATION = 10
 
         time.current += 1
       },
-      [time, resetAttacking, id]
+      [time, resetAttacking, id, lock, lockApi]
     )
 
     const handlePlayerSubscribe = useCallback(
@@ -278,7 +277,7 @@ const ATTACK_DURATION = 10
           removeOutline(group.current)
           set({ opacity: 0, config: config.molasses, onRest: () => removeCorona(id) })
         }
-      }, [isDead, removeOutline, set, removeCorona])
+      }, [id, isDead, removeOutline, set, removeCorona])
     
       useFrame(({ clock }) => {
         if(!body.current) return

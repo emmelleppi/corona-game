@@ -36,7 +36,7 @@ function ConvexPolyBody(props) {
     mapbody.current.geometry.computeBoundingBox();
     box.copy(mapbody.current.geometry.boundingBox).applyMatrix4(mapbody.current.matrixWorld);
     addMapBBoxes(box)
-  }, [])
+  }, [mapbody, addMapBBoxes])
 
   return <mesh receiveShadow ref={mapbody} material={material} geometry={geometry} userData={{ type: COLLISION_GROUP.TILES }} />
 }

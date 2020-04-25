@@ -41,7 +41,7 @@ const batMovements = {
 
 function PhyBaseballBat(props) {
   const onCollide = useRef()
-  const [playPlayerHitSfx] = useSound(playerHitSfx)
+  const [] = useSound(playerHitSfx)
 
   const { decrease } = useLife(s => s)
   const coronas = useCorona(s => s.coronas)
@@ -110,7 +110,7 @@ function BaseballBat(props) {
     }
   );
 
-  const [spring, set, stop] = useSpring(() => ({
+  const [spring, set] = useSpring(() => ({
     ...batMovements.end.spring,
     config: { mass: 1, tension: 210, friction: 10 }
   }));
@@ -121,7 +121,7 @@ function BaseballBat(props) {
         time.current = 0
       }
     },
-    [time, stop]
+    [time]
   )
 
   const [metalResourceRef, metalMaterial] = useResource()
@@ -135,7 +135,7 @@ function BaseballBat(props) {
     }
   }, [attacked])
 
-  useEffect(() => void callbacks.current.push(handleClick), [callbacks]);
+  useEffect(() => void callbacks.current.push(handleClick), [handleClick, callbacks]);
 
   useEffect(() => void addOutline(batGroupRef.current), [addOutline, batGroupRef]);
 

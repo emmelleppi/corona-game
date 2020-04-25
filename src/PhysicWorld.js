@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useCallback, useRef } from "react";
+import React, { Suspense } from "react";
 import { Physics } from "use-cannon";
 
 import FirstPersonCamera from "./FirstPersonCamera";

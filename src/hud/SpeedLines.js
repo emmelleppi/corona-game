@@ -1,7 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import * as THREE from "three";
-import { useLoader, useFrame } from "react-three-fiber";
-import lerp from "lerp"
+import React, { useState, useEffect } from "react";
 import { usePlayer } from "../store"
 
 import Sprite from '../utility/Sprite'

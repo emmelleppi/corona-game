@@ -2,13 +2,11 @@ import React, { useCallback, useEffect, useRef, Suspense, useMemo, useState } fr
 import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
-import { Vector3 } from 'three'
-import { PointerLockControls } from "./PointerLockControls";
-import BaseballBat from "./BaseballBat";
-import { COLLISION_GROUP, useBodyApi, useLife, useCorona, usePlayer } from "./store";
-import { useSpring, a } from 'react-spring/three';
 import useSound from 'use-sound'
 
+import { COLLISION_GROUP, useLife, useCorona, usePlayer } from "./store";
+import BaseballBat from "./BaseballBat";
+import { PointerLockControls } from "./PointerLockControls";
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
 import lerp from "lerp";
@@ -40,9 +38,7 @@ function FirstPersonCamera(props) {
   const walking = useRef(0);
   const onCollide = useRef()
 
-  const [springProps, set] = useSpring(() => ({}))
-
-  const { life, decrease } = useLife(s => s)
+  const { decrease } = useLife(s => s)
   const coronas = useCorona(s => s.coronas)
   const setPlayerApi = usePlayer(s => s.setPlayerApi)
   const setPlayerBody = usePlayer(s => s.setPlayerBody)
@@ -133,7 +129,7 @@ function FirstPersonCamera(props) {
     if (boost) {
       playBoostSfx()
     }
-  }, [boost])
+  }, [boost, playBoostSfx])
 
   useEffect(() => void setPlayerApi(api), [setPlayerApi, api])
   useEffect(() => void setPlayerBody(chest), [setPlayerBody, chest])
@@ -170,18 +166,10 @@ function FirstPersonCamera(props) {
     onDocumentKeyDown,
     onDocumentKeyUp
   ]);
-  // const raycast = useRef(new THREE.Raycaster())
 
   useFrame(() => {
     let x = 0;
     let y = 0;
-    // raycast.current.set(
-    //   mybody.current.position,
-    //   new THREE.Vector3(0, -1, 0)
-    // )
-    // raycast.current.far = 0.1
-    // const intersects = raycast.current.intersectObjects(scene.children)
-    // const isGrounded = intersects.length > 0
 
     camera.current.updateMatrixWorld();
 
@@ -251,27 +239,24 @@ function FirstPersonCamera(props) {
     }
   });
 
-  const handleV = React.useCallback((varr) => {
-    const v = Math.floor(new Vector3(...varr).length() * 10) / 10
-    const fov = lerp(70, 90, easing.easeOutQuad(v / 12))
+  const handleV = React.useCallback(
+    function handleV(varr) {
+      const v = Math.floor(new THREE.Vector3(...varr).length() * 10) / 10
+      const fov = lerp(70, 90, easing.easeOutQuad(v / 12))
 
-    camera.current.fov = fov
-    camera.current.updateProjectionMatrix()
+      camera.current.fov = fov
+      camera.current.updateProjectionMatrix()
+    },
+    []
+  )
+  
+  useEffect(() => api.velocity.subscribe(handleV), [api, handleV])
 
-    // set({ from: { fov: 60 }, to: { fov: 90 }, config: config.wobble, onFrame: () => camera.current.updateProjectionMatrix() })
-  }, [set])
-  useEffect(() => {
-    api.velocity.subscribe(handleV)
-  }, [api.velocity])
-
-  useFrame(() => {
-    mybody.current.layers.enable(1)
-  })
-
+  useFrame(() => void (mybody.current.layers.enable(1)))
 
   return (
     <>
-      <a.perspectiveCamera ref={camera} args={[60, aspect, .1, 300]} {...springProps}>
+      <perspectiveCamera ref={camera} args={[60, aspect, .1, 300]} >
         <Suspense fallback={null}>
           <BaseballBat callbacks={callbacks} position={[0.1, -0.3, -0.5]} rotation={[0, 0, 0]} />
         </Suspense>
@@ -279,7 +264,7 @@ function FirstPersonCamera(props) {
           <planeBufferGeometry attach="geometry" args={[10, 10]} />
           <meshBasicMaterial attach="material" color="red" opacity={1} transparent side={THREE.DoubleSide} />
         </mesh>
-      </a.perspectiveCamera>
+      </perspectiveCamera>
 
       <mesh ref={mybody} />
       <mesh ref={chestLock} />
