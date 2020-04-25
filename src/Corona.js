@@ -23,16 +23,16 @@ const ATTACK_DURATION = 10
 
   function PhyCorona(props) {
     const { id, position, isDead, isAttacking, isSeeking } = props
-  
+
     const [isUnderAttack, setIsUnderAttack] = useState(false)
-    
+
     const time = useRef(0)
     const velocity = useRef()
     const attackPosition = useRef()
     const orientation = useRef()
     const onCollide = useRef()
     const raycast = useRef(new THREE.Raycaster())
-  
+
     const {
       removeCorona,
       decreaseLife,
@@ -45,12 +45,12 @@ const ATTACK_DURATION = 10
     const playerBody = usePlayer(s => s.playerBody)
 
     const isPlayerAttacking = usePlayerAttack(s => s.isAttacking)
-  
+
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
-  
+
     const [playHitSfx, hitSfxMeta] = useSound(rand.current > 5 ? HitSfx : HitSfx2)
     const [playAlertSfx] = useSound(alertSfx)
-  
+
     const [coronaBody, coronaBodyApi] = useSphere(() => ({
       args: 0.2,
       mass: 0.2,
@@ -59,7 +59,7 @@ const ATTACK_DURATION = 10
       collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
       onCollide: e => onCollide.current(e)
     }))
-  
+
     const [lock, lockApi] = useParticle(() => ({
       args: [0.05, 0.2, 0.5, 16],
       position: [position[0], position[1] , position[2]],
@@ -68,33 +68,33 @@ const ATTACK_DURATION = 10
       angularDamping: 0.1,
       type: "Kinetic"
     }))
-  
+
     const [, , { disable }] = useLockConstraint(coronaBody, lock)
-  
+
     const handleCollide = useCallback(
       function handleCollide(e) {
-  
+
         const { contact, body } = e
         const { impactVelocity, ni } = contact
-  
+
         coronaBodyApi.rotation.set(
           coronaBody.current.rotation.x + ni[0],
           coronaBody.current.rotation.y + ni[1],
           coronaBody.current.rotation.z + ni[2]
         )
-  
+
         if (isPlayerAttacking && body?.userData?.type === COLLISION_GROUP.BAT) {
-  
+
           const absVelocity = Math.abs(impactVelocity)
           playHitSfx()
           decreaseLife(id, absVelocity)
           setIsUnderAttack(s => { if (!s) return true })
         }
-  
+
       },
       [id, coronaBody, coronaBodyApi, isPlayerAttacking, disable, decreaseLife]
     )
-  
+
     const updateOrientation = useCallback(
       function updateOrientation() {
         velocity.current = new THREE.Vector2(getRandomUnity(), getRandomUnity()).normalize()
@@ -102,16 +102,16 @@ const ATTACK_DURATION = 10
       },
       [velocity, orientation]
     )
-  
+
     const getIntersects = useCallback(
       function getIntersects(position, orientation, scene, collisionArray) {
-  
+
         raycast.current.set(position, orientation)
         const intersects = raycast.current.intersectObjects(scene.children);
-  
+
         return intersects.filter(({ object }) => collisionArray.includes(object?.userData?.type))
       }, [raycast])
-  
+
     const updatePosition = useCallback(
       function updatePosition(scene) {
         const tiles = getIntersects(
@@ -133,7 +133,7 @@ const ATTACK_DURATION = 10
       },
       [coronaBody, lockApi, updateOrientation, velocity]
     )
-  
+
     const seekBody = useCallback(
       function seekBody(p) {
         const dir = new THREE.Vector3()
@@ -143,16 +143,17 @@ const ATTACK_DURATION = 10
       },
       [coronaBody, lockApi, position, lock]
     )
-    
+
     const checkProximityToBody = useCallback(
       function checkProximityToBody(p) {
+        if (!coronaBody.current) return
         if (isDead) return
 
         const [x, y, z] = p
         
         const line = new THREE.Line3(new THREE.Vector3(x, y, z), coronaBody.current.position)
         const distance = line.distance()
-  
+
         if (distance < 1) {
           if (isSeeking) {
             resetSeeking(id)
@@ -162,9 +163,9 @@ const ATTACK_DURATION = 10
             attackPosition.current = [new THREE.Vector3(x, position[1] , z), coronaBody.current.position.clone()]
             time.current = 0
           }
-  
+
         } else if (distance >= 1 && distance < 4) {
-  
+
           if (isAttacking) {
             resetAttacking(id)
           }
@@ -182,13 +183,13 @@ const ATTACK_DURATION = 10
       },
       [id, raycast, isSeeking, setSeeking, resetSeeking, setAttacking, resetAttacking, isAttacking, isDead]
     )
-  
+
     const handleAttack = useCallback(
       function handleAttack() {
         if (!attackPosition.current) return
-  
+
         if (time.current < ATTACK_DURATION * 2) {
-  
+
           const { x, y, z } = attackPosition.current[time.current < ATTACK_DURATION ? 0 : 1]
 
           lockApi.position.set(
@@ -196,12 +197,12 @@ const ATTACK_DURATION = 10
             lerp(lock.current.position.y, y, 0.2),
             lerp(lock.current.position.z, z, 0.2)
           )
-  
+
         }
         if (time.current === ATTACK_DURATION * 4) {
           resetAttacking(id)
         }
-  
+
         time.current += 1
       },
       [time, resetAttacking, id]
@@ -246,7 +247,7 @@ const ATTACK_DURATION = 10
       const { x, y, z } = playerBody.current.position
       handlePlayerSubscribe([x, y, z], scene)
     })
-  
+
     return (
       <>
         <mesh ref={lock} />
