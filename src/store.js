@@ -5,9 +5,6 @@ import produce from "immer"
 
 export const INITIAL_LIFE = 100
 
-export const bodyRef = createRef()
-export const bodyApi = createRef()
-
 export const COLLISION_GROUP = {
     CORONA: 1,
     WALLS: 2,
@@ -30,7 +27,26 @@ export const [usePlayerAttack] = create(set => ({
     resetAttacking: () => set({ isAttacking: false })
 }))
 
-export const [useOutline] = create(set => ({
+export const [usePowTexture] = create(set => ({
+    powTexture: false,
+    setPowTexture: x => set({ powTexture: x }),
+}))
+
+export const [useExclamationTexture] = create(set => ({
+    exclamationTexture: false,
+    setExclamationTexture: x => set({ exclamationTexture: x }),
+}))
+
+export const [usePlayer] = create(set => ({
+    playerBody: null,
+    playerApi: null,
+    setPlayerBody: x => set({ playerBody: x }),
+    setPlayerApi: x => set({ playerApi: x }),
+    resetPlayerBody: () => set({ playerBody: null }),
+    resetPlayerApi: () => set({ playerApi: null })
+}))
+
+export const [useOutline, outlineApi] = create(set => ({
     outline: [],
     addOutline: x => set(state => ({ outline: [...state.outline, x] })),
     removeOutline: x => set(state => ({ outline: state.outline.filter(({ uuid }) => x.uuid !== uuid) })),

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import * as THREE from "three";
 import { useLoader, useFrame } from "react-three-fiber";
 import lerp from "lerp"
-import { bodyApi } from "../store"
+import { usePlayer } from "../store"
 
 import Sprite from '../utility/Sprite'
 import { Vector3 } from "three";
@@ -10,7 +10,7 @@ import { Vector3 } from "three";
 function SpeedLines(props) {
 
     const scale = [window.innerWidth, window.innerHeight, 1]
-
+    const playerApi = usePlayer(s => s.playerApi)
     const TH = 8
 
     const [visible, setVisible] = useState(false)
@@ -25,11 +25,10 @@ function SpeedLines(props) {
     }, [setVisible])
 
     useEffect(() => {
-        if (bodyApi.current) {
-            bodyApi.current.velocity.subscribe(handleV)
+        if (playerApi && handleV) {
+            return playerApi.velocity.subscribe(handleV)
         }
-    }, [bodyApi.current, handleV])
-
+    }, [playerApi, handleV])
 
     return (
         <>

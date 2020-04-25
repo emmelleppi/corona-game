@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import * as THREE from "three";
-import { useLoader } from "react-three-fiber";
+import { usePowTexture } from "./store";
 
 function Pow(props) {
   const { visible, scale = [1, 1, 1], position = [0, 0, 0] } = props
@@ -10,7 +9,7 @@ function Pow(props) {
 
   const _scale = useMemo(() => scale.map(x => x * scaleFactor), [scaleFactor, scale])
 
-  const powTexture = useLoader(THREE.TextureLoader, "/pow.png")
+  const powTexture = usePowTexture(s => s.powTexture)
 
   useEffect(() => {
     setScaleFactor(0.5 + Math.random() / 2)

@@ -1,8 +1,7 @@
+import React, { useState } from "react"
 import * as THREE from "three"
-import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLoader, useFrame } from "react-three-fiber"
 import { PlainAnimator } from "three-plain-animator/lib/plain-animator"
-import { bodyApi } from "../store"
 
 function Sprite(props) {
 

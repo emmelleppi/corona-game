@@ -4,7 +4,7 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { useSphere, useParticle, useLockConstraint, useConeTwistConstraint } from 'use-cannon';
 
-import { COLLISION_GROUP, bodyRef, useOutline, useCorona, usePlayerAttack } from "../store"
+import { COLLISION_GROUP, useOutline, useCorona, usePlayerAttack } from "../store"
 
 const Y_BIAS = .6
 

@@ -10,7 +10,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
 
-import { useOutline, lifeApi, INITIAL_LIFE } from "./store";
+import { outlineApi, lifeApi, INITIAL_LIFE } from "./store";
 
 const OUTLINE_COLOR = 0xffffff;
 
@@ -33,21 +33,9 @@ function Effects() {
   const glitch = useRef();
   const currLife = React.useRef(INITIAL_LIFE)
 
-  const outlineObjs = useOutline(state => state.outline);
-
   useEffect(() => void (glitch.current.factor = 0), [glitch])
 
-  useEffect(() => {
-    if (outline.current) {
-      outline.current.edgeStrength = 100;
-      outline.current.edgeGlow = 0;
-      outline.current.edgeThickness = 2;
-      outline.current.visibleEdgeColor = new THREE.Color(OUTLINE_COLOR);
-      outline.current.hiddenEdgeColor = new THREE.Color(OUTLINE_COLOR);
-      outline.current.overlayMaterial.blending = THREE.SubtractiveBlending
-      outline.current.selectedObjects = outlineObjs;
-    }
-  }, [outlineObjs, outline]);
+  useEffect(() => outlineApi.subscribe(({ outline: outlineObjs }) => void (outline.current.selectedObjects = outlineObjs)), [outlineApi, outline]);
 
   useEffect(() => {
     let timeout
@@ -78,6 +66,12 @@ function Effects() {
         ref={outline}
         attachArray="passes"
         args={[aspect, scene, camera]}
+        edgeStrength={100}
+        edgeGlow={0}
+        edgeThickness={2}
+        visibleEdgeColor={new THREE.Color(OUTLINE_COLOR)}
+        hiddenEdgeColor={new THREE.Color(OUTLINE_COLOR)}
+        overlayMaterial-blending={THREE.SubtractiveBlending}
       />
       <glitchPass attachArray="passes" renderToScreen ref={glitch} />
       <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />

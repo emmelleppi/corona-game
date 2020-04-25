@@ -9675,10 +9675,10 @@ url@^0.11.0:
     punycode "1.3.2"
     querystring "0.2.0"
 
-use-cannon@0.4.2:
-  version "0.4.2"
-  resolved "https://registry.yarnpkg.com/use-cannon/-/use-cannon-0.4.2.tgz#9e9a145da8ee2310eced8845c42e257b2f882567"
-  integrity sha512-tISN0ME1cw5LqfNrgJ1TPb1dVGuD5bK/QwpZtKIxhig/1QxMJsAy3ntQfVkp5lSQyVAk3yjPFSHJnny9b5mEww==
+use-cannon@0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/use-cannon/-/use-cannon-0.4.4.tgz#eaac70efee91b9e985a3d2f660f6c3da8c97cee1"
+  integrity sha512-hGpcHZZ3nq07l8A7Np/Njj3yi30q+LZy/rNdI2sGufkDJ7+fzebbgRQd5H2gaEu63RSc2a2MP0Q3N41YaaQ+DA==
 
 use-sound@^1.0.1:
   version "1.0.1"

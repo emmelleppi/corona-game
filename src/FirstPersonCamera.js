@@ -5,9 +5,8 @@ import * as THREE from "three";
 import { Vector3 } from 'three'
 import { PointerLockControls } from "./PointerLockControls";
 import BaseballBat from "./BaseballBat";
-import Effects from "./Effects";
-import { COLLISION_GROUP, bodyApi, useLife, useCorona } from "./store";
-import { useSpring, a, config } from 'react-spring/three';
+import { COLLISION_GROUP, useBodyApi, useLife, useCorona, usePlayer } from "./store";
+import { useSpring, a } from 'react-spring/three';
 import useSound from 'use-sound'
 
 import jumpSfx from './sounds/Jump.wav'
@@ -23,7 +22,7 @@ const JUMP_IMPULSE = 10;
 const VELOCITY = 40
 const BOOST_FACTOR = 4
 
-const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref) {
+function FirstPersonCamera(props) {
   const { position, callbacks } = props;
   const { scene, setDefaultCamera, size } = useThree();
 
@@ -45,7 +44,9 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
 
   const { life, decrease } = useLife(s => s)
   const coronas = useCorona(s => s.coronas)
-
+  const setPlayerApi = usePlayer(s => s.setPlayerApi)
+  const setPlayerBody = usePlayer(s => s.setPlayerBody)
+  
   const [mybody, api] = useSphere(() => ({
     mass: 1,
     args: 0.1,
@@ -63,7 +64,7 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
     collisionFilterGroup: COLLISION_GROUP.CHEST,
     collisionFilterMask: COLLISION_GROUP.CORONA,
     onCollide: e => onCollide.current(e)
-  }), ref);
+  }));
 
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
@@ -134,7 +135,8 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
     }
   }, [boost])
 
-  useEffect(() => void (bodyApi.current = api), [bodyApi, api])
+  useEffect(() => void setPlayerApi(api), [setPlayerApi, api])
+  useEffect(() => void setPlayerBody(chest), [setPlayerBody, chest])
 
   useEffect(() => {
     onCollide.current = handleCollide
@@ -287,6 +289,6 @@ const FirstPersonCamera = React.forwardRef(function FirstPersonCamera(props, ref
       </mesh>
     </>
   );
-})
+}
 
 export default FirstPersonCamera;
