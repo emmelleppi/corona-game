@@ -1,3 +1,4 @@
+import "./utility/fix"
 import * as THREE from "three";
 import React, { useRef, useEffect, useMemo } from "react";
 import { extend, useThree, useFrame } from "react-three-fiber";

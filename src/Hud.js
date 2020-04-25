@@ -1,7 +1,6 @@
 import React, { Suspense, useState } from "react";
 import { useFrame, createPortal } from "react-three-fiber";
 import * as THREE from "three";
-import "styled-components/macro"
 
 import SpeedLines from "./hud/SpeedLines";
 

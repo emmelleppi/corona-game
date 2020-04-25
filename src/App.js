@@ -39,10 +39,8 @@ function App() {
     <>
       <Suspense fallback={"LOADING"} >
         <Canvas
-          // shadowMap
           colorManagement
           camera={{ position: [0, 100, 0] }}
-          onCreated={({ gl }) => gl.setPixelRatio(window.devicePixelRatio)}
           onClick={handleClick}
         >
           <Main callbacks={callbacks} />

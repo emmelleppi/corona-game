@@ -27,12 +27,6 @@ function Sky() {
     ctx.fillStyle = CANVAS_BG_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // draws debug grid
-    // ctx.lineWidth = 20;
-    // ctx.strokeStyle = "green";
-    // ctx.strokeRect(0, 0, canvas.width / 2, canvas.height / 2)
-    // ctx.strokeRect(canvas.width / 2, canvas.height / 2, canvas.width, canvas.height)
-
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -49,7 +43,7 @@ function Sky() {
     const canvasTexture = new THREE.CanvasTexture(canvas)
     canvasTexture.wrapS = THREE.RepeatWrapping;
     canvasTexture.wrapT = THREE.RepeatWrapping;
-    canvasTexture.repeat.set(-6, 1);
+    canvasTexture.repeat.set(-4, 1);
     material.map = canvasTexture
 
   }, [text, canvas])
