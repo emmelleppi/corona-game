@@ -14,7 +14,7 @@ import HitSfx from './sounds/Player_Hit.wav'
 import HitSfx2 from './sounds/Player_Hit_2.wav'
 import alertSfx from './sounds/Alert.wav'
 
-import { COLLISION_GROUP, useOutline, usePlayer, useCorona, usePlayerAttack } from "./store"
+import { COLLISION_GROUP, useOutline, usePlayer, useCorona, usePlayerAttack, useCoronaNodes } from "./store"
 import { getRandomUnity } from './utility/math';
 import Exclamation from './Exclamation';
 import Pow from './Pow';
@@ -258,12 +258,13 @@ const ATTACK_DURATION = 10
 
   const Corona = forwardRef(
     function Corona(props, body) {
-      const { id, isDead, isAttacking, isSeeking, isUnderAttack, removeCorona , nodes} = props
+      const { id, isDead, isAttacking, isSeeking, isUnderAttack, removeCorona } = props
       
       const group = useRef()
       const rotationGroup = useRef()
       const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
     
+      const nodes = useCoronaNodes(s => s.coronaNodes)
       const { addOutline, removeOutline } = useOutline(s => s)
     
       const [springProps, set] = useSpring(() => ({ opacity: 1, config: config.molasses }))

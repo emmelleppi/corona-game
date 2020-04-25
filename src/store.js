@@ -35,6 +35,11 @@ export const [useExclamationTexture] = create(set => ({
     setExclamationTexture: x => set({ exclamationTexture: x }),
 }))
 
+export const [useCoronaNodes] = create(set => ({
+    coronaNodes: false,
+    setCoronaNodes: x => set({ coronaNodes: x }),
+}))
+
 export const [usePlayer] = create(set => ({
     playerBody: null,
     playerApi: null,

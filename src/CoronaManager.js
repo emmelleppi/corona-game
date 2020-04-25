@@ -5,19 +5,13 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 import Corona from "./Corona";
-import { useCorona, useMapBBoxes, COLLISION_GROUP, usePowTexture, useExclamationTexture } from "./store";
+import { useCorona, useMapBBoxes, COLLISION_GROUP, usePowTexture, useExclamationTexture, useCoronaNodes } from "./store";
 
 const NUMBER_OF_SPAWNS = 10
 const NUMBER_OF_MAP_BBOX = 15
 
-function CoronaManager() {
-
-    const { coronas, addCorona } = useCorona(s => s)
-    const mapBBoxes = useMapBBoxes(s => s.mapBBoxes)
-    const raycast = useRef(new THREE.Raycaster())
-
-    const { scene } = useThree()
-
+function useCoronaAssets() {
+    const setCoronaNodes = useCoronaNodes(s => s.setCoronaNodes)
     const { nodes } = useLoader(GLTFLoader, '/corona.glb',
         loader => {
         const dracoLoader = new DRACOLoader();
@@ -25,12 +19,11 @@ function CoronaManager() {
         loader.setDRACOLoader(dracoLoader);
         }
     )
+    useEffect(() => void setCoronaNodes(nodes),[nodes, setCoronaNodes])
 
     const setPowTexture = usePowTexture(s => s.setPowTexture)
     const powTexture = useLoader(THREE.TextureLoader, "/pow.png")
-    useEffect(() => {
-        setPowTexture(powTexture)
-    }, [setPowTexture, powTexture])
+    useEffect(() => void setPowTexture(powTexture), [setPowTexture, powTexture])
     
     const setExclamationTexture = useExclamationTexture(s => s.setExclamationTexture)
     useEffect(() => {
@@ -57,6 +50,16 @@ function CoronaManager() {
     
         setExclamationTexture(new THREE.CanvasTexture(canvas))
       }, [setExclamationTexture])
+}
+
+function CoronaManager() {
+
+    const { coronas, addCorona } = useCorona(s => s)
+    const mapBBoxes = useMapBBoxes(s => s.mapBBoxes)
+    const raycast = useRef(new THREE.Raycaster())
+
+    const { scene } = useThree()
+    useCoronaAssets()
 
     const isIntersect = useCallback(
         function isIntersect(position) {
@@ -89,7 +92,6 @@ function CoronaManager() {
             <Corona
                 key={id}
                 id={id}
-                nodes={nodes}
                 position={position}
                 isDead={isDead}
                 life={life}
