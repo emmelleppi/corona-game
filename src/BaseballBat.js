@@ -11,7 +11,7 @@ import { useBox } from "use-cannon";
 import * as THREE from "three";
 import useSound from "use-sound";
 
-import { useOutline, useLife, usePlayerAttack, useCorona, COLLISION_GROUP } from "./store"
+import { useOutline, usePlayer, useCorona, COLLISION_GROUP, useInteraction } from "./store"
 import playerHitSfx from './sounds/Player_Hit.wav'
 
 const batMovements = {
@@ -43,7 +43,7 @@ function PhyBaseballBat(props) {
   const onCollide = useRef()
   const [] = useSound(playerHitSfx)
 
-  const { decrease } = useLife(s => s)
+  const { decreaseLife } = usePlayer(s => s.actions)
   const coronas = useCorona(s => s.coronas)
 
   const [mybody, api] = useBox(() => ({
@@ -69,12 +69,12 @@ function PhyBaseballBat(props) {
         if (isAttacking) {
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
-          decrease(absVelocity)
+          decreaseLife(absVelocity)
         }
 
       }
     },
-    [decrease, coronas]
+    [decreaseLife, coronas]
   )
 
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
@@ -88,7 +88,7 @@ function PhyBaseballBat(props) {
 }
 
 function BaseballBat(props) {
-  const { callbacks, api, ...allTheRest } = props;
+  const { api, ...allTheRest } = props;
 
   const batRef = useRef()
   const batGroupRef = useRef()
@@ -97,8 +97,9 @@ function BaseballBat(props) {
   const [attacked, setAttacked] = useState(false)
 
   const addOutline = useOutline(s => s.addOutline)
-  const { setAttacking, resetAttacking } = usePlayerAttack(s => s)
-  const life = useLife(s => s.life)
+  const { setAttacking, resetAttacking } = usePlayer(s => s.actions)
+  const life = usePlayer(s => s.life)
+  const { addCallback } = useInteraction(s => s.actions)
 
   const { nodes } = useLoader(
     GLTFLoader,
@@ -135,7 +136,7 @@ function BaseballBat(props) {
     }
   }, [attacked])
 
-  useEffect(() => void callbacks.current.push(handleClick), [handleClick, callbacks]);
+  useEffect(() => void addCallback(handleClick), [handleClick, addCallback]);
 
   useEffect(() => void addOutline(batGroupRef.current), [addOutline, batGroupRef]);
 

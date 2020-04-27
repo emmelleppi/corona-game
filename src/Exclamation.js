@@ -1,8 +1,8 @@
 import React from "react";
-import { useExclamationTexture } from "./store";
+import { useAssets } from "./store";
 
 function Exclamation(props) {
-  const exclamationTexture = useExclamationTexture(s => s.exclamationTexture)
+  const exclamationTexture = useAssets(s => s.exclamationTexture)
 
   return (
     <sprite {...props} >

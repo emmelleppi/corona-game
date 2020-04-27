@@ -5,12 +5,11 @@ import FirstPersonCamera from "./FirstPersonCamera";
 import Map from "./Map";
 import CoronaManager from './CoronaManager'
 
-function PhysicWorld(props) {
-  const { callbacks } = props;
+function PhysicWorld() {
 
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
-      <FirstPersonCamera callbacks={callbacks} position={[0, 30, 0]} />
+      <FirstPersonCamera position={[0, 30, 0]} />
       <Suspense fallback={null}>
         <Map />
         <CoronaManager />

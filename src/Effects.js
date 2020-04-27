@@ -10,7 +10,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
 
-import { outlineApi, lifeApi, INITIAL_LIFE } from "./store";
+import { outlineApi, playerApi, INITIAL_LIFE } from "./store";
 
 const OUTLINE_COLOR = 0xffffff;
 
@@ -40,7 +40,7 @@ function Effects() {
   useEffect(() => {
     let timeout
 
-    lifeApi.subscribe(({ life }) => {
+    playerApi.subscribe(({ life }) => {
       
       if (life < currLife.current) {
         glitch.current.factor = 0.5;
@@ -54,9 +54,10 @@ function Effects() {
     })
 
     return () => clearTimeout(timeout)
-  }, [glitch, currLife])
+  }, [glitch, playerApi, currLife])
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [composer,size])
+  
   useFrame(({ gl }) => void ((gl.autoClear = true), composer.current.render()), 1)
 
   return (

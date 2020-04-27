@@ -4,11 +4,11 @@ import { useLoader } from "react-three-fiber";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
-import { usePowTexture, useExclamationTexture, useCoronaNodes } from "../store";
+import { useAssets } from "../store";
 
 function useCoronaAssets() {
     // NODES
-    const setCoronaNodes = useCoronaNodes(s => s.setCoronaNodes)
+    const setCoronaNodes = useAssets(s => s.setCoronaNodes)
     const { nodes } = useLoader(GLTFLoader, '/corona.glb',
         loader => {
         const dracoLoader = new DRACOLoader();
@@ -16,15 +16,15 @@ function useCoronaAssets() {
         loader.setDRACOLoader(dracoLoader);
         }
     )
-    useEffect(() => void setCoronaNodes(nodes),[nodes, setCoronaNodes])
+    useEffect(() => void setCoronaNodes(nodes), [nodes, setCoronaNodes])
 
     // POW TEXTURE
-    const setPowTexture = usePowTexture(s => s.setPowTexture)
+    const setPowTexture = useAssets(s => s.setPowTexture)
     const powTexture = useLoader(THREE.TextureLoader, "/pow.png")
     useEffect(() => void setPowTexture(powTexture), [setPowTexture, powTexture])
     
     // EXCLAMATION CANVAS TEXTURE
-    const setExclamationTexture = useExclamationTexture(s => s.setExclamationTexture)
+    const setExclamationTexture = useAssets(s => s.setExclamationTexture)
     useEffect(() => {
         const WIDTH = 200
         const HEIGHT = 200

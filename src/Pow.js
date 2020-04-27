@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { usePowTexture } from "./store";
+import { useAssets } from "./store";
 
 function Pow(props) {
   const { visible, scale = [1, 1, 1], position = [0, 0, 0] } = props
@@ -9,7 +9,7 @@ function Pow(props) {
 
   const _scale = useMemo(() => scale.map(x => x * scaleFactor), [scaleFactor, scale])
 
-  const powTexture = usePowTexture(s => s.powTexture)
+  const powTexture = useAssets(s => s.powTexture)
 
   useEffect(() => {
     setScaleFactor(0.5 + Math.random() / 2)

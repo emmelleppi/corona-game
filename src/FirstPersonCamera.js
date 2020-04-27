@@ -1,48 +1,28 @@
-import React, { useCallback, useEffect, useRef, Suspense, useMemo, useState } from "react";
+import React, { useCallback, useEffect, Suspense, useState, useRef } from "react";
 import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
 import useSound from 'use-sound'
 
-import { COLLISION_GROUP, useLife, useCorona, usePlayer } from "./store";
+import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi, CORONA_STATUS, coronaApi } from "./store";
 import BaseballBat from "./BaseballBat";
-import { PointerLockControls } from "./PointerLockControls";
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
-import lerp from "lerp";
-import * as easing from './utility/easing'
+import GestureHandler from "./GestureHandler";
 
-(function () { Math.clamp = function (a, b, c) { return Math.max(b, Math.min(c, a)); } })();
-
-
-const WALKING_STEP = 0.2;
 const JUMP_IMPULSE = 10;
 const VELOCITY = 40
 const BOOST_FACTOR = 4
 
-function FirstPersonCamera(props) {
-  const { position, callbacks } = props;
-  const { scene, setDefaultCamera, size } = useThree();
+function PhyPlayer(props) {
+  const { position } = props;
 
-  const [playJumpSfx] = useSound(jumpSfx)
-  const [playBoostSfx] = useSound(boostSfx)
-
-  const aspect = useMemo(() => new THREE.Vector2(size.width, size.height), [size])
-
-  const [boost, setBoost] = useState(false)
-
-  const keyCodeRef = useRef([]);
-  const controls = useRef();
-  const camera = useRef();
-  const jump = useRef(false);
-  const walking = useRef(0);
-  const onCollide = useRef()
-
-  const { decrease } = useLife(s => s)
-  const coronas = useCorona(s => s.coronas)
-  const setPlayerApi = usePlayer(s => s.setPlayerApi)
-  const setPlayerBody = usePlayer(s => s.setPlayerBody)
+  const { camera } = useThree() 
   
+  const actions = usePlayer(s => s.actions)
+
+  const { left, right, forward, backward, jump, boost } = useInteraction(s => s)
+
   const [mybody, api] = useSphere(() => ({
     mass: 1,
     args: 0.1,
@@ -59,7 +39,7 @@ function FirstPersonCamera(props) {
     args: [0.2, 0.1, 0.5, 32],
     collisionFilterGroup: COLLISION_GROUP.CHEST,
     collisionFilterMask: COLLISION_GROUP.CORONA,
-    onCollide: e => onCollide.current(e)
+    onCollide: e => handleCollide(e)
   }));
 
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
@@ -73,207 +53,111 @@ function FirstPersonCamera(props) {
       const { type, id } = body?.userData
 
       if (type === COLLISION_GROUP.CORONA) {
+        const coronas = coronaApi.getState().coronas
+        
+        const { status } = coronas?.filter(item => item.id === id)?.[0]
 
-        const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
-
-        if (isAttacking) {
+        if (status === CORONA_STATUS.ATTACK) {
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
-          decrease(absVelocity)
+          actions.decreaseLife(absVelocity)
         }
       }
     },
-    [decrease, coronas]
+    [actions]
   )
 
-  const onDocumentKeyDown = useCallback(
-    function onDocumentKeyDown(event) {
-      const keyCode = event.which;
-      if ([87, 83].includes(keyCode)) {
-        keyCodeRef.current.push(keyCode);
-      }
-      if ([65, 68].includes(keyCode)) {
-        keyCodeRef.current.push(keyCode);
-      }
-      if (keyCode === 32) {
-        jump.current = true;
-      }
-      if (keyCode === 16) {
-        setBoost(true)
-      }
-    },
-    [keyCodeRef, jump, setBoost]
-  );
-
-  const onDocumentKeyUp = useCallback(
-    function onDocumentKeyUp(event) {
-      const keyCode = event.which;
-      keyCodeRef.current = keyCodeRef.current.filter(x => x !== keyCode);
-      if (keyCode === 16) {
-        setBoost(false)
-      }
-    },
-    [keyCodeRef, setBoost]
-  );
-
-  const lockPointerLock = useCallback(
-    function lockPointerLock() {
-      if (controls.current) {
-        controls.current.lock();
-      }
-    },
-    [controls]
-  );
-
-  useEffect(() => {
-    if (boost) {
-      playBoostSfx()
-    }
-  }, [boost, playBoostSfx])
-
-  useEffect(() => void setPlayerApi(api), [setPlayerApi, api])
-  useEffect(() => void setPlayerBody(chest), [setPlayerBody, chest])
-
-  useEffect(() => {
-    onCollide.current = handleCollide
-  }, [onCollide, handleCollide])
-
-  useEffect(() => {
-    setDefaultCamera(camera.current);
-
-    const canvas = document.getElementsByTagName("canvas")[0];
-    controls.current = new PointerLockControls(camera.current, canvas);
-    canvas.addEventListener("click", () => lockPointerLock(), false);
-
-    const obj = controls.current.getObject();
-    scene.add(obj);
-
-    document.addEventListener("keydown", onDocumentKeyDown, false);
-    document.addEventListener("keyup", onDocumentKeyUp, false);
-
-    return () => {
-      canvas.removeEventListener("click", lockPointerLock);
-      document.removeEventListener("keydown", onDocumentKeyDown);
-      document.removeEventListener("keyup", onDocumentKeyUp);
-      scene.remove(obj);
-    };
-  }, [
-    camera,
-    setDefaultCamera,
-    controls,
-    scene,
-    lockPointerLock,
-    onDocumentKeyDown,
-    onDocumentKeyUp
-  ]);
+  useEffect(() => void actions.init(chest, api), [actions, chest, api])
+  useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.4, z)), [api, chestLockApi])
 
   useFrame(() => {
-    let x = 0;
-    let y = 0;
-
-    camera.current.updateMatrixWorld();
+    mybody.current.layers.enable(1)
 
     const direction = new THREE.Vector3();
-    camera.current.getWorldDirection(direction);
+    camera.getWorldDirection(direction);
 
-    if (keyCodeRef.current.includes(87)) {
+    let x = 0;
+    let y = 0;
+  
+    if (backward) {
       x += direction.z;
       y += -direction.x;
-    } else if (keyCodeRef.current.includes(83)) {
+    } else if (forward) {
       x += -direction.z;
       y += direction.x;
     }
-    if (keyCodeRef.current.includes(65)) {
+    if (left) {
       x += -direction.x;
       y += -direction.z;
-    } else if (keyCodeRef.current.includes(68)) {
+    } else if (right) {
       x += direction.x;
       y += direction.z;
     }
-
+  
     x = Math.min(1, Math.max(x, -1));
     y = Math.min(1, Math.max(y, -1));
-
-    if (x !== 0 || y !== 0) {
-
-      const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
-
-      api.angularVelocity.set(velocity * x, 0, velocity * y);
-
-      if (walking.current === 0) {
-        walking.current = WALKING_STEP;
-      }
-
-    } else if (walking.current > 0) {
-
-      api.angularVelocity.set(0, 0, 0);
-
-    }
-
-    if (jump.current && mybody.current.position.y < 0.4) {
-      api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
-      playJumpSfx();
-      jump.current = false
-    }
-
-    if (walking.current > 0) {
-      walking.current += WALKING_STEP;
-    }
-
-    chestLockApi.position.set(
-      mybody.current.position.x,
-      mybody.current.position.y + .4,
-      mybody.current.position.z
-    )
-
-    camera.current.position.set(
-      mybody.current.position.x,
-      mybody.current.position.y +
-      0.5 +
-      (0.05 * (1 - Math.cos(walking.current))) / 2,
-      mybody.current.position.z
-    );
-
-    if (walking.current > 2 * Math.PI) {
-      walking.current = 0;
-    }
-  });
-
-  const handleV = React.useCallback(
-    function handleV(varr) {
-      const v = Math.floor(new THREE.Vector3(...varr).length() * 10) / 10
-      const fov = lerp(70, 90, easing.easeOutQuad(v / 12))
-
-      camera.current.fov = fov
-      camera.current.updateProjectionMatrix()
-    },
-    []
-  )
   
-  useEffect(() => api.velocity.subscribe(handleV), [api, handleV])
-
-  useFrame(() => void (mybody.current.layers.enable(1)))
+    if (x !== 0 || y !== 0) {
+      const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
+      api.angularVelocity.set(velocity * x, 0, velocity * y);
+    } else {
+      api.angularVelocity.set(0, 0, 0);
+    }
+  
+    if (jump && mybody.current.position.y < 0.4) {
+      api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
+    }
+  })
 
   return (
     <>
-      <perspectiveCamera ref={camera} args={[60, aspect, .1, 300]} >
-        <Suspense fallback={null}>
-          <BaseballBat callbacks={callbacks} position={[0.1, -0.3, -0.5]} rotation={[0, 0, 0]} />
-        </Suspense>
-        <mesh position={[0, 0, -1]} rotation={[Math.PI / 2, 0, 0]}>
-          <planeBufferGeometry attach="geometry" args={[10, 10]} />
-          <meshBasicMaterial attach="material" color="red" opacity={1} transparent side={THREE.DoubleSide} />
-        </mesh>
-      </perspectiveCamera>
-
       <mesh ref={mybody} />
       <mesh ref={chestLock} />
       <mesh ref={chest} userData={{ type: COLLISION_GROUP.CHEST }} >
         <cylinderBufferGeometry attach="geometry" args={[0.15, 0.05, 0.5, 32]} />
         <meshBasicMaterial attach="material" transparent opacity={0} />
       </mesh>
+      <Player />
     </>
   );
 }
 
-export default FirstPersonCamera;
+function Player() {
+  const [hasJump, setHasJump] = useState(false)
+  const [hasBoost, setHasBoost] = useState(false)
+
+  const [playJumpSfx] = useSound(jumpSfx)
+  const [playBoostSfx] = useSound(boostSfx)
+
+  const onSubscribe = useCallback(
+    function onSubscribe({ jump, boost }) {
+      if (jump && !hasJump) {
+        playJumpSfx()
+        setHasJump(true)
+      }
+      if (!jump && hasJump) {
+        setHasJump(false)
+      }
+      if (boost && !hasBoost) {
+        playBoostSfx()
+        setHasBoost(true)
+      }
+      if (!boost && hasBoost) {
+        setHasBoost(false)
+      }
+    },
+    [hasJump, setHasJump, hasBoost, setHasBoost]
+  )
+
+  useEffect(() => interactionApi.subscribe(onSubscribe), [interactionApi, , playBoostSfx, playJumpSfx])
+
+  return (
+    <GestureHandler>
+      <Suspense fallback={null}>
+        <BaseballBat position={[0.1, -0.3, -0.5]} />
+      </Suspense>
+    </GestureHandler>
+  )
+}
+
+export default PhyPlayer;

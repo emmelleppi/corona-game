@@ -1,22 +1,22 @@
-import React, { useCallback, useRef, Suspense } from "react";
+import React, { useCallback, useRef, Suspense, useEffect } from "react";
 import { Canvas, useThree, createPortal } from "react-three-fiber";
 
 import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
 import Lights from "./Lights";
 import Hud from "./Hud";
+import { useInteraction } from "./store";
 
 import "./styles.css";
 
-function Main(props) {
-  const { callbacks } = props
+function Main() {
   const { scene } = useThree();
 
   return createPortal(
     <>
       <fog attach="fog" args={[0x333333, 0.08]} />
       <Lights />
-      <PhysicWorld callbacks={callbacks} />
+      <PhysicWorld />
       <Effects />
     </>,
     scene
@@ -24,13 +24,11 @@ function Main(props) {
 }
 
 function App() {
-  const callbacks = useRef([]);
+  const callbacks = useInteraction(s => s.callbacks)
 
   const handleClick = useCallback(
     function handleClick(e) {
-      if (callbacks.current) {
-        callbacks.current.map(f => f(e));
-      }
+        callbacks.map(f => f(e));
     },
     [callbacks]
   );
@@ -43,7 +41,7 @@ function App() {
           camera={{ position: [0, 100, 0] }}
           onClick={handleClick}
         >
-          <Main callbacks={callbacks} />
+          <Main />
           <Hud />
         </Canvas>
       </Suspense>
