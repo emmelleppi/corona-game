@@ -11,7 +11,7 @@ import { useBox } from "use-cannon";
 import * as THREE from "three";
 import useSound from "use-sound";
 
-import { useOutline, usePlayer, useCorona, COLLISION_GROUP, useInteraction } from "./store"
+import { useOutline, usePlayer, useCorona, COLLISION_GROUP, useInteraction, coronaApi, CORONA_STATUS } from "./store"
 import playerHitSfx from './sounds/Player_Hit.wav'
 
 const batMovements = {
@@ -43,7 +43,7 @@ function PhyBaseballBat(props) {
   const onCollide = useRef()
   const [] = useSound(playerHitSfx)
 
-  const { decreaseLife } = usePlayer(s => s.actions)
+  const actions = usePlayer(s => s.actions)
   const coronas = useCorona(s => s.coronas)
 
   const [mybody, api] = useBox(() => ({
@@ -67,17 +67,22 @@ function PhyBaseballBat(props) {
       const { type, id } = body?.userData
 
       if (type === COLLISION_GROUP.CORONA) {
-        const { isAttacking } = coronas?.filter(item => item.id === id)?.[0]
+        const coronas = coronaApi.getState().coronas
+        const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
 
-        if (isAttacking) {
-          const { impactVelocity } = contact
-          const absVelocity = Math.abs(impactVelocity)
-          decreaseLife(absVelocity)
+        const { store } = collidingCorona
+        const [_, api] = store
+
+        const { status } = api.getState()
+
+        if (status === CORONA_STATUS.ATTACK) {
+          // const { impactVelocity } = contact
+          // const absVelocity = Math.abs(impactVelocity)
+          actions.decreaseLife(10)
         }
-
       }
     },
-    [decreaseLife, coronas]
+    [actions]
   )
 
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])

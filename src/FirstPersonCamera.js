@@ -65,8 +65,8 @@ function PhyPlayer(props) {
         const { status } = api.getState()
 
         if (status === CORONA_STATUS.ATTACK) {
-          const { impactVelocity } = contact
-          const absVelocity = Math.abs(impactVelocity)
+          // const { impactVelocity } = contact
+          // const absVelocity = Math.abs(impactVelocity)
           actions.decreaseLife(10)
         }
       }
