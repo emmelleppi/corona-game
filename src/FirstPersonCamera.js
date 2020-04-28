@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, Suspense, useState, useRef } from "react";
+import React, { useCallback, useEffect, Suspense, useState } from "react";
 import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
@@ -49,6 +49,8 @@ function PhyPlayer(props) {
   const handleCollide = useCallback(
     function handleCollide(e) {
       const { body, contact } = e
+
+      if (!body) return
 
       const { type, id } = body?.userData
 
@@ -146,10 +148,10 @@ function Player() {
         setHasBoost(false)
       }
     },
-    [hasJump, setHasJump, hasBoost, setHasBoost]
+    [hasJump, setHasJump, hasBoost, setHasBoost, playBoostSfx, playJumpSfx]
   )
 
-  useEffect(() => interactionApi.subscribe(onSubscribe), [interactionApi, , playBoostSfx, playJumpSfx])
+  useEffect(() => interactionApi.subscribe(onSubscribe), [onSubscribe])
 
   return (
     <GestureHandler>

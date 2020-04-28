@@ -61,6 +61,9 @@ function PhyBaseballBat(props) {
   const handleCollide = useCallback(
     function handleCollide(e) {
       const { body, contact } = e
+      
+      if (!body) return
+      
       const { type, id } = body?.userData
 
       if (type === COLLISION_GROUP.CORONA) {
