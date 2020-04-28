@@ -28,7 +28,7 @@ function App() {
 
   const handleClick = useCallback(
     function handleClick(e) {
-        callbacks.map(f => f(e));
+      callbacks.map(f => f(e));
     },
     [callbacks]
   );

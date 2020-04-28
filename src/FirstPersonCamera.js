@@ -17,8 +17,8 @@ const BOOST_FACTOR = 4
 function PhyPlayer(props) {
   const { position } = props;
 
-  const { camera } = useThree() 
-  
+  const { camera } = useThree()
+
   const actions = usePlayer(s => s.actions)
 
   const { left, right, forward, backward, jump, boost } = useInteraction(s => s)
@@ -54,15 +54,20 @@ function PhyPlayer(props) {
 
       const { type, id } = body?.userData
 
+
       if (type === COLLISION_GROUP.CORONA) {
         const coronas = coronaApi.getState().coronas
-        
-        const { status } = coronas?.filter(item => item.id === id)?.[0]
+        const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
+
+        const { store } = collidingCorona
+        const [_, api] = store
+
+        const { status } = api.getState()
 
         if (status === CORONA_STATUS.ATTACK) {
           const { impactVelocity } = contact
           const absVelocity = Math.abs(impactVelocity)
-          actions.decreaseLife(absVelocity)
+          actions.decreaseLife(10)
         }
       }
     },
@@ -80,7 +85,7 @@ function PhyPlayer(props) {
 
     let x = 0;
     let y = 0;
-  
+
     if (backward) {
       x += direction.z;
       y += -direction.x;
@@ -95,17 +100,17 @@ function PhyPlayer(props) {
       x += direction.x;
       y += direction.z;
     }
-  
+
     x = Math.min(1, Math.max(x, -1));
     y = Math.min(1, Math.max(y, -1));
-  
+
     if (x !== 0 || y !== 0) {
       const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
       api.angularVelocity.set(velocity * x, 0, velocity * y);
     } else {
       api.angularVelocity.set(0, 0, 0);
     }
-  
+
     if (jump && mybody.current.position.y < 0.4) {
       api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
     }

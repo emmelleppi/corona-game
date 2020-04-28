@@ -23,7 +23,7 @@ function Sprite(props) {
     return (
         <mesh position={IconPosition} visible={visible} >
             <boxBufferGeometry attach="geometry" args={IconSize} />
-            <meshStandardMaterial transparent opacity={opacity} attach="material" map={spriteTexture} alphaMap={spriteTexture} />
+            <meshBasicMaterial transparent opacity={opacity} attach="material" map={spriteTexture} alphaMap={spriteTexture} />
         </mesh>
     )
 }

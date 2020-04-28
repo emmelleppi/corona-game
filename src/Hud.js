@@ -3,6 +3,7 @@ import { useFrame, createPortal } from "react-three-fiber";
 import * as THREE from "three";
 
 import SpeedLines from "./hud/SpeedLines";
+import Health from "./hud/Health";
 
 function Hud() {
     const [scene] = useState(() => new THREE.Scene())
@@ -36,7 +37,7 @@ function Hud() {
     return createPortal(
         <>
             <Suspense fallback={null}>
-                <ambientLight intensity={1} />
+                <Health />
                 <SpeedLines />
             </Suspense>
         </>,
