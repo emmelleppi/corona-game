@@ -33,7 +33,7 @@ const batMovements = {
     t: 15,
     spring: {
       rotation: [Math.PI / 2, -Math.PI / 24, -Math.PI],
-      position: [0, 0, 0]
+      position: [0.3, 0, 0]
     }
   },
   idle: { t: 90 }
@@ -133,11 +133,7 @@ function BaseballBat(props) {
 
   useEffect(() => void setAttacked(true), [life])
 
-  useEffect(() => {
-    if (attacked) {
-      setTimeout(() => setAttacked(false), 200)
-    }
-  }, [attacked])
+  useEffect(() => void (attacked && setTimeout(() => setAttacked(false), 200)), [attacked])
 
   useEffect(() => void addCallback(handleClick), [handleClick, addCallback]);
 
