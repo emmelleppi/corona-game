@@ -5,6 +5,7 @@
   "keywords": [],
   "main": "src/index.js",
   "dependencies": {
+    "gsap": "^3.2.6",
     "immer": "^6.0.3",
     "lerp": "^1.0.3",
     "react": "16.12.0",
