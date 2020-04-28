@@ -7,6 +7,7 @@ import { getRandomUnity } from './utility/math';
 export const INITIAL_LIFE = 100
 const NUMBER_OF_SPAWNS = 20
 const NUMBER_OF_MAP_BBOX = 15
+const ORIENTATION_THRESHOLD = 0.5
 
 export const CORONA_STATUS = {
     IDLE: 0,
@@ -113,29 +114,28 @@ export const [useCorona, coronaApi] = create((set, get) => ({
                     const { actions } = get();
                     const { mapBBoxes } = mapApi.getState()
 
-                    const position = []
+                    let position = null
 
                     do {
                         const bbox = mapBBoxes[Math.round(Math.random() * (mapBBoxes.length - 1))]
                         const x = bbox.min.x + (bbox.max.x - bbox.min.x) * Math.random()
                         const z = bbox.min.z + (bbox.max.z - bbox.min.z) * Math.random()
-        
                         if (actions.isIntersect([x, 1, z])) {
-                            position.push(x, 0.6, z)
+                            position = [x, 0.6, z]
                         }
-                    } while(position.length === 0)
+                    } while(!position)
         
                     state.coronas.push({
                         id: uuidv4(),
                         initPosition: position,
-                        store: createNewCorona(get)
+                        store: createNewCorona(get),
                     })
                 }
               )
             );
         },
         removeCorona(id) {
-            set(produce(state => void (state.coronas = state.coronas.filter(x => x.id !== id))))
+            set(produce(state => void (state.coronas =  state.coronas.filter(x => x.id !== id))))
         },
     },
 }))
@@ -146,7 +146,7 @@ function createNewCorona(getManager) {
         status: CORONA_STATUS.IDLE,
         orientation: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
         isUnderAttack: false,
-        ref: null,
+        seekAlert: false,
         actions: {
             decreaseLife(x) {
                 set(produce(state => {
@@ -164,40 +164,47 @@ function createNewCorona(getManager) {
             },
             setIsUnderAttack() {
                 const callback = get().actions.resetIsUnderAttack
-                set(produce(state => void (state.isUnderAttack = true)))
+                set({ isUnderAttack: true })
                 setTimeout(() => callback(), 300)
             },
-            resetIsUnderAttack() {
-                set(produce(state => void (state.isUnderAttack = false)))
+            resetIsUnderAttack() { set({ isUnderAttack: false }) },
+            setSeekAlert() {
+                const callback = get().actions.resetSeekAlert
+                set({ seekAlert: true })
+                setTimeout(() => callback(), 1000)
             },
+            resetSeekAlert() { set({ seekAlert: false }) },
             handleAttack(damage) {
                 const isPlayerAttacking = playerApi.getState().isAttacking
     
                 if (isPlayerAttacking) {
                     const actions = get().actions
                     actions.decreaseLife(damage)
-                    // actions.setIsUnderAttack()
+                    actions.setIsUnderAttack()
                 }
-            },
-            setRef(ref) {
-                set(produce(state => void (state.ref = ref)))
             },
             updateSeekingOrientation(position) {
                 const { status } = get()
+                
                 if (status === CORONA_STATUS.SEEKING) {
-                    const { actions, ref } = get()
-                    const { x, y, z } = ref.current.position
+                    const player = playerApi.getState().playerBody
+                    const { actions, orientation } = get()
+                    const { x, y, z } = position
     
                     const dir = new THREE.Vector3()
-                    dir.subVectors(new THREE.Vector3(...position), new THREE.Vector3(x, y, z)).normalize();
+                    dir.subVectors(player.current.position, new THREE.Vector3(x, y, z)).normalize();
                     dir.y = 0
-                    actions.setOrientation(dir.clone())
+                    const diff = new THREE.Vector3().subVectors(orientation, dir)
+
+                    if (diff.length() > ORIENTATION_THRESHOLD) {
+                        actions.setOrientation(dir.clone())
+                    }
                 }
             },
-            update() {
+            update(position) {
                 const { isIntersect } = getManager().actions
-                const { ref, orientation, status, actions } = get()
-                const { x, y, z } = ref.current.position
+                const { orientation, status, actions } = get()
+                const { x, y, z } = position
 
                 if (isIntersect([x + orientation.x / 25, y, z + orientation.z / 25])) {
                     
@@ -213,7 +220,9 @@ function createNewCorona(getManager) {
 
                         if (status !== CORONA_STATUS.SEEKING) {
                             actions.setStatus(CORONA_STATUS.SEEKING)
+                            actions.setSeekAlert()
                         }
+                        actions.updateSeekingOrientation(position)
 
                     } else {
                         if (status !== CORONA_STATUS.IDLE) {
