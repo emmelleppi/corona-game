@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, Suspense, useEffect } from "react";
+import React, { useCallback, Suspense } from "react";
 import { Canvas, useThree, createPortal } from "react-three-fiber";
 
 import PhysicWorld from "./PhysicWorld";

@@ -54,7 +54,7 @@ function Effects() {
     })
 
     return () => clearTimeout(timeout)
-  }, [glitch, playerApi, currLife])
+  }, [glitch, currLife])
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [composer,size])
   
