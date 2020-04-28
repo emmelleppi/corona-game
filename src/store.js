@@ -18,13 +18,11 @@ export const CORONA_STATUS = {
 
 export const COLLISION_GROUP = {
     CORONA: 1,
-    WALLS: 2,
     TILES: 4,
     BODY: 8,
     CHEST: 16,
     BAT: 32,
 }
-
 
 export const [useInteraction, interactionApi] = create((set, get) => ({
     forward: false,
