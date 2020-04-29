@@ -30,7 +30,7 @@ function PhyCorona(props) {
   const time = useRef(0)
   const attackPosition = useRef()
 
-  const { playerBody } = playerApi.getState()
+  const { playerBody, isAttacking: isPlayerAttacking } = playerApi.getState()
 
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
     args: 0.2,
@@ -38,7 +38,7 @@ function PhyCorona(props) {
     position: initPosition,
     type: "Kinematic",
     collisionFilter: COLLISION_GROUP.CORONA,
-    collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.TILES,
+    collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT,
     onCollide: e => onCollide.current(e)
   }))
 
@@ -48,7 +48,8 @@ function PhyCorona(props) {
       const { contact, body } = e
       const { ni } = contact
       
-      if (body?.userData?.type === COLLISION_GROUP.BAT) {
+      if (body?.userData?.type === COLLISION_GROUP.BAT && isPlayerAttacking) {
+
         coronaBodyApi.rotation.set(
           coronaBody.current.rotation.x + ni[0],
           coronaBody.current.rotation.y + ni[1],
@@ -74,10 +75,11 @@ function PhyCorona(props) {
         }
 
         _handleAttack()
+
       }
 
     },
-    [life, playerBody, coronaBody, coronaBodyApi, _handleAttack]
+    [isPlayerAttacking, life, playerBody, coronaBody, coronaBodyApi, _handleAttack]
   )
   useEffect(() => void (onCollide.current = handleCollide), [handleCollide, onCollide])
 

@@ -1,6 +1,5 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { useLoader, useResource } from 'react-three-fiber'
 import { useConvexPolyhedron } from "use-cannon";
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry'
