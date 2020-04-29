@@ -23,8 +23,8 @@ function PhyCorona(props) {
   const { id, initPosition, store } = props
   const [useMyCorona] = store
 
-  const { status, orientation, actions, isUnderAttack, seekAlert } = useMyCorona(s => s)
   const removeCorona = useCorona(s => s.actions.removeCorona)
+  const { life, status, orientation, actions, isUnderAttack, seekAlert } = useMyCorona(s => s)
   const { setStatus, handleAttack: _handleAttack, update } = actions
 
   const time = useRef(0)
@@ -38,29 +38,48 @@ function PhyCorona(props) {
     position: initPosition,
     type: "Kinematic",
     collisionFilter: COLLISION_GROUP.CORONA,
-    collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
-    onCollide: e => handleCollide(e)
+    collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.TILES,
+    onCollide: e => onCollide.current(e)
   }))
 
+  const onCollide = useRef()
   const handleCollide = useCallback(
     function handleCollide(e) {
-
       const { contact, body } = e
       const { ni } = contact
-
-      coronaBodyApi.rotation.set(
-        coronaBody.current.rotation.x + ni[0],
-        coronaBody.current.rotation.y + ni[1],
-        coronaBody.current.rotation.z + ni[2]
-      )
-
+      
       if (body?.userData?.type === COLLISION_GROUP.BAT) {
+        coronaBodyApi.rotation.set(
+          coronaBody.current.rotation.x + ni[0],
+          coronaBody.current.rotation.y + ni[1],
+          coronaBody.current.rotation.z + ni[2]
+        )
+
+        const dir = new THREE.Vector3()
+        dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
+        
+        if (life > 0) {
+
+          coronaBodyApi.velocity.set(-10 * dir.x, 0,  -10 * dir.z)
+          setTimeout(() => coronaBodyApi.velocity.set(0, 0, 0), 100);
+
+        } else {
+
+          const x = -50 * (dir.x + (0.5 * Math.random() * (Math.random() > 0.5 ? -1 : +1)))
+          const y = Math.random()
+          const z = -50 * (dir.z + (0.5 * Math.random() * (Math.random() > 0.5 ? -1 : +1)))
+          
+          coronaBodyApi.velocity.set(x, y, z)
+          
+        }
+
         _handleAttack()
       }
 
     },
-    [coronaBody, coronaBodyApi, _handleAttack]
+    [life, playerBody, coronaBody, coronaBodyApi, _handleAttack]
   )
+  useEffect(() => void (onCollide.current = handleCollide), [handleCollide, onCollide])
 
   const handleAttack = useCallback(
     function handleAttack() {
@@ -99,18 +118,6 @@ function PhyCorona(props) {
     [time, coronaBody, coronaBodyApi, setStatus, playerBody, coronaBody]
   )
 
-  const handleDeath = useCallback(
-    function handleDeath() {
-      const dir = new THREE.Vector3()
-      dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
-      const x = -50 * (dir.x + (0.5 * Math.random() * (Math.random() > 0.5 ? -1 : +1)))
-      const y = Math.random()
-      const z = -50 * (dir.z + (0.5 * Math.random() * (Math.random() > 0.5 ? -1 : +1)))
-      coronaBodyApi.velocity.set(x, y, z)
-    },
-    [coronaBody, coronaBodyApi, playerBody]
-  )
-
   const onFrame = useCallback(
     function onFrame() {
 
@@ -135,8 +142,6 @@ function PhyCorona(props) {
     },
     [coronaBody, coronaBodyApi, initPosition, handleAttack, orientation, update, status]
   )
-
-  useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [handleDeath, status])
 
   useFrame(onFrame)
 

@@ -142,7 +142,7 @@ export const [useCorona, coronaApi] = create((set, get) => ({
 
 function createNewCorona(getManager) {
     return create((set, get) => ({
-        life: 5,
+        life: 3,
         status: CORONA_STATUS.IDLE,
         orientation: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
         isUnderAttack: false,
