@@ -114,7 +114,6 @@ function Map() {
         <ConvexPolyBody position={position} material={outerMaterial} geometry={nodes.Curve042.geometry} name="Curve042" />
       </group>
 
-      <Sky />
     </>
   );
 }

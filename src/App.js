@@ -5,6 +5,8 @@ import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
 import Lights from "./Lights";
 import Hud from "./Hud";
+import Sky from './Sky'
+
 import { useInteraction } from "./store";
 
 import "./styles.css";
@@ -18,6 +20,7 @@ function Main() {
       <Lights />
       <PhysicWorld />
       <Effects />
+      <Sky />
     </>,
     scene
   );
