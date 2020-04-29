@@ -3360,6 +3360,15 @@ dotenv@6.2.0:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-6.2.0.tgz#941c0410535d942c8becf28d3f357dbd9d476064"
   integrity sha512-HygQCKUBSFl8wKQZBSemMywRWcEDNidvNbjGVyZu3nbZ8qq9ubiPoGLMdRDpfSrpkkm9BXYFkpKxxFX38o/76w==
 
+drei@^0.0.16:
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/drei/-/drei-0.0.16.tgz#7c86a42b745703a71dc2bed57c2ef426d5eb46eb"
+  integrity sha512-D4wK0ppPMN1N2ZCgKtn3xAO4Rt0PnEgxIAEoYeLv71EXlInV6tFR/bV2UR/MNTMCD4JxrLkX7rCYcbJyAmESaQ==
+  dependencies:
+    "@babel/runtime" "^7.9.2"
+    postprocessing "^6.13.3"
+    react-merge-refs "^1.0.0"
+
 duplexer@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/duplexer/-/duplexer-0.1.1.tgz#ace6ff808c1ce66b57d1ebf97977acb02334cfc1"
@@ -7598,6 +7607,11 @@ postcss@^7.0.0, postcss@^7.0.1, postcss@^7.0.14, postcss@^7.0.17, postcss@^7.0.2
     chalk "^2.4.2"
     source-map "^0.6.1"
     supports-color "^6.1.0"
+
+postprocessing@^6.13.3:
+  version "6.13.3"
+  resolved "https://registry.yarnpkg.com/postprocessing/-/postprocessing-6.13.3.tgz#37ce789bd3107763e0adae5646ef2994bbd37a26"
+  integrity sha512-u+ynPbv+9S7a6HXfQGtKCoN58gVepTL8jR8LDiKAA8tKDthDg6lxS4QM4VSl5Q2Q3/eRIiL6XB3mLkve8LTKuw==
 
 prelude-ls@~1.1.2:
   version "1.1.2"
