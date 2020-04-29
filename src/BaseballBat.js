@@ -46,7 +46,7 @@ function PhyBaseballBat(props) {
   const actions = usePlayer(s => s.actions)
 
   const [mybody, api] = useBox(() => ({
-    args: [0.03, 0.3, 0.03],
+    args: [0.05, 1, 0.05],
     mass: 1,
     material: { friction: 1, restitution: 1 },
     linearDamping: 1,
@@ -149,8 +149,7 @@ function BaseballBat(props) {
 
     } else if (time.current === end.t) {
 
-      set({ ...end.spring });
-      resetAttacking()
+      set({ ...end.spring, onRest: resetAttacking });
       
     } else if (time.current > idle.t) {
 
@@ -187,7 +186,7 @@ function BaseballBat(props) {
 
       <group ref={batGroupRef} {...allTheRest} rotation={[Math.PI / 2, 0, 0]} dispose={null}>
         <a.group scale={[0.02, 0.12, 0.02]} {...spring} >
-          <mesh position={[0, 2.5, 0]} ref={batRef} />
+          <mesh position={[0, 0, 0]} ref={batRef} />
           <mesh material={metalMaterial} geometry={nodes.Cylinder_1.geometry} />
           <mesh material={handleMaterial} geometry={nodes.Cylinder_0.geometry} />
           <mesh material={handleMaterial} geometry={nodes.Cylinder_2.geometry} />
