@@ -10,6 +10,7 @@ import { a, useSpring } from "react-spring/three";
 import { useBox } from "use-cannon";
 import * as THREE from "three";
 import useSound from "use-sound";
+import { draco } from 'drei'
 
 import { useOutline, usePlayer, useCorona, COLLISION_GROUP, useInteraction, coronaApi, CORONA_STATUS } from "./store"
 import playerHitSfx from './sounds/Player_Hit.wav'
@@ -105,15 +106,7 @@ function BaseballBat(props) {
   const life = usePlayer(s => s.life)
   const { addCallback } = useInteraction(s => s.actions)
 
-  const { nodes } = useLoader(
-    GLTFLoader,
-    "/baseball_bat.glb",
-    loader => {
-      const dracoLoader = new DRACOLoader();
-      dracoLoader.setDecoderPath("/draco-gltf/");
-      loader.setDRACOLoader(dracoLoader);
-    }
-  );
+  const { nodes } = useLoader(GLTFLoader, "/baseball_bat.glb", draco());
 
   const [spring, set] = useSpring(() => ({
     ...batMovements.end.spring,
