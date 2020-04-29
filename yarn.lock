@@ -1277,6 +1277,11 @@
     "@svgr/plugin-svgo" "^4.0.3"
     loader-utils "^1.1.0"
 
+"@timohausmann/quadtree-js@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@timohausmann/quadtree-js/-/quadtree-js-1.2.1.tgz#11f8d55ea9a884684a45d1b2ce14f2e26850c461"
+  integrity sha512-eA2iI9ucRMfbuGbcMNknjYBi2218zeYrhkzNMQETIEHoLl1RTsyC96M24s1wAGd1HeGMtZ6IPqWf1hZUoByznA==
+
 "@types/babel__core@^7.1.0":
   version "7.1.6"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.1.6.tgz#16ff42a5ae203c9af1c6e190ed1f30f83207b610"
