@@ -19,7 +19,7 @@ function PhyPlayer(props) {
 
   const { camera } = useThree()
 
-  const actions = usePlayer(s => s.actions)
+  const { actions, playerBody } = usePlayer(s => s)
 
   const { left, right, forward, backward, jump, boost } = useInteraction(s => s)
 
@@ -40,7 +40,7 @@ function PhyPlayer(props) {
     collisionFilterGroup: COLLISION_GROUP.CHEST,
     collisionFilterMask: COLLISION_GROUP.CORONA,
     onCollide: e => handleCollide(e)
-  }));
+  }), playerBody);
 
   const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
 
@@ -72,7 +72,7 @@ function PhyPlayer(props) {
     [actions]
   )
 
-  useEffect(() => void actions.init(chest, api), [actions, chest, api])
+  useEffect(() => void actions.init(api), [actions, api])
   useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.4, z)), [api, chestLockApi])
 
   useFrame(() => {
