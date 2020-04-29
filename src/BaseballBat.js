@@ -44,11 +44,9 @@ function PhyBaseballBat(props) {
   const [] = useSound(playerHitSfx)
 
   const actions = usePlayer(s => s.actions)
-  const coronas = useCorona(s => s.coronas)
 
   const [mybody, api] = useBox(() => ({
     args: [0.03, 0.3, 0.03],
-    type: "Kinematic",
     mass: 1,
     material: { friction: 1, restitution: 1 },
     linearDamping: 1,
@@ -60,7 +58,7 @@ function PhyBaseballBat(props) {
 
   const handleCollide = useCallback(
     function handleCollide(e) {
-      const { body, contact } = e
+      const { body } = e
       
       if (!body) return
       
@@ -76,8 +74,6 @@ function PhyBaseballBat(props) {
         const { status } = api.getState()
 
         if (status === CORONA_STATUS.ATTACK) {
-          // const { impactVelocity } = contact
-          // const absVelocity = Math.abs(impactVelocity)
           actions.decreaseLife(10)
         }
       }

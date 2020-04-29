@@ -142,15 +142,15 @@ export const [useCorona, coronaApi] = create((set, get) => ({
 
 function createNewCorona(getManager) {
     return create((set, get) => ({
-        life: 1,
+        life: 5,
         status: CORONA_STATUS.IDLE,
         orientation: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
         isUnderAttack: false,
         seekAlert: false,
         actions: {
-            decreaseLife(x) {
+            decreaseLife() {
                 set(produce(state => {
-                    state.life -= x
+                    state.life -= 1
                     if (state.life < 0) {
                         state.status = CORONA_STATUS.DEAD
                     }
@@ -174,12 +174,12 @@ function createNewCorona(getManager) {
                 setTimeout(() => callback(), 1000)
             },
             resetSeekAlert() { set({ seekAlert: false }) },
-            handleAttack(damage) {
+            handleAttack() {
                 const isPlayerAttacking = playerApi.getState().isAttacking
 
                 if (isPlayerAttacking) {
                     const actions = get().actions
-                    actions.decreaseLife(damage)
+                    actions.decreaseLife()
                     actions.setIsUnderAttack()
                 }
             },
