@@ -5,6 +5,8 @@
   "keywords": [],
   "main": "src/index.js",
   "dependencies": {
+    "@timohausmann/quadtree-js": "^1.2.1",
+    "drei": "^0.0.16",
     "gsap": "^3.2.6",
     "immer": "^6.0.3",
     "lerp": "^1.0.3",

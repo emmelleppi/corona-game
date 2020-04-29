@@ -7,7 +7,6 @@ import { useFrame, useResource } from 'react-three-fiber'
 import { useSphere, useParticle, useLockConstraint } from 'use-cannon';
 import { useSpring, a, config } from 'react-spring/three';
 import * as THREE from "three";
-import lerp from "lerp"
 import useSound from 'use-sound'
 
 import HitSfx from './sounds/Player_Hit.wav'
@@ -21,24 +20,28 @@ const ATTACK_DURATION = 10
 
 function PhyCorona(props) {
   const { id, initPosition, store } = props
+
   const [useMyCorona] = store
-
-  const { status, orientation, actions, isUnderAttack, seekAlert } = useMyCorona(s => s)
-  const removeCorona = useCorona(s => s.actions.removeCorona)
+  const { ref, status, orientation, actions, isUnderAttack, seekAlert } = useMyCorona(s => s)
   const { setStatus, handleAttack: _handleAttack, update } = actions
-
+  
+  const removeCorona = useCorona(s => s.actions.removeCorona)
+  
   const time = useRef(0)
   const attackPosition = useRef()
 
-  const { playerBody } = playerApi.getState()
+  const { playerBody, isAttacking: isPlayerAttacking } = playerApi.getState()
 
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
     args: 0.2,
-    mass: 0.2,
+    mass: 1,
     position: initPosition,
+    material: { friction: 0, restitution: 0.2 },
+    linearDamping: 0.1,
+    angularDamping: 0.1,
     collisionFilter: COLLISION_GROUP.CORONA,
     collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
-    onCollide: e => handleCollide(e)
+    onCollide: e => onCollide.current(e)
   }))
 
   const [lock, lockApi] = useParticle(() => ({
@@ -47,67 +50,61 @@ function PhyCorona(props) {
     material: { friction: 0, restitution: 0.2 },
     linearDamping: 0.1,
     angularDamping: 0.1,
-    type: "Kinetic"
-  }))
+  }), ref)
 
   const [, , { disable }] = useLockConstraint(coronaBody, lock)
 
+  const onCollide = useRef()
   const handleCollide = useCallback(
     function handleCollide(e) {
 
       const { contact, body } = e
-      const { impactVelocity, ni } = contact
-
-      coronaBodyApi.rotation.set(
-        coronaBody.current.rotation.x + ni[0],
-        coronaBody.current.rotation.y + ni[1],
-        coronaBody.current.rotation.z + ni[2]
-      )
-
-      if (body?.userData?.type === COLLISION_GROUP.BAT) {
-        const absVelocity = Math.abs(impactVelocity)
-        _handleAttack(absVelocity)
+      
+      if (body?.userData?.type === COLLISION_GROUP.BAT && isPlayerAttacking) {
+        const { rj } = contact
+        const vel = rj.map(x => x * 100)
+        lockApi.angularVelocity.set(...vel)
+        setTimeout(() => lockApi.angularVelocity.set(0,0,0), 500)
+        _handleAttack()
       }
 
     },
-    [coronaBody, coronaBodyApi, _handleAttack]
+    [time, isPlayerAttacking, lockApi,lock, _handleAttack]
   )
+  useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
 
   const handleAttack = useCallback(
-    function handleAttack() {
+    function handleAttack() {   
 
       if (time.current === 0) {
+      
+        const dir = new THREE.Vector3()
+        dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
 
-        attackPosition.current = [
-          new THREE.Vector3(playerBody.current.position.x, coronaBody.current.position.y, playerBody.current.position.z),
-          coronaBody.current.position.clone()
-        ]
-
-      } else if (time.current < ATTACK_DURATION * 2) {
-
-        const { x, y, z } = attackPosition.current[time.current < ATTACK_DURATION ? 0 : 1]
-
-        lockApi.position.set(
-          lerp(lock.current.position.x, x, 0.2),
-          lerp(lock.current.position.y, y, 0.2),
-          lerp(lock.current.position.z, z, 0.2)
-        )
+        const { x, y, z } = dir.multiplyScalar(0.75).add(coronaBody.current.position)
+        lockApi.position.set(x, y, z)
 
       }
 
-      if (time.current === ATTACK_DURATION * 4) {
+      if (time.current === ATTACK_DURATION) {
+        
+        const { x, y, z } = attackPosition.current
+        lockApi.position.set(x, y, z)
+        setStatus(CORONA_STATUS.PRE_ATTACK)
 
-        setStatus(CORONA_STATUS.SEEKING)
+      }
+
+      if (time.current === ATTACK_DURATION * 8) {
+        
         time.current = 0
-
+      
       } else {
-
+        
         time.current += 1
 
       }
-
     },
-    [time, lock, lockApi, setStatus, playerBody, coronaBody]
+    [time, lock, lockApi, setStatus, playerBody, attackPosition]
   )
 
   const handleDeath = useCallback(
@@ -126,15 +123,14 @@ function PhyCorona(props) {
   const onFrame = useCallback(
     function onFrame() {
 
-      if (status === CORONA_STATUS.DEAD) return
-
-      update(lock.current.position)
+      if ([CORONA_STATUS.DEAD, CORONA_STATUS.PRE_ATTACK].includes(status)) return
 
       if (status === CORONA_STATUS.ATTACK) {
 
         handleAttack()
 
       } else {
+        attackPosition.current = lock.current.position.clone()
 
         const velocityFactor = status === CORONA_STATUS.IDLE ? 1 / 50 : 1 / 30
         lockApi.position.set(
@@ -142,7 +138,6 @@ function PhyCorona(props) {
           initPosition[1],
           lock.current.position.z + orientation.z * velocityFactor
         )
-
       }
     },
     [lock, lockApi, initPosition, handleAttack, orientation, update, status]
@@ -151,8 +146,6 @@ function PhyCorona(props) {
   useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [handleDeath, status])
 
   useFrame(onFrame)
-
-
 
   return (
     <>

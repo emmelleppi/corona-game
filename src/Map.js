@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { useLoader, useResource } from 'react-three-fiber'
 import { useConvexPolyhedron } from "use-cannon";
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry'
 import * as THREE from "three";
+import { draco } from 'drei'
 
 import { COLLISION_GROUP, useMap } from "./store"
 import Sky from "./Sky";
@@ -36,11 +36,7 @@ function Map() {
   const group = useRef()
   const addMapItem = useMap(s => s.addMapItem)
 
-  const { nodes } = useLoader(GLTFLoader, '/map.glb', loader => {
-    const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderPath('/draco-gltf/')
-    loader.setDRACOLoader(dracoLoader)
-  })
+  const { nodes } = useLoader(GLTFLoader, '/map.glb', draco())
 
   const position = [0, 0, 0]
 

@@ -3,6 +3,8 @@ import produce from "immer"
 import * as THREE from "three";
 import { v4 as uuidv4 } from "uuid";
 import { getRandomUnity } from './utility/math';
+import { createRef } from "react"
+import Quadtree from '@timohausmann/quadtree-js';
 
 export const INITIAL_LIFE = 100
 const NUMBER_OF_SPAWNS = 20
@@ -12,8 +14,9 @@ const ORIENTATION_THRESHOLD = 0.5
 export const CORONA_STATUS = {
     IDLE: 0,
     SEEKING: 1,
-    ATTACK: 2,
-    DEAD: 3
+    PRE_ATTACK: 2,
+    ATTACK: 3,
+    DEAD: 4
 }
 
 export const COLLISION_GROUP = {
@@ -75,11 +78,11 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
 export const [usePlayer, playerApi] = create((set) => ({
     life: INITIAL_LIFE,
     isAttacking: false,
-    playerBody: null,
+    playerBody: createRef(),
     playerApi: null,
     actions: {
-        init(playerBody, playerApi) {
-            set({ playerBody, playerApi })
+        init(playerApi) {
+            set({ playerApi })
         },
         decreaseLife(x) {
             set(produce(state => void (state.life -= Math.floor(Math.random(0, x) * 2) + x)))
@@ -142,22 +145,31 @@ export const [useCorona, coronaApi] = create((set, get) => ({
 
 function createNewCorona(getManager) {
     return create((set, get) => ({
-        life: 1,
+        life: 3,
         status: CORONA_STATUS.IDLE,
         orientation: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
         isUnderAttack: false,
         seekAlert: false,
+        ref: createRef(),
         actions: {
-            decreaseLife(x) {
+            decreaseLife() {
                 set(produce(state => {
-                    state.life -= x
+                    state.life -= 1
                     if (state.life < 0) {
                         state.status = CORONA_STATUS.DEAD
                     }
                 }))
             },
-            setStatus(status) {
-                set(produce(state => void (state.status = status)))
+            setStatus(newStatus) {
+                const { status, actions } = get()
+                if (status !== newStatus) {
+
+                    set({ status: newStatus })
+
+                    if (newStatus === CORONA_STATUS.SEEKING) {
+                        actions.setSeekAlert()
+                    }
+                }
             },
             setOrientation(orientation) {
                 set(produce(state => void (state.orientation = orientation)))
@@ -171,64 +183,51 @@ function createNewCorona(getManager) {
             setSeekAlert() {
                 const callback = get().actions.resetSeekAlert
                 set({ seekAlert: true })
-                setTimeout(() => callback(), 1000)
+                setTimeout(() => callback(), 5000)
             },
             resetSeekAlert() { set({ seekAlert: false }) },
-            handleAttack(damage) {
+            handleAttack() {
                 const isPlayerAttacking = playerApi.getState().isAttacking
 
                 if (isPlayerAttacking) {
                     const actions = get().actions
-                    actions.decreaseLife(damage)
+                    actions.decreaseLife()
                     actions.setIsUnderAttack()
                 }
             },
-            updateSeekingOrientation(position) {
-                const { status } = get()
+            updateSeekingOrientation() {
+                const { ref } = get()
 
-                if (status === CORONA_STATUS.SEEKING) {
-                    const player = playerApi.getState().playerBody
-                    const { actions, orientation } = get()
-                    const { x, y, z } = position
+                const player = playerApi.getState().playerBody
+                const { actions, orientation } = get()
 
-                    const dir = new THREE.Vector3()
-                    dir.subVectors(player.current.position, new THREE.Vector3(x, y, z)).normalize();
-                    dir.y = 0
-                    const diff = new THREE.Vector3().subVectors(orientation, dir)
+                const dir = new THREE.Vector3()
+                dir.subVectors(player.current.position, ref.current.position).normalize();
+                dir.y = 0
+                const diff = new THREE.Vector3().subVectors(orientation, dir)
 
-                    if (diff.length() > ORIENTATION_THRESHOLD) {
-                        actions.setOrientation(dir.clone())
-                    }
+                if (diff.length() > ORIENTATION_THRESHOLD) {
+                    actions.setOrientation(dir.clone())
                 }
             },
-            update(position) {
+            update() {
                 const { isIntersect } = getManager().actions
-                const { orientation, status, actions } = get()
-                const { x, y, z } = position
+                const { ref, orientation, status, actions } = get()
+                const { x, y, z } = ref.current.position
 
                 if (isIntersect([x + orientation.x / 25, y, z + orientation.z / 25])) {
+                    
+                    if ([CORONA_STATUS.SEEKING, CORONA_STATUS.PRE_ATTACK].includes(status)) {
+                        const player = playerApi.getState().playerBody
+                        const line = new THREE.Line3(player.current.position, new THREE.Vector3(x, y, z))
+                        const distance = line.distance()
 
-                    const player = playerApi.getState().playerBody
-                    const line = new THREE.Line3(player.current.position, new THREE.Vector3(x, y, z))
-                    const distance = line.distance()
-
-                    if (distance < 1 && status !== CORONA_STATUS.ATTACK) {
-
-                        actions.setStatus(CORONA_STATUS.ATTACK)
-
-                    } else if (distance >= 1 && distance < 4) {
-
-                        if (status !== CORONA_STATUS.SEEKING) {
-                            actions.setStatus(CORONA_STATUS.SEEKING)
-                            actions.setSeekAlert()
+                        if (distance < 1) {
+                            actions.setStatus(CORONA_STATUS.ATTACK)
+                        } else {
+                            actions.updateSeekingOrientation()
                         }
-                        actions.updateSeekingOrientation(position)
-
-                    } else {
-                        if (status !== CORONA_STATUS.IDLE) {
-                            actions.setStatus(CORONA_STATUS.IDLE)
-                        }
-                    }
+                    } 
 
                 } else {
 
@@ -244,20 +243,77 @@ function createNewCorona(getManager) {
 export const [useMap, mapApi] = create(set => ({
     mapItems: [],
     mapBBoxes: [],
-    addMapItem: x => set(produce(({ mapItems, mapBBoxes }) => {
+    mapBBox: new THREE.Box3(),
+    addMapItem: x => set(produce(({ mapBBox, mapItems, mapBBoxes }) => {
 
         const box = new THREE.Box3();
         x.geometry.computeBoundingBox();
         box.copy(x.geometry.boundingBox).applyMatrix4(x.matrixWorld);
-
+        
         mapItems.push(x)
         mapBBoxes.push(box)
+        mapBBox.union(box)
 
         if (mapItems.length === NUMBER_OF_MAP_BBOX) {
             const { actions } = coronaApi.getState()
+            const { initQuadtree } = quadtreeApi.getState()
             actions.initCoronas()
+            initQuadtree()
         }
     })),
+}))
+
+export const [useQuadtree, quadtreeApi] = create((set, get) => ({
+    tree: null,
+    initQuadtree() {
+        const { mapBBox } = mapApi.getState()
+        const { min, max } = mapBBox
+
+        const tree = new Quadtree({
+            x: 0,
+            y: 0,
+            width: max.x - min.x,
+            height: max.z - min.z,
+        }, 4);
+
+        set({ tree })
+    },
+    update() {
+        const { tree } = get()
+        const { coronas } = coronaApi.getState()
+
+        tree.clear();
+        
+        for(let i = 0; i < coronas.length; i++) {
+            const { store, id } = coronas[i]
+            const { ref } = store[1].getState()
+            const { x = 0, z = 0 } = ref?.current?.position
+
+            tree.insert({
+                id,
+                x: x,
+                y: z,
+                width : 1,
+                height : 1,
+            });
+        }
+
+        const { x = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
+        const candidates = tree.retrieve({ x: x, y: z, width: 1, height: 1 })
+        
+        coronas.forEach(({ id, store }) => {
+
+            const { actions, status } = store[1].getState()
+            const { setStatus, update } = actions
+            const isCandidate = candidates.reduce((acc, candidate) => acc || id === candidate.id, false)
+
+            if (![CORONA_STATUS.PRE_ATTACK, CORONA_STATUS.ATTACK, CORONA_STATUS.DEAD].includes(status)) {
+                setStatus(isCandidate ? CORONA_STATUS.SEEKING : CORONA_STATUS.IDLE)
+            }
+
+            update()
+        }) 
+    }
 }))
 
 export const [useOutline, outlineApi] = create(set => ({

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useMemo } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useThree } from "react-three-fiber";
 import * as THREE from "three";
 
@@ -6,20 +6,19 @@ import { PointerLockControls } from "./PointerLockControls";
 import lerp from "lerp";
 import * as easing from './utility/easing'
 import { useInteraction, usePlayer } from "./store";
+import { PerspectiveCamera } from "drei";
 
 const WALKING_STEP = 0.2;
 
 function GestureHandler(props) {
     const { children } = props
 
-    const { scene, setDefaultCamera, size } = useThree();
+    const { scene, setDefaultCamera } = useThree();
 
     const walking = useRef(0);
     const controls = useRef();
     const camera = useRef();
     const api = usePlayer(s => s.playerApi)
-
-    const aspect = useMemo(() => new THREE.Vector2(size.width, size.height), [size])
 
     const { onDocumentKeyDown, onDocumentKeyUp } = useInteraction(s => s.actions)
 
@@ -103,9 +102,9 @@ function GestureHandler(props) {
     }, [api, camera])
 
     return(
-        <perspectiveCamera ref={camera} args={[60, aspect, .1, 300]} >
+        <PerspectiveCamera ref={camera} fov={70} >
             {children}
-        </perspectiveCamera>
+        </PerspectiveCamera>
     )
 }
 

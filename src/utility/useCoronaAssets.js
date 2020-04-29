@@ -1,21 +1,15 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 import { useLoader } from "react-three-fiber";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { draco } from 'drei'
 
 import { useAssets } from "../store";
 
 function useCoronaAssets() {
     // NODES
     const setCoronaNodes = useAssets(s => s.setCoronaNodes)
-    const { nodes } = useLoader(GLTFLoader, '/corona.glb',
-        loader => {
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath("/draco-gltf/");
-        loader.setDRACOLoader(dracoLoader);
-        }
-    )
+    const { nodes } = useLoader(GLTFLoader, '/corona.glb', draco())
     useEffect(() => void setCoronaNodes(nodes), [nodes, setCoronaNodes])
 
     // POW TEXTURE

@@ -1277,6 +1277,11 @@
     "@svgr/plugin-svgo" "^4.0.3"
     loader-utils "^1.1.0"
 
+"@timohausmann/quadtree-js@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@timohausmann/quadtree-js/-/quadtree-js-1.2.1.tgz#11f8d55ea9a884684a45d1b2ce14f2e26850c461"
+  integrity sha512-eA2iI9ucRMfbuGbcMNknjYBi2218zeYrhkzNMQETIEHoLl1RTsyC96M24s1wAGd1HeGMtZ6IPqWf1hZUoByznA==
+
 "@types/babel__core@^7.1.0":
   version "7.1.6"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.1.6.tgz#16ff42a5ae203c9af1c6e190ed1f30f83207b610"
@@ -3359,6 +3364,15 @@ dotenv@6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-6.2.0.tgz#941c0410535d942c8becf28d3f357dbd9d476064"
   integrity sha512-HygQCKUBSFl8wKQZBSemMywRWcEDNidvNbjGVyZu3nbZ8qq9ubiPoGLMdRDpfSrpkkm9BXYFkpKxxFX38o/76w==
+
+drei@^0.0.16:
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/drei/-/drei-0.0.16.tgz#7c86a42b745703a71dc2bed57c2ef426d5eb46eb"
+  integrity sha512-D4wK0ppPMN1N2ZCgKtn3xAO4Rt0PnEgxIAEoYeLv71EXlInV6tFR/bV2UR/MNTMCD4JxrLkX7rCYcbJyAmESaQ==
+  dependencies:
+    "@babel/runtime" "^7.9.2"
+    postprocessing "^6.13.3"
+    react-merge-refs "^1.0.0"
 
 duplexer@^0.1.1:
   version "0.1.1"
@@ -7598,6 +7612,11 @@ postcss@^7.0.0, postcss@^7.0.1, postcss@^7.0.14, postcss@^7.0.17, postcss@^7.0.2
     chalk "^2.4.2"
     source-map "^0.6.1"
     supports-color "^6.1.0"
+
+postprocessing@^6.13.3:
+  version "6.13.3"
+  resolved "https://registry.yarnpkg.com/postprocessing/-/postprocessing-6.13.3.tgz#37ce789bd3107763e0adae5646ef2994bbd37a26"
+  integrity sha512-u+ynPbv+9S7a6HXfQGtKCoN58gVepTL8jR8LDiKAA8tKDthDg6lxS4QM4VSl5Q2Q3/eRIiL6XB3mLkve8LTKuw==
 
 prelude-ls@~1.1.2:
   version "1.1.2"
