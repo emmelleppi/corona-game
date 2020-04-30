@@ -10,7 +10,7 @@ import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
 import GestureHandler from "./GestureHandler";
 
-const JUMP_IMPULSE = 10;
+const JUMP_IMPULSE = 8;
 const VELOCITY = 40
 const BOOST_FACTOR = 4
 
@@ -76,8 +76,6 @@ function PhyPlayer(props) {
   useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.4, z)), [api, chestLockApi])
 
   useFrame(() => {
-    mybody.current.layers.enable(1)
-
     const direction = new THREE.Vector3();
     camera.getWorldDirection(direction);
 
@@ -110,7 +108,7 @@ function PhyPlayer(props) {
     }
 
     if (jump && mybody.current.position.y < 0.4) {
-      api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
+      api.applyImpulse([2 * JUMP_IMPULSE * -y, JUMP_IMPULSE, 2 * JUMP_IMPULSE * x], [0, 0, 0]);
     }
   })
 
