@@ -10,7 +10,7 @@ const HEIGHT = WIDTH * 2;
 function ShaderSphere(props) {
   const ref = useRef();
   const args = useMemo(() => {
-    const color = new THREE.Color(0xd95b9a);
+    const color = new THREE.Color(0xa30a3f);
     const { r, g, b } = color;
     return {
       uniforms: {

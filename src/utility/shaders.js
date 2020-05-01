@@ -31,7 +31,7 @@ const fragmentShader = `
         vec2 i = floor( p );
         vec2 f = fract( p );
         
-        vec2 u = f*f*(3.0-2.0*f);
+        vec2 u = f * f * (3.0 - 2.0 * f);
 
         return mix( mix( random( i + vec2(0.0,0.0) ), 
                         random( i + vec2(1.0,0.0) ), u.x),
@@ -43,19 +43,17 @@ const fragmentShader = `
         float t = u_time;
         
         vec2 p = vUv - 0.5;
-        p.x=dot(p,p*2.0);
+        p.x = dot(p, p * 2.0);
         vec2 q = vec2(n(p));
         #define d p = vec2( n(vec2(p.x+cos(n(p+t)), p.y+sin(n(p+t)))) );
-        #define d2 p = abs(p+q/p-q) / dot(p, p)-n(q+t);
+        #define d2 p = abs(p + q / p - q) / dot(p, p) - n(q + t);
         d;
         d2;
         
-        
-        float c1 = float(pow(p-q, q/p));
+        float c1 = float(pow(p - q, q / p));
         
         float c = length(c1);
-        gl_FragColor = 0.9 * vec4(my_r, my_g, my_b, c);
-
+        gl_FragColor = 1.0 * vec4(my_r, my_g, my_b, 1.-c);
     }
 `;
 
