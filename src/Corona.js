@@ -227,10 +227,10 @@ const CoronaRenderer = React.memo(forwardRef(
           </Suspense>
 
           <group ref={rotationGroup} >
-            <mesh castShadow material={material} geometry={nodes?.Cube_0?.geometry} name="Cube_0" />
-            <mesh castShadow material={material} geometry={nodes?.Cube_1?.geometry} name="Cube_1" />
-            <mesh castShadow material={material} geometry={nodes?.Cube_2?.geometry} name="Cube_2" />
-            <mesh castShadow material={material} geometry={nodes?.Cube_3?.geometry} name="Cube_3" />
+            <mesh material={material} geometry={nodes?.Cube_0?.geometry} name="Cube_0" />
+            <mesh material={material} geometry={nodes?.Cube_1?.geometry} name="Cube_1" />
+            <mesh material={material} geometry={nodes?.Cube_2?.geometry} name="Cube_2" />
+            <mesh material={material} geometry={nodes?.Cube_3?.geometry} name="Cube_3" />
           </group>
 
         </group>
