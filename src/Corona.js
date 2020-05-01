@@ -24,9 +24,9 @@ function PhyCorona(props) {
   const [useMyCorona] = store
   const { ref, status, orientation, actions, isUnderAttack, seekAlert } = useMyCorona(s => s)
   const { setStatus, handleAttack: _handleAttack, update } = actions
-  
+
   const removeCorona = useCorona(s => s.actions.removeCorona)
-  
+
   const time = useRef(0)
   const attackPosition = useRef()
 
@@ -59,25 +59,25 @@ function PhyCorona(props) {
     function handleCollide(e) {
 
       const { contact, body } = e
-      
+
       if (body?.userData?.type === COLLISION_GROUP.BAT && isPlayerAttacking) {
         const { rj } = contact
         const vel = rj.map(x => x * 100)
         lockApi.angularVelocity.set(...vel)
-        setTimeout(() => lockApi.angularVelocity.set(0,0,0), 500)
+        setTimeout(() => lockApi.angularVelocity.set(0, 0, 0), 500)
         _handleAttack()
       }
 
     },
-    [time, isPlayerAttacking, lockApi,lock, _handleAttack]
+    [time, isPlayerAttacking, lockApi, lock, _handleAttack]
   )
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
 
   const handleAttack = useCallback(
-    function handleAttack() {   
+    function handleAttack() {
 
       if (time.current === 0) {
-      
+
         const dir = new THREE.Vector3()
         dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
 
@@ -87,7 +87,7 @@ function PhyCorona(props) {
       }
 
       if (time.current === ATTACK_DURATION) {
-        
+
         const { x, y, z } = attackPosition.current
         lockApi.position.set(x, y, z)
         setStatus(CORONA_STATUS.PRE_ATTACK)
@@ -95,11 +95,11 @@ function PhyCorona(props) {
       }
 
       if (time.current === ATTACK_DURATION * 8) {
-        
+
         time.current = 0
-      
+
       } else {
-        
+
         time.current += 1
 
       }
@@ -120,32 +120,27 @@ function PhyCorona(props) {
     [disable, coronaBody, coronaBodyApi, playerBody]
   )
 
-  const onFrame = useCallback(
-    function onFrame() {
-
-      if ([CORONA_STATUS.DEAD, CORONA_STATUS.PRE_ATTACK].includes(status)) return
-
-      if (status === CORONA_STATUS.ATTACK) {
-
-        handleAttack()
-
-      } else {
-        attackPosition.current = lock.current.position.clone()
-
-        const velocityFactor = status === CORONA_STATUS.IDLE ? 1 / 50 : 1 / 30
-        lockApi.position.set(
-          lock.current.position.x + orientation.x * velocityFactor,
-          initPosition[1],
-          lock.current.position.z + orientation.z * velocityFactor
-        )
-      }
-    },
-    [lock, lockApi, initPosition, handleAttack, orientation, update, status]
-  )
-
   useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [handleDeath, status])
 
-  useFrame(onFrame)
+  useFrame(function () {
+    if (
+      status === CORONA_STATUS.DEAD ||
+      status === CORONA_STATUS.PRE_ATTACK
+    ) return
+
+    if (status === CORONA_STATUS.ATTACK) {
+      handleAttack()
+    } else {
+      attackPosition.current = lock.current.position.clone()
+
+      const velocityFactor = status === CORONA_STATUS.IDLE ? 1 / 50 : 1 / 30
+      lockApi.position.set(
+        lock.current.position.x + orientation.x * velocityFactor,
+        initPosition[1],
+        lock.current.position.z + orientation.z * velocityFactor
+      )
+    }
+  })
 
   return (
     <>
@@ -183,6 +178,7 @@ const CoronaRenderer = React.memo(forwardRef(
   function CoronaRenderer(props, ref) {
     const { id, status, isUnderAttack, seekAlert, onDeathAnimEnd } = props
 
+
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
 
     const group = useRef()
@@ -206,12 +202,10 @@ const CoronaRenderer = React.memo(forwardRef(
     useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [status, handleDeath])
 
     useFrame(({ clock }) => {
-
       const multiplier = 10 * (status === CORONA_STATUS.SEEKING ? 2 : 1)
       group.current.position.copy(ref.current.position)
       rotationGroup.current.rotation.copy(ref.current.rotation)
       group.current.position.y += 0.1 * (Math.sin((clock.getElapsedTime() % (2 * Math.PI)) * multiplier + rand.current * 5))
-
     })
 
     return (

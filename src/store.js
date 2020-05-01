@@ -212,33 +212,38 @@ function createNewCorona(getManager) {
                 const player = playerApi.getState().playerBody
                 const { actions, orientation } = get()
 
-                const dir = new THREE.Vector3()
-                dir.subVectors(player.current.position, ref.current.position).normalize();
+                const dir = player.current.position.clone().sub(ref.current.position).normalize()
                 dir.y = 0
-                const diff = new THREE.Vector3().subVectors(orientation, dir)
+                const diff = dir.clone().sub(orientation)
 
                 if (diff.length() > ORIENTATION_THRESHOLD) {
-                    actions.setOrientation(dir.clone())
+                    actions.setOrientation(dir)
                 }
             },
-            update() {
+            update(isPlayer) {
                 const { isIntersect } = getManager().actions
                 const { ref, orientation, status, actions } = get()
+
+                if (status === CORONA_STATUS.DEAD) return
+
                 const { x, y, z } = ref.current.position
 
                 if (isIntersect([x + orientation.x / 25, y, z + orientation.z / 25])) {
-                    
-                    if ([CORONA_STATUS.SEEKING, CORONA_STATUS.PRE_ATTACK].includes(status)) {
+
+                    if (
+                        status === CORONA_STATUS.SEEKING ||
+                        status === CORONA_STATUS.PRE_ATTACK
+                    ) {
+
                         const player = playerApi.getState().playerBody
-                        const line = new THREE.Line3(player.current.position, new THREE.Vector3(x, y, z))
-                        const distance = line.distance()
+                        const distance = player.current.position.clone().distanceTo(ref.current.position)
 
                         if (distance < 1) {
                             actions.setStatus(CORONA_STATUS.ATTACK)
                         } else {
                             actions.updateSeekingOrientation()
                         }
-                    } 
+                    }
 
                 } else {
 
@@ -260,7 +265,7 @@ export const [useMap, mapApi] = create(set => ({
         const box = new THREE.Box3();
         x.geometry.computeBoundingBox();
         box.copy(x.geometry.boundingBox).applyMatrix4(x.matrixWorld);
-        
+
         mapItems.push(x)
         mapBBoxes.push(box)
         mapBBox.union(box)
@@ -294,36 +299,48 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
         const { coronas } = coronaApi.getState()
 
         tree.clear();
-        
-        for(let i = 0; i < coronas.length; i++) {
+
+        for (let i = 0; i < coronas.length; i++) {
             const { store, id } = coronas[i]
-            const { ref } = store[1].getState()
+            const { ref, status } = store[1].getState()
+
             const { x = 0, z = 0 } = ref?.current?.position
 
             tree.insert({
                 id,
-                x: x,
-                y: z,
-                width : 1,
-                height : 1,
+                x: x + 20,
+                y: z + 20,
+                width: 1,
+                height: 1,
             });
         }
 
         const { x = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
-        const candidates = tree.retrieve({ x: x, y: z, width: 1, height: 1 })
-        
-        coronas.forEach(({ id, store }) => {
+        const candidates = tree.retrieve({ x: x + 20, y: z + 20, width: 1, height: 1 })
 
+        for (let i = 0; i < coronas.length; i++) {
+            const { id, store } = coronas[i]
             const { actions, status } = store[1].getState()
             const { setStatus, update } = actions
-            const isCandidate = candidates.reduce((acc, candidate) => acc || id === candidate.id, false)
 
-            if (![CORONA_STATUS.PRE_ATTACK, CORONA_STATUS.ATTACK, CORONA_STATUS.DEAD].includes(status)) {
-                setStatus(isCandidate ? CORONA_STATUS.SEEKING : CORONA_STATUS.IDLE)
+            if (status === CORONA_STATUS.DEAD) {
+                update()
+            } else {
+                const isCandidate = candidates.findIndex(candidate => id === candidate.id) !== -1
+
+                if (
+                    status !== CORONA_STATUS.PRE_ATTACK &&
+                    status !== CORONA_STATUS.ATTACK
+                ) {
+                    setStatus(isCandidate ? CORONA_STATUS.SEEKING : CORONA_STATUS.IDLE)
+                }
+
+                update()
             }
 
-            update()
-        }) 
+
+        }
+
     }
 }))
 
