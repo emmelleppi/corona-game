@@ -1,11 +1,51 @@
-import React, { useRef, useState, useEffect } from "react"
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
 import { useFrame, useUpdate } from "react-three-fiber";
 import * as THREE from "three";
+import { vertexShader, fragmentShader } from "./utility/shaders";
 
 const TEXT = ["KILL", "THE", "CORONA", "STAY", "THE", "FUCK", "HOME!"];
 const WIDTH = Math.pow(2, 10);
 const HEIGHT = WIDTH * 2;
-const CANVAS_BG_COLOR = "#23213D";
+
+function ShaderSphere(props) {
+  const ref = useRef();
+  const args = useMemo(() => {
+    const color = new THREE.Color(0xd95b9a);
+    const { r, g, b } = color;
+    return {
+      uniforms: {
+        u_time: { type: "f", value: 0 },
+        my_r: { type: "f", value: r },
+        my_g: { type: "f", value: g },
+        my_b: { type: "f", value: b }
+      },
+      vertexShader,
+      fragmentShader
+    };
+  }, []);
+
+  const keepRockinTheAnimation = useCallback(
+    function keepRockinTheAnimation() {
+      ref.current.uniforms.u_time.value += 0.002;
+    },
+    [ref]
+  );
+
+  useFrame(keepRockinTheAnimation);
+
+  return (
+    <mesh {...props}>
+      <sphereBufferGeometry attach="geometry" args={[21, 32, 32]} />
+      <shaderMaterial
+        ref={ref}
+        attach="material"
+        args={[args]}
+        transparent
+        side={THREE.BackSide}
+      />
+    </mesh>
+  );
+}
 
 function Sky() {
   const time = useRef(0);
@@ -23,9 +63,6 @@ function Sky() {
     const ctx = canvas.getContext("2d");
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = CANVAS_BG_COLOR;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -68,8 +105,11 @@ function Sky() {
           fog={false}
           side={THREE.BackSide}
           attach="material"
+          transparent
+          alphaTest={0.5}
         />
       </mesh>
+      <ShaderSphere />
     </group>
   );
 }

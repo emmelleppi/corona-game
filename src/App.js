@@ -44,6 +44,7 @@ function App() {
           camera={{ position: [0, 100, 0] }}
           onClick={handleClick}
         >
+          <color attach="background" args={[0x673366]} />
           <Main />
           <Hud />
         </Canvas>
