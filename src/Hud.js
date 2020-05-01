@@ -4,8 +4,11 @@ import * as THREE from "three";
 
 import SpeedLines from "./hud/SpeedLines";
 import Health from "./hud/Health";
+import { useGame } from "./store";
 
 function Hud() {
+    const isGameStarted = useGame(s => s.isStarted)
+
     const [scene] = useState(() => new THREE.Scene())
     const [camera] = useState(() => {
 
@@ -36,10 +39,12 @@ function Hud() {
 
     return createPortal(
         <>
-            <Suspense fallback={null}>
-                <Health />
-                <SpeedLines />
-            </Suspense>
+            {isGameStarted && (
+                <Suspense fallback={null}>
+                    <Health />
+                    <SpeedLines />
+                </Suspense>
+            )}
         </>,
         scene
     );
