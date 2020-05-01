@@ -9,12 +9,14 @@ import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
+import { WaterPass } from "./post/waterPass";
 
 import { outlineApi, playerApi, INITIAL_LIFE } from "./store";
 
 const OUTLINE_COLOR = 0xffffff;
 
 extend({
+  WaterPass,
   EffectComposer,
   RenderPass,
   OutlinePass,
@@ -31,6 +33,7 @@ function Effects() {
   const composer = useRef();
   const outline = useRef();
   const glitch = useRef();
+  const water = useRef();
   const currLife = React.useRef(INITIAL_LIFE)
 
   useEffect(() => void (glitch.current.factor = 0), [glitch])
@@ -58,7 +61,17 @@ function Effects() {
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [composer,size])
   
-  useFrame(({ gl }) => void ((gl.autoClear = true), composer.current.render()), 1)
+  useFrame(({ gl }) => {
+    const { playerBody } = playerApi.getState()
+    if (playerBody.current) {
+      const { y } = playerBody.current.position
+      if (y < 0) {
+        water.current.factor = -y / 10
+      }
+    }
+    gl.autoClear = true
+    composer.current.render()
+  }, 1)
 
   return (
     <effectComposer ref={composer} args={[gl]}>
@@ -74,6 +87,7 @@ function Effects() {
         hiddenEdgeColor={new THREE.Color(OUTLINE_COLOR)}
         overlayMaterial-blending={THREE.SubtractiveBlending}
       />
+      <waterPass attachArray="passes" factor={0} ref={water} />
       <glitchPass attachArray="passes" renderToScreen ref={glitch} />
       <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />
       <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
