@@ -28,7 +28,7 @@ function GestureHandler(props) {
         time.current += boost ? 1 : -1
         time.current = Math.min(Math.max(time.current, 0), 25)
         if (time.current >= 0 && time.current <= 25) {
-            const fov = lerp(70, 120, easing.easeOutQuad(time.current / 25))
+            const fov = lerp(70, 100, easing.easeOutQuad(time.current / 25))
             camera.current.fov = fov
             camera.current.updateProjectionMatrix()
         }
