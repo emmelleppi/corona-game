@@ -238,7 +238,7 @@ function createNewCorona(getManager) {
                     actions.setOrientation(dir)
                 }
             },
-            update(isPlayer) {
+            update() {
                 const { isIntersect } = getManager().actions
                 const { ref, orientation, status, actions } = get()
 
@@ -315,50 +315,53 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
     update() {
         const { tree } = get()
         const { coronas } = coronaApi.getState()
+        const { isStarted } = gameApi.getState()
 
-        tree.clear();
+        if (!isStarted) {
 
-        for (let i = 0; i < coronas.length; i++) {
-            const { store, id } = coronas[i]
-            const { ref, status } = store[1].getState()
-
-            const { x = 0, z = 0 } = ref?.current?.position
-
-            tree.insert({
-                id,
-                x: x + 20,
-                y: z + 20,
-                width: 1,
-                height: 1,
-            });
-        }
-
-        const { x = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
-        const candidates = tree.retrieve({ x: x + 20, y: z + 20, width: 1, height: 1 })
-
-        for (let i = 0; i < coronas.length; i++) {
-            const { id, store } = coronas[i]
-            const { actions, status } = store[1].getState()
-            const { setStatus, update } = actions
-
-            if (status === CORONA_STATUS.DEAD) {
-                update()
-            } else {
-                const isCandidate = candidates.findIndex(candidate => id === candidate.id) !== -1
-
-                if (
-                    status !== CORONA_STATUS.PRE_ATTACK &&
-                    status !== CORONA_STATUS.ATTACK
-                ) {
-                    setStatus(isCandidate ? CORONA_STATUS.SEEKING : CORONA_STATUS.IDLE)
-                }
-
+            for (let i = 0; i < coronas.length; i++) {
+                const { store } = coronas[i]
+                const { actions } = store[1].getState()
+                const { update } = actions
                 update()
             }
 
+        } else {
+            
+            tree.clear();
+    
+            for (let i = 0; i < coronas.length; i++) {
+                const { store, id } = coronas[i]
+                const { ref } = store[1].getState()
+    
+                const { x = 0, z = 0 } = ref?.current?.position
+    
+                tree.insert({
+                    id,
+                    x: x + 20,
+                    y: z + 20,
+                    width: 1,
+                    height: 1,
+                });
+            }
+    
+            const { x = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
+            const candidates = tree.retrieve({ x: x + 20, y: z + 20, width: 1, height: 1 })
+    
+            for (let i = 0; i < coronas.length; i++) {
+                const { id, store } = coronas[i]
+                const { actions, status } = store[1].getState()
+                const { setStatus, update } = actions
+    
+                if (status === CORONA_STATUS.SEEKING || status === CORONA_STATUS.IDLE) {
+                    const isCandidate = candidates.findIndex(candidate => id === candidate.id) !== -1
+                    setStatus(isCandidate ? CORONA_STATUS.SEEKING : CORONA_STATUS.IDLE)
+                }
+                update()
+    
+            }
 
         }
-
     }
 }))
 

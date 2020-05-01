@@ -8,6 +8,7 @@ function CoronaManager() {
     useCoronaAssets()
     const coronas = useCorona(s => s.coronas)
     const update = useQuadtree(s => s.update)
+    
     useFrame(update)
 
     return coronas.map(({ id, initPosition, store }) => <Corona key={id} id={id} initPosition={initPosition} store={store} />)
