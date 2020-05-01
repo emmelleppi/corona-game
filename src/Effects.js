@@ -34,6 +34,7 @@ function Effects() {
   const outline = useRef();
   const glitch = useRef();
   const water = useRef();
+  const vignette = useRef();
   const currLife = React.useRef(INITIAL_LIFE)
 
   useEffect(() => void (glitch.current.factor = 0), [glitch])
@@ -67,6 +68,8 @@ function Effects() {
       const { y } = playerBody.current.position
       if (y < 0) {
         water.current.factor = -y / 10
+        vignette.current.uniforms.offset.value = 0.95 + y / 10
+        vignette.current.uniforms.darkness.value = 1.6 - y / 10
       }
     }
     gl.autoClear = true
@@ -90,7 +93,7 @@ function Effects() {
       <waterPass attachArray="passes" factor={0} ref={water} />
       <glitchPass attachArray="passes" renderToScreen ref={glitch} />
       <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />
-      <shaderPass attachArray="passes" args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
+      <shaderPass attachArray="passes" ref={vignette} args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
       <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0005} />
     </effectComposer>
   );
