@@ -9,6 +9,7 @@ const HEIGHT = WIDTH * 2;
 
 function ShaderSphere(props) {
   const ref = useRef();
+  const matRef = useRef();
   const args = useMemo(() => {
     const color = new THREE.Color(0xa30a3f);
     const { r, g, b } = color;
@@ -23,21 +24,20 @@ function ShaderSphere(props) {
       fragmentShader
     };
   }, []);
-
-  const keepRockinTheAnimation = useCallback(
-    function keepRockinTheAnimation() {
-      ref.current.uniforms.u_time.value += 0.002;
-    },
-    [ref]
-  );
-
-  useFrame(keepRockinTheAnimation);
+    
+  useFrame(() => {
+    ref.current.rotation.x += 0.001;
+    ref.current.rotation.y += 0.001;
+    ref.current.rotation.z += 0.001;
+    matRef.current.uniforms.u_time.value += 0.0001;
+      
+  });
 
   return (
-    <mesh {...props}>
+    <mesh ref={ref} {...props}>
       <sphereBufferGeometry attach="geometry" args={[21, 32, 32]} />
       <shaderMaterial
-        ref={ref}
+        ref={matRef}
         attach="material"
         args={[args]}
         transparent

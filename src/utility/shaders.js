@@ -21,39 +21,21 @@ const fragmentShader = `
     uniform float my_b;
     varying vec2 vUv;
 
-    float random (in vec2 st) { 
-        return fract(sin(dot(st.xy,vec2(12.9898,78.233)))
-            * 43758.5453123);
-    }
-
-    float n( in vec2 p )
-    {
-        vec2 i = floor( p );
-        vec2 f = fract( p );
-        
-        vec2 u = f * f * (3.0 - 2.0 * f);
-
-        return mix( mix( random( i + vec2(0.0,0.0) ), 
-                        random( i + vec2(1.0,0.0) ), u.x),
-                    mix( random( i + vec2(0.0,1.0) ), 
-                        random( i + vec2(1.0,1.0) ), u.x), u.y);
+    float circle(in vec2 _st, in float _radius, in float t){
+        vec2 dist = _st - vec2(0.5 * sin(t), 0.5 * cos(t));
+        return 1. - smoothstep(_radius - (_radius * 0.858),
+                             _radius + (_radius * 0.01),
+                             dot(dist, dist) * 4.0);
     }
 
     void main( void ) {
         float t = u_time;
         
-        vec2 p = vUv - 0.5;
-        p.x = dot(p, p * 2.0);
-        vec2 q = vec2(n(p));
-        #define d p = vec2( n(vec2(p.x+cos(n(p+t)), p.y+sin(n(p+t)))) );
-        #define d2 p = abs(p + q / p - q) / dot(p, p) - n(q + t);
-        d;
-        d2;
-        
-        float c1 = float(pow(p - q, q / p));
-        
-        float c = length(c1);
-        gl_FragColor = 1.0 * vec4(my_r, my_g, my_b, 1.-c);
+        vec2 p = 2.0 * (vUv - 0.5);
+        float color = circle(p, 0.01 + (sin(t * 10.0) + 1.0) * 0.2, t * 9.);
+        color += circle(p, 0.01 + (cos(t * 5.0) + 1.0) * 0.2, t * 6.);
+        color += circle(p, 0.01 + (sin(t * 2.0) + 1.0) * 0.2, t * 3.);
+        gl_FragColor = 1.0 * vec4(my_r, my_g, my_b, color);
     }
 `;
 
