@@ -6,11 +6,14 @@ import Map from "./Map";
 import CoronaManager from './CoronaManager'
 import { COLLISION_GROUP } from "./store";
 
+const PLAYER_INITIAL_POSITION = [0, 30, 10]
+
 function Trampoline() {
+  const [x, y, z] = PLAYER_INITIAL_POSITION
+
   const [planeBody] = useBox(() => ({
     args: [0.1, 0.1, 0.1],
-    rotation: [0, 0, 0],
-    position: [0, 29, 5],
+    position: [x, y-1, z],
     type: "Static",
     collisionFilterGroup: COLLISION_GROUP.TILES,
   }))
@@ -24,7 +27,7 @@ function PhysicWorld() {
 
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
-      <FirstPersonCamera position={[0, 30, 5]} />
+      <FirstPersonCamera position={PLAYER_INITIAL_POSITION} />
       <Trampoline />
       <Suspense fallback={null}>
         <Map />

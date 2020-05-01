@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useThree, useFrame } from "react-three-fiber";
-import * as THREE from "three";
 
 import { PointerLockControls } from "./PointerLockControls";
 import lerp from "lerp";
@@ -8,15 +7,12 @@ import * as easing from './utility/easing'
 import { usePlayer, useInteraction } from "./store";
 import { PerspectiveCamera } from "drei";
 
-const WALKING_STEP = 0.2;
-
 function GestureHandler(props) {
     const { children } = props
 
     const { scene, setDefaultCamera } = useThree();
 
     const time = useRef(0)
-    const walking = useRef(0);
     const controls = useRef();
     const camera = useRef();
     const api = usePlayer(s => s.playerApi)
@@ -33,29 +29,6 @@ function GestureHandler(props) {
             camera.current.updateProjectionMatrix()
         }
     })
-
-    const handleV = React.useCallback(
-        function handleV(varr) {
-            const [x,, z] = varr
-
-            const vel = new THREE.Vector2(x, z)
-
-            if (vel.length() > 0) {
-                if (walking.current === 0) {
-                    walking.current = WALKING_STEP;
-                }
-            } else {
-                if (walking.current > 0) {
-                    walking.current += WALKING_STEP;
-                }
-            
-                if (walking.current > 2 * Math.PI) {
-                    walking.current = 0;
-                }
-            }
-        },
-        [camera, walking]
-    )
     
     const lockPointerLock = useCallback(
         function lockPointerLock() {
@@ -91,17 +64,12 @@ function GestureHandler(props) {
             document.removeEventListener("keyup", onDocumentKeyUp);
         };
     }, [onDocumentKeyDown, onDocumentKeyUp]);
-      
-    useEffect(() => {
-        if (!api) return
-        return api.velocity.subscribe(handleV)
-    }, [api, handleV])
 
     useEffect(() => {
         if (api) {
             return api.position.subscribe(([x, y, z]) => void camera.current.position.set(
                 x,
-                y + 0.5 + (0.05 * (1 - Math.cos(walking.current))) / 2,
+                y + 0.2,
                 z
             ))
         }

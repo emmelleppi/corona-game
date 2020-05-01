@@ -10,9 +10,9 @@ import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
 import GestureHandler from "./GestureHandler";
 
-const JUMP_IMPULSE = 8;
-const VELOCITY = 40
-const BOOST_FACTOR = 4
+const JUMP_IMPULSE = 1.4;
+const VELOCITY = 12
+const BOOST_FACTOR = 3
 
 function PhyPlayer(props) {
   const { position } = props;
@@ -25,10 +25,9 @@ function PhyPlayer(props) {
 
   const [mybody, api] = useSphere(() => ({
     mass: 1,
-    args: 0.1,
+    args: 0.5,
     type: "Dynamic",
     position,
-    linearDamping: 0.9,
     angularDamping: 0.9,
     collisionFilterGroup: COLLISION_GROUP.BODY,
     collisionFilterMask: COLLISION_GROUP.TILES,
@@ -107,8 +106,8 @@ function PhyPlayer(props) {
       api.angularVelocity.set(0, 0, 0);
     }
 
-    if (jump && mybody.current.position.y < 0.4) {
-      api.applyImpulse([2 * JUMP_IMPULSE * -y, JUMP_IMPULSE, 2 * JUMP_IMPULSE * x], [0, 0, 0]);
+    if (jump && mybody.current.position.y < 1) {
+      api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
     }
   })
 
