@@ -27,6 +27,24 @@ export const COLLISION_GROUP = {
     BAT: 32,
 }
 
+export const [useGame, gameApi] = create((set, get) => ({
+    isStarted: false,
+    isStartAnimation: false,
+    pointerLock: null,
+    scene: null,
+    camera: null,
+    init() {
+    },
+    initGame() {
+        set({ isStartAnimation: true })
+        setTimeout(() => set({ isStarted: true }), 500) 
+    },
+    unmountPointerLock() {
+
+    }
+
+}))
+
 export const [useInteraction, interactionApi] = create((set, get) => ({
     forward: false,
     backward: false,

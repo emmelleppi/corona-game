@@ -28,6 +28,7 @@ function PhyPlayer(props) {
     args: 0.5,
     type: "Dynamic",
     position,
+    linearDamping: 0.3,
     angularDamping: 0.9,
     collisionFilterGroup: COLLISION_GROUP.BODY,
     collisionFilterMask: COLLISION_GROUP.TILES,
@@ -72,7 +73,7 @@ function PhyPlayer(props) {
   )
 
   useEffect(() => void actions.init(api), [actions, api])
-  useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.4, z)), [api, chestLockApi])
+  useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.1, z)), [api, chestLockApi])
 
   useFrame(() => {
     const direction = new THREE.Vector3();
