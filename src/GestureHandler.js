@@ -39,7 +39,7 @@ function GestureHandler(props) {
         [controls]
     );
 
-    useEffect(() => void (setDefaultCamera(camera.current)), [setDefaultCamera, camera])
+    useEffect(() => void (setDefaultCamera(camera.current), camera.current.lookAt(0, -1, -0.5)), [setDefaultCamera, camera])
 
     useEffect(() => {
         const canvas = document.getElementsByTagName("canvas")[0];
@@ -76,7 +76,7 @@ function GestureHandler(props) {
     }, [api, camera])
 
     return(
-        <PerspectiveCamera ref={camera}  >
+        <PerspectiveCamera ref={camera}   >
             {children}
         </PerspectiveCamera>
     )
