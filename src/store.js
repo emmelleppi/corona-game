@@ -50,7 +50,8 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
             }
 
             if (keyCode === 32) {
-                set({ jump: value })
+                const { isIntersect } = playerApi.getState().actions
+                set({ jump: value && isIntersect() })
             }
 
             if (keyCode === 16) {
@@ -75,14 +76,24 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
 }))
 
 
-export const [usePlayer, playerApi] = create((set) => ({
+export const [usePlayer, playerApi] = create((set, get) => ({
     life: INITIAL_LIFE,
     isAttacking: false,
     playerBody: createRef(),
     playerApi: null,
+    raycast: new THREE.Raycaster(),
     actions: {
         init(playerApi) {
             set({ playerApi })
+        },
+        isIntersect() {
+            const { raycast, playerBody } = get();
+            const { mapItems } = mapApi.getState()
+
+            raycast.set(playerBody.current.position, new THREE.Vector3(0, -1, 0))
+
+            const intersects = raycast.intersectObjects(mapItems);
+            return intersects?.length > 0
         },
         decreaseLife(x) {
             set(produce(state => void (state.life -= Math.floor(Math.random(0, x) * 2) + x)))
