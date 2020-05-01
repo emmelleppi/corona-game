@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import { useThree } from "react-three-fiber";
+import { useThree, useFrame } from "react-three-fiber";
 import * as THREE from "three";
 
 import { PointerLockControls } from "./PointerLockControls";
 import lerp from "lerp";
 import * as easing from './utility/easing'
-import { useInteraction, usePlayer } from "./store";
+import { usePlayer, useInteraction } from "./store";
 import { PerspectiveCamera } from "drei";
 
 const WALKING_STEP = 0.2;
@@ -15,21 +15,28 @@ function GestureHandler(props) {
 
     const { scene, setDefaultCamera } = useThree();
 
+    const time = useRef(0)
     const walking = useRef(0);
     const controls = useRef();
     const camera = useRef();
     const api = usePlayer(s => s.playerApi)
 
+    const { boost } = useInteraction(s => s)
     const { onDocumentKeyDown, onDocumentKeyUp } = useInteraction(s => s.actions)
+
+    useFrame(() => {
+        time.current += boost ? 1 : -1
+        time.current = Math.min(Math.max(time.current, 0), 25)
+        if (time.current >= 0 && time.current <= 25) {
+            const fov = lerp(70, 120, easing.easeOutQuad(time.current / 25))
+            camera.current.fov = fov
+            camera.current.updateProjectionMatrix()
+        }
+    })
 
     const handleV = React.useCallback(
         function handleV(varr) {
-            const [x, y, z] = varr
-            const v = Math.floor(new THREE.Vector3(x, y, z).length() * 10) / 10
-            const fov = lerp(70, 90, easing.easeOutQuad(v / 12))
-
-            camera.current.fov = fov
-            camera.current.updateProjectionMatrix()
+            const [x,, z] = varr
 
             const vel = new THREE.Vector2(x, z)
 
@@ -86,9 +93,8 @@ function GestureHandler(props) {
     }, [onDocumentKeyDown, onDocumentKeyUp]);
       
     useEffect(() => {
-        if (api) {
-            return api.velocity.subscribe(handleV)
-        }
+        if (!api) return
+        return api.velocity.subscribe(handleV)
     }, [api, handleV])
 
     useEffect(() => {
@@ -102,7 +108,7 @@ function GestureHandler(props) {
     }, [api, camera])
 
     return(
-        <PerspectiveCamera ref={camera} fov={70} >
+        <PerspectiveCamera ref={camera}  >
             {children}
         </PerspectiveCamera>
     )
