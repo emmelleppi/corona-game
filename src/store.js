@@ -30,22 +30,25 @@ export const COLLISION_GROUP = {
 export const [useGame, gameApi] = create((set, get) => ({
   isStarted: false,
   isStartAnimation: false,
-  pointerLock: null,
-  scene: null,
-  camera: null,
   win: false,
+  coronaSub: null,
   init() {
 
   },
   initGame() {
     set({ isStartAnimation: true })
     setTimeout(() => set({ isStarted: true }), 500)
-  },
-  unmountPointerLock() {
-
+    const coronaSub = coronaApi.subscribe(({ coronas }) => {
+      if (coronas.length === 0) {
+        const { win } = get()
+        win()
+      }
+    })
+    set({ coronaSub })
   },
   win() {
-    console.log('win win win win')
+    const { initCoronas } = coronaApi.getState().actions
+    initCoronas()
   }
 
 }))
@@ -172,13 +175,7 @@ export const [useCorona, coronaApi] = create((set, get) => ({
       );
     },
     removeCorona(id) {
-      set(state => produce(state, state => {
-        state.coronas = state.coronas.filter(x => x.id !== id)
-
-        if (state.coronas.length === 0) {
-          gameApi.getState().win()
-        }
-      }))
+      set(produce(state => void (state.coronas = state.coronas.filter(x => x.id !== id))))
     },
   },
 }))
@@ -290,7 +287,6 @@ export const [useMap, mapApi] = create(set => ({
   mapBBoxes: [],
   mapBBox: new THREE.Box3(),
   addMapItem: x => set(produce(({ mapBBox, mapItems, mapBBoxes }) => {
-
     const box = new THREE.Box3();
     x.geometry.computeBoundingBox();
     box.copy(x.geometry.boundingBox).applyMatrix4(x.matrixWorld);
@@ -327,7 +323,7 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
     const { tree } = get()
     const { coronas } = coronaApi.getState()
     const { isStarted } = gameApi.getState()
-
+    
     if (!isStarted) {
 
       for (let i = 0; i < coronas.length; i++) {
