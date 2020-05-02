@@ -103,7 +103,7 @@ function PhyCorona(props) {
       const dir = new THREE.Vector3()
       dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
 
-      coronaBodyApi.applyLocalImpulse([-10 * dir.x, -0.5, -10 * dir.z], [0, 0, 0])
+      coronaBodyApi.applyLocalImpulse([-4 * dir.x, 2, -4 * dir.z], [0, 0, 0])
     },
     [disable, coronaBody, coronaBodyApi, playerBody]
   )
@@ -127,7 +127,7 @@ function PhyCorona(props) {
     }
 
     renderingGroup.current.position.copy(coronaBody.current.position)
-    
+
     if (status === CORONA_STATUS.DEAD) {
       renderingGroup.current.rotation.copy(coronaBody.current.rotation)
     }
