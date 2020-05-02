@@ -11,8 +11,7 @@ function ShaderSphere(props) {
   const ref = useRef();
   const matRef = useRef();
   const args = useMemo(() => {
-    const color = new THREE.Color(0xa30a3f);
-    const { r, g, b } = color;
+    const { r, g, b } = new THREE.Color(0xa30a3f);
     return {
       uniforms: {
         u_time: { type: "f", value: 0 },
