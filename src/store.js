@@ -378,4 +378,6 @@ export const [useAssets] = create(set => ({
     setExclamationTexture: x => set({ exclamationTexture: x }),
     coronaNodes: null,
     setCoronaNodes: x => set({ coronaNodes: x }),
+    coronaShadow: null,
+    setCoronaShadow: x => set({ coronaShadow: x }),
 }))

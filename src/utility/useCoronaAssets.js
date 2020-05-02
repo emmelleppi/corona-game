@@ -11,6 +11,11 @@ function useCoronaAssets() {
     const setCoronaNodes = useAssets(s => s.setCoronaNodes)
     const { nodes } = useLoader(GLTFLoader, '/corona2.glb', draco())
     useEffect(() => void setCoronaNodes(nodes), [nodes, setCoronaNodes])
+    
+    // SHADOW
+    const setCoronaShadow = useAssets(s => s.setCoronaShadow)
+    const shadow = useLoader(THREE.TextureLoader, "/shadow.png")
+    useEffect(() => void setCoronaShadow(shadow), [shadow, setCoronaShadow])
 
     // POW TEXTURE
     const setPowTexture = useAssets(s => s.setPowTexture)

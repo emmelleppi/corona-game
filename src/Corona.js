@@ -178,13 +178,13 @@ const CoronaRenderer = React.memo(forwardRef(
   function CoronaRenderer(props, ref) {
     const { id, status, isUnderAttack, seekAlert, onDeathAnimEnd } = props
 
-
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
 
+    const shadow = useRef()
     const group = useRef()
     const rotationGroup = useRef()
 
-    const nodes = useAssets(s => s.coronaNodes)
+    const { coronaNodes: nodes, coronaShadow: shadowTexture } = useAssets(s => s)
 
     const { addOutline, removeOutline } = useOutline(s => s)
 
@@ -206,6 +206,10 @@ const CoronaRenderer = React.memo(forwardRef(
       group.current.position.copy(ref.current.position)
       rotationGroup.current.rotation.copy(ref.current.rotation)
       group.current.position.y += 0.1 * (Math.sin((clock.getElapsedTime() % (2 * Math.PI)) * multiplier + rand.current * 5))
+      
+      const { x, z } = group.current.position
+      shadow.current.position.set(x, 0.2, z)
+      shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, group.current.position.y);
     })
 
     return (
@@ -231,6 +235,15 @@ const CoronaRenderer = React.memo(forwardRef(
           </group>
 
         </group>
+        <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} visible={status !== CORONA_STATUS.DEAD} >
+          <planeBufferGeometry attach="geometry" args={[0.5,0.5]} />
+          <meshBasicMaterial
+            attach="material"
+            map={shadowTexture}
+            transparent={true}
+            depthWrite={false}
+          />
+        </mesh>
       </>
     )
   }
