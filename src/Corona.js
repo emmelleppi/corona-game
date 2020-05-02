@@ -34,23 +34,14 @@ function PhyCorona(props) {
 
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
     args: 0.2,
-    mass: 1,
+    mass: 0.1,
     position: initPosition,
-    material: { friction: 0, restitution: 0.2 },
-    linearDamping: 0.1,
-    angularDamping: 0.1,
     collisionFilter: COLLISION_GROUP.CORONA,
     collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
     onCollide: e => onCollide.current(e)
   }))
 
-  const [lock, lockApi] = useParticle(() => ({
-    args: [0.05, 0.2, 0.5, 16],
-    position: initPosition,
-    material: { friction: 0, restitution: 0.2 },
-    linearDamping: 0.1,
-    angularDamping: 0.1,
-  }), ref)
+  const [lock, lockApi] = useParticle(() => ({ position: initPosition }), ref)
 
   const [, , { disable }] = useLockConstraint(coronaBody, lock)
 
@@ -112,7 +103,7 @@ function PhyCorona(props) {
       const dir = new THREE.Vector3()
       dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
 
-      coronaBodyApi.applyLocalImpulse([-1 * dir.x, -1, -1 * dir.z], [1, 1, 1])
+      coronaBodyApi.applyLocalImpulse([-10 * dir.x, -0.5, -10 * dir.z], [0, 0, 0])
     },
     [disable, coronaBody, coronaBodyApi, playerBody]
   )
@@ -121,10 +112,6 @@ function PhyCorona(props) {
 
   const renderingGroup = useRef()
   useFrame(function () {
-    if (
-      status === CORONA_STATUS.DEAD ||
-      status === CORONA_STATUS.PRE_ATTACK
-    ) return
 
     if (status === CORONA_STATUS.ATTACK) {
       handleAttack()
@@ -140,6 +127,10 @@ function PhyCorona(props) {
     }
 
     renderingGroup.current.position.copy(coronaBody.current.position)
+    
+    if (status === CORONA_STATUS.DEAD) {
+      renderingGroup.current.rotation.copy(coronaBody.current.rotation)
+    }
   })
 
 
@@ -155,11 +146,13 @@ function PhyCorona(props) {
           seekAlert={seekAlert}
           onDeathAnimEnd={removeCorona}
         />
-        <CoronaUI
-          position={coronaBody}
-          seekAlert={seekAlert}
-          isUnderAttack={isUnderAttack}
-        />
+        {status !== CORONA_STATUS.DEAD && (
+          <CoronaUI
+            position={coronaBody}
+            seekAlert={seekAlert}
+            isUnderAttack={isUnderAttack}
+          />
+        )}
       </group>
       <CoronaHowler
         isUnderAttack={isUnderAttack}
@@ -226,6 +219,8 @@ const CoronaRenderer = React.memo(forwardRef(
     useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [status, handleDeath])
 
     useFrame(({ clock }) => {
+      if (status === CORONA_STATUS.DEAD) return
+
       const multiplier = 10 * (status === CORONA_STATUS.SEEKING ? 2 : 1)
       // group.current.position.copy(ref.current.position)
       // rotationGroup.current.rotation.copy(ref.current.rotation)
