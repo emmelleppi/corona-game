@@ -29,7 +29,7 @@ function ShaderSphere(props) {
     ref.current.rotation.x += 0.01;
     ref.current.rotation.y += 0.01;
     ref.current.rotation.z += 0.01;
-    matRef.current.uniforms.u_time.value += 0.0001;
+    matRef.current.uniforms.u_time.value += 0.001;
       
   });
 
