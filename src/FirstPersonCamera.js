@@ -82,7 +82,7 @@ function PhyPlayer(props) {
   )
 
   useEffect(() => void actions.init(api), [actions, api])
-  useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.1, z)), [api, chestLockApi])
+  useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.3, z)), [api, chestLockApi])
 
   useFrame(() => {
     const direction = new THREE.Vector3();
