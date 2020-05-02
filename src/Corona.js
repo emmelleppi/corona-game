@@ -62,9 +62,6 @@ function PhyCorona(props) {
 
       if (body?.userData?.type === COLLISION_GROUP.BAT && isPlayerAttacking) {
         const { rj } = contact
-        const vel = rj.map(x => x * 100)
-        lockApi.angularVelocity.set(...vel)
-        setTimeout(() => lockApi.angularVelocity.set(0, 0, 0), 500)
         _handleAttack()
       }
 
@@ -122,6 +119,7 @@ function PhyCorona(props) {
 
   useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [handleDeath, status])
 
+  const renderingGroup = useRef()
   useFrame(function () {
     if (
       status === CORONA_STATUS.DEAD ||
@@ -140,27 +138,50 @@ function PhyCorona(props) {
         lock.current.position.z + orientation.z * velocityFactor
       )
     }
+
+    renderingGroup.current.position.copy(coronaBody.current.position)
   })
+
 
   return (
     <>
       <mesh ref={lock} />
       <mesh ref={coronaBody} userData={{ type: COLLISION_GROUP.CORONA, id }} />
-      <CoronaRenderer
-        ref={coronaBody}
-        {...props}
-        status={status}
-        isUnderAttack={isUnderAttack}
-        seekAlert={seekAlert}
-        onDeathAnimEnd={removeCorona}
-      />
+      <group ref={renderingGroup} scale={[0.2, 0.2, 0.2]}>
+        <CoronaRenderer
+          {...props}
+          status={status}
+          isUnderAttack={isUnderAttack}
+          seekAlert={seekAlert}
+          onDeathAnimEnd={removeCorona}
+        />
+        <CoronaUI
+          position={coronaBody}
+          seekAlert={seekAlert}
+          isUnderAttack={isUnderAttack}
+        />
+      </group>
       <CoronaHowler
         isUnderAttack={isUnderAttack}
         seekAlert={seekAlert}
       />
+
     </>
   )
 }
+
+const CoronaUI = React.memo(function CoronaUI({
+  seekAlert,
+  isUnderAttack
+}) {
+
+  return (
+    <Suspense fallback={null}>
+      <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={seekAlert} />
+      <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={isUnderAttack} />
+    </Suspense>
+  )
+})
 
 const CoronaHowler = React.memo(function CoronaHowler({ isUnderAttack, seekAlert }) {
   const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
@@ -176,7 +197,7 @@ const CoronaHowler = React.memo(function CoronaHowler({ isUnderAttack, seekAlert
 
 const CoronaRenderer = React.memo(forwardRef(
   function CoronaRenderer(props, ref) {
-    const { id, status, isUnderAttack, seekAlert, onDeathAnimEnd } = props
+    const { id, status, onDeathAnimEnd } = props
 
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
 
@@ -192,24 +213,39 @@ const CoronaRenderer = React.memo(forwardRef(
 
     const [springProps, set] = useSpring(() => ({ opacity: 1, config: config.molasses }))
 
+
+    const coronaMesh = useRef()
+    const positionGroup = useRef()
+
     const handleDeath = useCallback(() => {
-      removeOutline(group.current)
+      removeOutline(coronaMesh.current)
       set({ opacity: 0, config: config.molasses, onRest: () => onDeathAnimEnd(id) })
     }, [id, group, removeOutline, set, onDeathAnimEnd])
-
-    useEffect(() => void addOutline(group.current), [addOutline, group]);
+    useEffect(() => void addOutline(coronaMesh.current), [addOutline, group]);
 
     useEffect(() => void (status === CORONA_STATUS.DEAD && handleDeath()), [status, handleDeath])
 
     useFrame(({ clock }) => {
       const multiplier = 10 * (status === CORONA_STATUS.SEEKING ? 2 : 1)
-      group.current.position.copy(ref.current.position)
-      rotationGroup.current.rotation.copy(ref.current.rotation)
-      group.current.position.y += 0.1 * (Math.sin((clock.getElapsedTime() % (2 * Math.PI)) * multiplier + rand.current * 5))
-      
+      // group.current.position.copy(ref.current.position)
+      // rotationGroup.current.rotation.copy(ref.current.rotation)
+      // group.current.position.y += 0.1 * (Math.sin((clock.getElapsedTime() % (2 * Math.PI)) * multiplier + rand.current * 5))
+
+      positionGroup.current.position.y = Math.sin(rand.current + clock.elapsedTime * multiplier) * 0.5
+
+      const h = 1 - Math.sin(rand.current + clock.elapsedTime * multiplier) / 8
+      const v = 1 + Math.sin(rand.current + clock.elapsedTime * multiplier) / 10
+
+      coronaMesh.current.scale.x = h
+      coronaMesh.current.scale.z = h
+      coronaMesh.current.scale.y = v
+
       const { x, z } = group.current.position
-      shadow.current.position.set(x, 0.2, z)
-      shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, group.current.position.y);
+      shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, positionGroup.current.position.y);
+
+      shadow.current.scale.x = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
+      shadow.current.scale.y = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
+
     })
 
     return (
@@ -223,27 +259,25 @@ const CoronaRenderer = React.memo(forwardRef(
           {...springProps}
         />
 
-        <group ref={group} dispose={null} scale={[0.1, 0.1, 0.1]} >
-
-          <Suspense fallback={null}>
-            <Exclamation position={[0, 2.5, 0]} scale={[2, 2, 1]} visible={seekAlert} />
-            <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={isUnderAttack} />
-          </Suspense>
-
-          <group ref={rotationGroup} scale={[1.4,1.4,1.4]}>
-            <mesh material={material} geometry={nodes?.Cube?.geometry} name="Cube" />
+        <group ref={group} dispose={null} >
+          <group ref={rotationGroup}>
+            <group ref={positionGroup}>
+              <mesh material={material} ref={coronaMesh} geometry={nodes?.Cube?.geometry} name="Corona" />
+            </group>
           </group>
 
+          <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[4, 4, 4]} visible={status !== CORONA_STATUS.DEAD} >
+            <planeBufferGeometry attach="geometry" args={[0.5, 0.5]} />
+            <meshBasicMaterial
+              attach="material"
+              map={shadowTexture}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+
         </group>
-        <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} visible={status !== CORONA_STATUS.DEAD} >
-          <planeBufferGeometry attach="geometry" args={[0.5,0.5]} />
-          <meshBasicMaterial
-            attach="material"
-            map={shadowTexture}
-            transparent={true}
-            depthWrite={false}
-          />
-        </mesh>
+
       </>
     )
   }
