@@ -5,6 +5,7 @@ import * as THREE from "three";
 import SpeedLines from "./hud/SpeedLines";
 import Health from "./hud/Health";
 import Cursor from "./hud/Cursor";
+import Remaining from "./hud/Remaining";
 import { useGame } from "./store";
 
 function Hud() {
@@ -43,6 +44,7 @@ function Hud() {
       {isGameStarted && (
         <Suspense fallback={null}>
           <Health />
+          <Remaining />
           <SpeedLines />
           <Cursor />
         </Suspense>
