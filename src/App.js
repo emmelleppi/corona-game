@@ -16,7 +16,7 @@ function Main() {
 
   return createPortal(
     <>
-      <fog attach="fog" args={[0x333333, 0.08]} />
+      <fog attach="fog" args={[0x333333, 10, 50]} />
       <Lights />
       <PhysicWorld />
       <Effects />
