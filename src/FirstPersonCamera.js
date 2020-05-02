@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, Suspense, useState } from "react";
+import React, { useCallback, useEffect, Suspense, useState, useRef } from "react";
 import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
 import * as THREE from "three";
@@ -10,13 +10,14 @@ import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
 import GestureHandler from "./GestureHandler";
 
-const JUMP_IMPULSE = 1.4;
+const JUMP_IMPULSE = 10;
 const VELOCITY = 12
 const BOOST_FACTOR = 3
 
 function PhyPlayer(props) {
   const { position } = props;
 
+  const isOnTiles = useRef(false)
   const { camera } = useThree()
 
   const { actions, playerBody } = usePlayer(s => s)
@@ -32,6 +33,14 @@ function PhyPlayer(props) {
     angularDamping: 0.9,
     collisionFilterGroup: COLLISION_GROUP.BODY,
     collisionFilterMask: COLLISION_GROUP.TILES,
+    onCollide: e => {
+      const { body } = e
+      if (!body) return
+      const { type } = body?.userData
+      if (type === COLLISION_GROUP.TILES && !isOnTiles.current) {
+        isOnTiles.current = true
+      }
+    }
   }));
 
   const [chest] = useCylinder(() => ({
@@ -107,8 +116,9 @@ function PhyPlayer(props) {
       api.angularVelocity.set(0, 0, 0);
     }
 
-    if (jump && mybody.current.position.y < 1) {
+    if (jump && isOnTiles.current) {
       api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
+      isOnTiles.current = false
     }
   })
 
