@@ -213,8 +213,8 @@ const CoronaRenderer = React.memo(forwardRef(
         <a.meshToonMaterial
           transparent
           color={status === CORONA_STATUS.DEAD ? 0xff0000 : 0x1E9983}
-          shininess={0.3}
-          specular={0xaaaaaa}
+          shininess={0.7}
+          specular={0xffffff}
           ref={resourceRef}
           {...springProps}
         />
@@ -226,11 +226,8 @@ const CoronaRenderer = React.memo(forwardRef(
             <Pow position={[0, 1.5, 0]} scale={[2, 2, 1]} visible={isUnderAttack} />
           </Suspense>
 
-          <group ref={rotationGroup} >
-            <mesh material={material} geometry={nodes?.Cube_0?.geometry} name="Cube_0" />
-            <mesh material={material} geometry={nodes?.Cube_1?.geometry} name="Cube_1" />
-            <mesh material={material} geometry={nodes?.Cube_2?.geometry} name="Cube_2" />
-            <mesh material={material} geometry={nodes?.Cube_3?.geometry} name="Cube_3" />
+          <group ref={rotationGroup} scale={[1.4,1.4,1.4]}>
+            <mesh material={material} geometry={nodes?.Cube?.geometry} name="Cube" />
           </group>
 
         </group>

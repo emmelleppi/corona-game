@@ -9,7 +9,7 @@ import { useAssets } from "../store";
 function useCoronaAssets() {
     // NODES
     const setCoronaNodes = useAssets(s => s.setCoronaNodes)
-    const { nodes } = useLoader(GLTFLoader, '/corona.glb', draco())
+    const { nodes } = useLoader(GLTFLoader, '/corona2.glb', draco())
     useEffect(() => void setCoronaNodes(nodes), [nodes, setCoronaNodes])
 
     // POW TEXTURE
