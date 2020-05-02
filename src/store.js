@@ -210,7 +210,7 @@ function createNewCorona(getManager) {
     seekAlert: false,
     ref: createRef(),
     lastSpawn: new Date().getTime(),
-    spawnTime: 5000,
+    spawnTime: 5000 + (Math.random() * 10 * 1000),
     actions: {
       decreaseLife() {
         set(produce(state => {
