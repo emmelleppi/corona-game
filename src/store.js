@@ -7,7 +7,7 @@ import { createRef } from "react"
 import Quadtree from '@timohausmann/quadtree-js';
 
 export const INITIAL_LIFE = 100
-const NUMBER_OF_SPAWNS = 1
+const NUMBER_OF_SPAWNS = 30
 const NUMBER_OF_MAP_BBOX = 15
 const ORIENTATION_THRESHOLD = 0.5
 
