@@ -5,9 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import { getRandomUnity } from './utility/math';
 import { createRef } from "react"
 import Quadtree from '@timohausmann/quadtree-js';
+import { Vector3 } from 'three';
 
 export const INITIAL_LIFE = 100
-const NUMBER_OF_SPAWNS = 30
+const NUMBER_OF_SPAWNS = 4
 const NUMBER_OF_MAP_BBOX = 15
 const ORIENTATION_THRESHOLD = 0.5
 
@@ -174,6 +175,26 @@ export const [useCorona, coronaApi] = create((set, get) => ({
         )
       );
     },
+    spawn(corona) {
+
+      const { coronas } = coronaApi.getState()
+
+      if (coronas.length > 50) return
+
+      set(produce(state => {
+
+        state.coronas.push({
+          id: uuidv4(),
+          initPosition: corona.ref.current.position.add(
+            new Vector3(getRandomUnity(), 0, getRandomUnity())
+          ).toArray(),
+          store: createNewCorona(get),
+          latSpawn: new Date().getTime() + 5000,
+        })
+
+      }))
+
+    },
     removeCorona(id) {
       set(produce(state => void (state.coronas = state.coronas.filter(x => x.id !== id))))
     },
@@ -188,6 +209,8 @@ function createNewCorona(getManager) {
     isUnderAttack: false,
     seekAlert: false,
     ref: createRef(),
+    lastSpawn: new Date().getTime(),
+    spawnTime: 5000,
     actions: {
       decreaseLife() {
         set(produce(state => {
@@ -246,9 +269,28 @@ function createNewCorona(getManager) {
           actions.setOrientation(dir)
         }
       },
+      spawn() {
+        const thisCorona = get()
+
+        const { spawnTime } = thisCorona
+
+        set({
+          lastSpawn: new Date().getTime(),
+          spawnTime: spawnTime * 2
+        })
+
+        coronaApi.getState().actions.spawn(thisCorona)
+
+      },
       update() {
+
+        const { spawnTime, lastSpawn, ref, orientation, status, actions } = get()
+
+        if (new Date().getTime() > (lastSpawn + spawnTime)) {
+          actions.spawn()
+        }
+
         const { isIntersect } = getManager().actions
-        const { ref, orientation, status, actions } = get()
 
         if (status === CORONA_STATUS.DEAD) return
 
@@ -323,7 +365,7 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
     const { tree } = get()
     const { coronas } = coronaApi.getState()
     const { isStarted } = gameApi.getState()
-    
+
     if (!isStarted) {
 
       for (let i = 0; i < coronas.length; i++) {
