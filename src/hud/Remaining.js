@@ -52,7 +52,7 @@ class RemainingController {
     this.c.font = "16px Bangers";
 
     this.c.fillText(
-      "left",
+      "l e f t",
       this.x + this.radius + 8 + 20,
       this.y + this.radius + 30
     );

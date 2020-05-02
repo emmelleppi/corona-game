@@ -94,6 +94,15 @@ class HealthBarController {
       -this.offset.y + this.y + this.radius - 16
     );
 
+    this.c.font = "16px Bangers";
+
+    this.c.textAlign = "left";
+    this.c.fillText(
+      "h e a l t h",
+      this.x + 20,
+      this.y + this.radius + 30
+    );
+
     this.c.shadowColor = "transparent";
 
     // outer
