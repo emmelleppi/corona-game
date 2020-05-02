@@ -1,56 +1,22 @@
-import React, { useCallback, Suspense } from "react";
-import { Canvas, useThree, createPortal } from "react-three-fiber";
+import React from "react";
 
-import PhysicWorld from "./PhysicWorld";
-import Effects from "./Effects";
-import Lights from "./Lights";
-import Hud from "./Hud";
-import Sky from './Sky'
-
-import { useInteraction } from "./store";
+import StartScreen from './StartScreen'
+import Game from './Game'
 
 import "./styles.css";
-
-function Main() {
-  const { scene } = useThree();
-
-  return createPortal(
-    <>
-      <fog attach="fog" args={[0x333333, 10, 50]} />
-      <Lights />
-      <PhysicWorld />
-      <Effects />
-      <Sky />
-    </>,
-    scene
-  );
-}
+import { useGame } from "./store";
 
 function App() {
-  const callbacks = useInteraction(s => s.callbacks)
 
-  const handleClick = useCallback(
-    function handleClick(e) {
-      callbacks.map(f => f(e));
-    },
-    [callbacks]
-  );
+  const isStartAnimation = useGame(s => s.isStartAnimation)
 
   return (
     <>
-      <Suspense fallback={"LOADING"} >
-        <Canvas
-          colorManagement
-          camera={{ position: [0, 100, 0] }}
-          onClick={handleClick}
-        >
-          <color attach="background" args={[0x3b163a]} />
-          <Main />
-          <Hud />
-        </Canvas>
-      </Suspense>
+      <Game />
+      <StartScreen hidden={isStartAnimation} />
     </>
   );
+
 }
 
 export default App;
