@@ -12,13 +12,16 @@ function Trampoline() {
   const [x, y, z] = PLAYER_INITIAL_POSITION
 
   const [planeBody] = useBox(() => ({
-    args: [0.1, 0.1, 0.1],
-    position: [x, y-1, z],
+    args: [1, 1, 1],
+    position: [x, y - 1, z],
     type: "Static",
     collisionFilterGroup: COLLISION_GROUP.TILES,
   }))
 
-  return <mesh ref={planeBody} />
+  return <mesh ref={planeBody}>
+    <boxBufferGeometry args={[1, 1, 1]} attach="geometry" />
+    <meshBasicMaterial attach="material" wireframe />
+  </mesh>
 }
 
 function PhysicWorld() {
