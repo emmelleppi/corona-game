@@ -122,8 +122,8 @@ export const [usePlayer, playerApi] = create((set, get) => ({
       const intersects = raycast.intersectObjects(mapItems);
       return intersects?.length > 0
     },
-    decreaseLife(x) {
-      set(produce(state => void (state.life -= Math.floor(Math.random(0, x) * 2) + x)))
+    decreaseLife() {
+      set(produce(state => void (state.life -= Math.floor(1 + Math.random() * 5))))
     },
     resetLife() { set({ life: INITIAL_LIFE }) },
     setAttacking() { set({ isAttacking: true }) },
@@ -189,7 +189,7 @@ export const [useCorona, coronaApi] = create((set, get) => ({
             new Vector3(getRandomUnity(), 0, getRandomUnity())
           ).toArray(),
           store: createNewCorona(get),
-          latSpawn: new Date().getTime() + 5000,
+          latSpawn: new Date().getTime() + 10000,
         })
 
       }))
@@ -203,7 +203,7 @@ export const [useCorona, coronaApi] = create((set, get) => ({
 
 function createNewCorona(getManager) {
   return create((set, get) => ({
-    life: 3,
+    life: 2,
     status: CORONA_STATUS.IDLE,
     orientation: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
     isUnderAttack: false,
@@ -214,7 +214,7 @@ function createNewCorona(getManager) {
     actions: {
       decreaseLife() {
         set(produce(state => {
-          state.life -= 1
+          state.life -= Math.random() > 0.5 ? 1 : 2
           if (state.life < 0) {
             state.status = CORONA_STATUS.DEAD
           }

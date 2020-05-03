@@ -74,7 +74,7 @@ function PhyBaseballBat(props) {
         const { status } = api.getState()
 
         if (status === CORONA_STATUS.ATTACK) {
-          actions.decreaseLife(10)
+          actions.decreaseLife()
         }
       }
     },
