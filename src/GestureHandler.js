@@ -1,33 +1,37 @@
-import React, { useCallback, useEffect, useRef, useMemo } from "react";
+import React, { useCallback, useEffect, useRef, useMemo, useState } from "react";
 import { useThree, useFrame } from "react-three-fiber";
 import { useSpring, a, config } from 'react-spring/three';
 import * as THREE from "three"
 
 import { PointerLockControls } from "./PointerLockControls";
-import { useInteraction, gameApi, useGame, playerApi, useCorona } from "./store";
+import { useInteraction, gameApi, useGame, playerApi, useCorona, coronaApi } from "./store";
 
 function PreGameMode() {
+  const [index, setIndex] = useState(0)
+  const t = useRef(0)
+  
   const { camera } = useThree();
 
   const coronas = useCorona(s => s.coronas)
 
-  const [index, setIndex] = React.useState(0)
-  const corona = useMemo(() => coronas?.[index]?.store?.[1]?.getState(), [coronas, index])
-
-  let t = useRef(0)
+  const { ref, orientation, coronaNum } = useMemo(() => {
+    const { ref, orientation } = coronas?.[index]?.store?.[1]?.getState() || {}
+    return { ref, orientation, coronaNum: coronas.length }
+  }, [coronas, index])
+  
   useFrame(({ clock }) => {
     t.current += clock.getDelta() * 1000
 
     if (t.current > 15) {
       t.current = 0;
-      setIndex(index => (index + 1) % coronas.length)
+      setIndex(index => (index + 1) % coronaNum)
     }
 
-    if (corona?.ref.current) {
-      const { orientation } = corona
-      const { x, y, z } = corona.ref.current.position
+    if (ref?.current) {
+      const { x, y, z } = ref.current.position
+      const _orientation = orientation[1].getState().coords
 
-      const lookAtVector = new THREE.Vector3(x - orientation.x, y + 0.5, z - orientation.z);
+      const lookAtVector = new THREE.Vector3(x - _orientation.x, y + 0.5, z - _orientation.z);
 
       camera.position.lerp(lookAtVector, 0.2);
       camera.lookAt(x, y, z);
