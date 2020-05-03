@@ -131,7 +131,7 @@ class HealthBarController {
 
     const shake = 4 * (damage / 20);
 
-    const tween = TweenLite.fromTo(
+    TweenLite.fromTo(
       offset,
       0.12,
       {

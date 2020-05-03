@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
+import React, { useRef, useState, useEffect, useMemo } from "react"
 import { useFrame, useUpdate } from "react-three-fiber";
 import * as THREE from "three";
 import { vertexShader, fragmentShader } from "./utility/shaders";

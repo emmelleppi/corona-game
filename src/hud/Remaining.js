@@ -68,7 +68,7 @@ class RemainingController {
 
     const shake = 10;
 
-    const tween = TweenLite.fromTo(
+    TweenLite.fromTo(
       offset,
       0.12,
       {

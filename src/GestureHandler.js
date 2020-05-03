@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useMemo } from "react";
 import { useThree, useFrame } from "react-three-fiber";
 import { useSpring, a, config } from 'react-spring/three';
-import lerp from "lerp"
 import * as THREE from "three"
 
 import { PointerLockControls } from "./PointerLockControls";
@@ -46,7 +45,7 @@ function GestureHandler(props) {
   const controls = useRef();
   const camera = useRef();
 
-  const playerBody = useMemo(() => playerApi.getState().playerBody, [playerApi])
+  const playerBody = useMemo(() => playerApi.getState().playerBody, [])
 
   const { isStarted: isGameStarted, isStartAnimation } = useGame(s => s)
   const { boost } = useInteraction(s => s)

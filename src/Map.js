@@ -7,7 +7,6 @@ import * as THREE from "three";
 import { draco } from 'drei'
 
 import { COLLISION_GROUP, useMap } from "./store"
-import Sky from "./Sky";
 
 function ConvexPolyBody(props) {
   const { position, geometry, material } = props
