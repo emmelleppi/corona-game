@@ -5,10 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import { getRandomUnity } from './utility/math';
 import { createRef } from "react"
 import Quadtree from '@timohausmann/quadtree-js';
-import { Vector3 } from 'three';
+import { addEffect } from 'react-three-fiber'
 
 export const INITIAL_LIFE = 100
-const NUMBER_OF_SPAWNS = 4
+const NUMBER_OF_SPAWNS = 50
 const NUMBER_OF_MAP_BBOX = 15
 const ORIENTATION_THRESHOLD = 0.5
 
@@ -31,11 +31,8 @@ export const COLLISION_GROUP = {
 export const [useGame, gameApi] = create((set, get) => ({
   isStarted: false,
   isStartAnimation: false,
-  win: false,
   coronaSub: null,
-  init() {
-
-  },
+  init() {},
   initGame() {
     set({ isStartAnimation: true })
     setTimeout(() => set({ isStarted: true }), 500)
@@ -186,7 +183,7 @@ export const [useCorona, coronaApi] = create((set, get) => ({
         state.coronas.push({
           id: uuidv4(),
           initPosition: corona.ref.current.position.add(
-            new Vector3(getRandomUnity(), 0, getRandomUnity())
+            new THREE.Vector3(getRandomUnity(), 0, getRandomUnity())
           ).toArray(),
           store: createNewCorona(get),
           latSpawn: new Date().getTime() + 10000,
@@ -205,7 +202,10 @@ function createNewCorona(getManager) {
   return create((set, get) => ({
     life: 2,
     status: CORONA_STATUS.IDLE,
-    orientation: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
+    orientation: create(set => ({
+      coords: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
+      setCoords(coords) { set({ coords }) },
+    })),
     isUnderAttack: false,
     seekAlert: false,
     ref: createRef(),
@@ -229,10 +229,14 @@ function createNewCorona(getManager) {
           if (newStatus === CORONA_STATUS.SEEKING) {
             actions.setSeekAlert()
           }
+          if (newStatus === CORONA_STATUS.PRE_ATTACK) {
+            setTimeout(() => set({ status: CORONA_STATUS.ATTACK }), 2000)
+          }
         }
       },
-      setOrientation(orientation) {
-        set(produce(state => void (state.orientation = orientation)))
+      setOrientation(_orientation) {
+        const { setCoords } = get().orientation[1].getState()
+        setCoords(_orientation)
       },
       setIsUnderAttack() {
         const callback = get().actions.resetIsUnderAttack
@@ -263,7 +267,7 @@ function createNewCorona(getManager) {
 
         const dir = player.current.position.clone().sub(ref.current.position).normalize()
         dir.y = 0
-        const diff = dir.clone().sub(orientation)
+        const diff = dir.clone().sub(orientation[1].getState().coords)
 
         if (diff.length() > ORIENTATION_THRESHOLD) {
           actions.setOrientation(dir)
@@ -283,31 +287,29 @@ function createNewCorona(getManager) {
 
       },
       update() {
-
         const { spawnTime, lastSpawn, ref, orientation, status, actions } = get()
+        if (!ref.current) return
 
-        if (new Date().getTime() > (lastSpawn + spawnTime)) {
-          actions.spawn()
-        }
+        const _orientation = orientation[1].getState().coords
 
-        const { isIntersect } = getManager().actions
+        // if (new Date().getTime() > (lastSpawn + spawnTime)) {
+        //   actions.spawn()
+        // }
 
         if (status === CORONA_STATUS.DEAD) return
-
+        
         const { x, y, z } = ref.current.position
+        const { isIntersect } = getManager().actions
 
-        if (isIntersect([x + orientation.x / 25, y, z + orientation.z / 25])) {
+        if (isIntersect([x + _orientation.x / 25, y, z + _orientation.z / 25])) {
 
-          if (
-            status === CORONA_STATUS.SEEKING ||
-            status === CORONA_STATUS.PRE_ATTACK
-          ) {
+          if (status === CORONA_STATUS.SEEKING) {
 
             const player = playerApi.getState().playerBody
             const distance = player.current.position.clone().distanceTo(ref.current.position)
-
+            
             if (distance < 1) {
-              actions.setStatus(CORONA_STATUS.ATTACK)
+              actions.setStatus(CORONA_STATUS.PRE_ATTACK)
             } else {
               actions.updateSeekingOrientation()
             }
@@ -349,6 +351,7 @@ export const [useMap, mapApi] = create(set => ({
 export const [useQuadtree, quadtreeApi] = create((set, get) => ({
   tree: null,
   initQuadtree() {
+    const { update } = get()
     const { mapBBox } = mapApi.getState()
     const { min, max } = mapBBox
 
@@ -360,6 +363,7 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
     }, 4);
 
     set({ tree })
+    addEffect(update)
   },
   update() {
     const { tree } = get()
