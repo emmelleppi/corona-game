@@ -4,7 +4,7 @@ import { useSphere, useCylinder } from "use-cannon";
 import * as THREE from "three";
 import useSound from 'use-sound'
 
-import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi } from "./store";
+import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi, playerApi, CORONA_STATUS, coronaApi } from "./store";
 import BaseballBat from "./BaseballBat";
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
@@ -18,6 +18,8 @@ function PhyPlayer(props) {
   const { position } = props;
 
   const isOnTiles = useRef(false)
+  const onCollide = useRef()
+
   const { camera } = useThree()
 
   const { actions, playerBody } = usePlayer(s => s)
@@ -46,7 +48,38 @@ function PhyPlayer(props) {
   const [chest, chestApi] = useCylinder(() => ({
     type: "Dynamic",
     args: [0.2, 0.1, 0.5, 32],
+    onCollide: e => onCollide.current(e)
   }), playerBody);
+
+  const handleCollide = useCallback(
+    function handleCollide(e) {
+      const { body } = e
+      
+      if (!body) return
+      
+      const { type, id } = body?.userData
+
+      if (type === COLLISION_GROUP.CORONA) {
+        const coronas = coronaApi.getState().coronas
+        const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
+
+        const { store } = collidingCorona
+        const [, api] = store
+
+        const { status } = api.getState()
+
+        if (status === CORONA_STATUS.ATTACK) {
+          const { actions, isAttacking } = playerApi.getState()
+          if (!isAttacking) {
+            actions.decreaseLife()
+          }
+        }
+      }
+    },
+    []
+  )
+  useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
+
 
   useEffect(() => void actions.init(api), [actions, api])
   useEffect(() => api.position.subscribe(([x, y, z]) => void chestApi.position.set(x, y + 0.3, z)), [api, chestApi])

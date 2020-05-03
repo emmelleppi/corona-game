@@ -40,49 +40,14 @@ const batMovements = {
 }
 
 function PhyBaseballBat(props) {
-  const onCollide = useRef()
   const [] = useSound(playerHitSfx)
 
   const [mybody, api] = useBox(() => ({
     args: [0.05, 1, 0.05],
     mass: 1,
-    material: { friction: 1, restitution: 1 },
-    linearDamping: 1,
-    angularDamping: 1,
     collisionFilterGroup: COLLISION_GROUP.BAT,
     collisionFilterMask: COLLISION_GROUP.CORONA,
-    onCollide: e => onCollide.current(e)
   }));
-
-  const handleCollide = useCallback(
-    function handleCollide(e) {
-      const { body } = e
-      
-      if (!body) return
-      
-      const { type, id } = body?.userData
-
-      if (type === COLLISION_GROUP.CORONA) {
-        const coronas = coronaApi.getState().coronas
-        const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
-
-        const { store } = collidingCorona
-        const [, api] = store
-
-        const { status } = api.getState()
-
-        if (status === CORONA_STATUS.ATTACK) {
-          const { actions, isAttacking } = playerApi.getState()
-          if (!isAttacking) {
-            actions.decreaseLife()
-          }
-        }
-      }
-    },
-    []
-  )
-
-  useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
 
   return (
     <>
@@ -94,7 +59,7 @@ function PhyBaseballBat(props) {
 
 function BaseballBat(props) {
   const { api, ...allTheRest } = props;
-
+  
   const batRef = useRef()
   const batGroupRef = useRef()
   const time = useRef(batMovements.idle.t);
