@@ -11,7 +11,7 @@ import * as THREE from "three";
 import useSound from "use-sound";
 import { draco } from 'drei'
 
-import { useOutline, usePlayer, COLLISION_GROUP, useInteraction, coronaApi, CORONA_STATUS } from "./store"
+import { useOutline, usePlayer, COLLISION_GROUP, useInteraction, coronaApi, CORONA_STATUS, playerApi } from "./store"
 import playerHitSfx from './sounds/Player_Hit.wav'
 
 const batMovements = {
@@ -43,8 +43,6 @@ function PhyBaseballBat(props) {
   const onCollide = useRef()
   const [] = useSound(playerHitSfx)
 
-  const actions = usePlayer(s => s.actions)
-
   const [mybody, api] = useBox(() => ({
     args: [0.05, 1, 0.05],
     mass: 1,
@@ -69,16 +67,19 @@ function PhyBaseballBat(props) {
         const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
 
         const { store } = collidingCorona
-        const [_, api] = store
+        const [, api] = store
 
         const { status } = api.getState()
 
         if (status === CORONA_STATUS.ATTACK) {
-          actions.decreaseLife()
+          const { actions, isAttacking } = playerApi.getState()
+          if (!isAttacking) {
+            actions.decreaseLife()
+          }
         }
       }
     },
-    [actions]
+    []
   )
 
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])

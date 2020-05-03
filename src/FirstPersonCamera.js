@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, Suspense, useState, useRef } from "react";
 import { useThree, useFrame } from "react-three-fiber";
-import { useSphere, useLockConstraint, useCylinder, useParticle } from "use-cannon";
+import { useSphere, useCylinder } from "use-cannon";
 import * as THREE from "three";
 import useSound from 'use-sound'
 
-import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi, CORONA_STATUS, coronaApi } from "./store";
+import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi } from "./store";
 import BaseballBat from "./BaseballBat";
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
@@ -43,46 +43,13 @@ function PhyPlayer(props) {
     }
   }));
 
-  const [chest] = useCylinder(() => ({
-    mass: 1,
+  const [chest, chestApi] = useCylinder(() => ({
+    type: "Dynamic",
     args: [0.2, 0.1, 0.5, 32],
-    collisionFilterGroup: COLLISION_GROUP.CHEST,
-    collisionFilterMask: COLLISION_GROUP.CORONA,
-    onCollide: e => handleCollide(e)
   }), playerBody);
 
-  const [chestLock, chestLockApi] = useParticle(() => ({ mass: 0 }));
-
-  useLockConstraint(chest, chestLock)
-
-  const handleCollide = useCallback(
-    function handleCollide(e) {
-      const { body } = e
-
-      if (!body) return
-
-      const { type, id } = body?.userData
-
-
-      if (type === COLLISION_GROUP.CORONA) {
-        const coronas = coronaApi.getState().coronas
-        const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
-
-        const { store } = collidingCorona
-        const [_, api] = store
-
-        const { status } = api.getState()
-
-        if (status === CORONA_STATUS.ATTACK) {
-          actions.decreaseLife()
-        }
-      }
-    },
-    [actions]
-  )
-
   useEffect(() => void actions.init(api), [actions, api])
-  useEffect(() => api.position.subscribe(([x, y, z]) => void chestLockApi.position.set(x, y + 0.3, z)), [api, chestLockApi])
+  useEffect(() => api.position.subscribe(([x, y, z]) => void chestApi.position.set(x, y + 0.3, z)), [api, chestApi])
 
   useFrame(() => {
     const direction = new THREE.Vector3();
@@ -125,7 +92,6 @@ function PhyPlayer(props) {
   return (
     <>
       <mesh ref={mybody} />
-      <mesh ref={chestLock} />
       <mesh ref={chest} userData={{ type: COLLISION_GROUP.CHEST }} >
         <cylinderBufferGeometry attach="geometry" args={[0.15, 0.05, 0.5, 32]} />
         <meshBasicMaterial attach="material" transparent opacity={0} />
