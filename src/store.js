@@ -61,24 +61,33 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
   callbacks: [],
   actions: {
     onDocumentKey(keyCode, value) {
-      if (keyCode === 83) {
+      const { 
+        forward,
+        backward,
+        left,
+        right,
+        jump,
+        boost,
+      } = get()
+
+      if (keyCode === 83 && forward !== value) {
         set({ forward: value })
-      } else if (keyCode === 87) {
+      } else if (keyCode === 87 && backward !== value) {
         set({ backward: value })
       }
 
-      if (keyCode === 65) {
+      if (keyCode === 65 && left !== value) {
         set({ left: value })
-      } else if (keyCode === 68) {
+      } else if (keyCode === 68 && right !== value) {
         set({ right: value })
       }
 
-      if (keyCode === 32) {
+      if (keyCode === 32 && jump !== value) {
         const { isIntersect } = playerApi.getState().actions
         set({ jump: value && isIntersect() })
       }
 
-      if (keyCode === 16) {
+      if (keyCode === 16 && boost !== value) {
         set({ boost: value })
       }
     },
@@ -172,7 +181,7 @@ export const [useCorona, coronaApi] = create((set, get) => ({
         )
       );
     },
-    spawn(corona) {
+    spawn(position) {
 
       const { coronas } = coronaApi.getState()
 
@@ -182,11 +191,8 @@ export const [useCorona, coronaApi] = create((set, get) => ({
 
         state.coronas.push({
           id: uuidv4(),
-          initPosition: corona.ref.current.position.add(
-            new THREE.Vector3(getRandomUnity(), 0, getRandomUnity())
-          ).toArray(),
+          initPosition: position,
           store: createNewCorona(get),
-          latSpawn: new Date().getTime() + 10000,
         })
 
       }))
@@ -241,13 +247,13 @@ function createNewCorona(getManager) {
       setIsUnderAttack() {
         const callback = get().actions.resetIsUnderAttack
         set({ isUnderAttack: true })
-        setTimeout(() => callback(), 300)
+        setTimeout(callback, 300)
       },
       resetIsUnderAttack() { set({ isUnderAttack: false }) },
       setSeekAlert() {
         const callback = get().actions.resetSeekAlert
         set({ seekAlert: true })
-        setTimeout(() => callback(), 5000)
+        setTimeout(callback, 5000)
       },
       resetSeekAlert() { set({ seekAlert: false }) },
       handleAttack() {
@@ -274,46 +280,52 @@ function createNewCorona(getManager) {
         }
       },
       spawn() {
-        const thisCorona = get()
+        const { ref } = get()
 
-        const { spawnTime } = thisCorona
+        // set({
+        //   lastSpawn: new Date().getTime(),
+        //   spawnTime: 5000 + (Math.random() * 10 * 1000)
+        // })
 
-        set({
-          lastSpawn: new Date().getTime(),
-          spawnTime: spawnTime * 2
-        })
-
-        coronaApi.getState().actions.spawn(thisCorona)
+        const position = ref.current.position.add(
+          new THREE.Vector3(getRandomUnity(), 0, getRandomUnity())
+        ).toArray()
+        coronaApi.getState().actions.spawn(position)
 
       },
       update() {
         const { spawnTime, lastSpawn, ref, orientation, status, actions } = get()
         if (!ref.current) return
 
-        const _orientation = orientation[1].getState().coords
-
-        // if (new Date().getTime() > (lastSpawn + spawnTime)) {
-        //   actions.spawn()
-        // }
-
-        if (status === CORONA_STATUS.DEAD) return
         
+        // if (new Date().getTime() > (lastSpawn + spawnTime)) {
+          //   actions.spawn()
+          // }
+          
+        if (status === CORONA_STATUS.DEAD || status === CORONA_STATUS.ATTACK) return
+          
+        const _orientation = orientation[1].getState().coords
         const { x, y, z } = ref.current.position
         const { isIntersect } = getManager().actions
 
         if (isIntersect([x + _orientation.x / 25, y, z + _orientation.z / 25])) {
 
-          if (status === CORONA_STATUS.SEEKING) {
+          const player = playerApi.getState().playerBody
+          const distance = player.current.position.clone().distanceTo(ref.current.position)
 
-            const player = playerApi.getState().playerBody
-            const distance = player.current.position.clone().distanceTo(ref.current.position)
+          if (status === CORONA_STATUS.SEEKING) {
             
-            if (distance < 1) {
+            if (distance <= 1) {
               actions.setStatus(CORONA_STATUS.PRE_ATTACK)
             } else {
               actions.updateSeekingOrientation()
             }
+
           }
+          if (status === CORONA_STATUS.PRE_ATTACK && distance > 1) {
+            actions.setStatus(CORONA_STATUS.IDLE)
+          }
+
 
         } else {
 
