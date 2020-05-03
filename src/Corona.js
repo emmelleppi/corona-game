@@ -86,7 +86,7 @@ function PhyCorona(props) {
     const dir = new THREE.Vector3()
     dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
 
-    const { x, y, z } = dir.multiplyScalar(0.65).add(coronaBody.current.position)
+    const { x, y, z } = dir.multiplyScalar(0.75).add(coronaBody.current.position)
     lockApi.position.set(x, y, z)
 
     setTimeout(() => {
@@ -228,7 +228,7 @@ const CoronaRenderer = React.memo(
 
       if (status === CORONA_STATUS.PRE_ATTACK) {
         rotationGroup.current.rotation.y = easeInQuad(time.current)
-        time.current += 0.1
+        time.current += 0.001
       }
     })
 
