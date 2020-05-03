@@ -9,6 +9,9 @@ import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
+import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader.js';
+import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader.js';
+import { ToonShader1, ToonShader2, ToonShaderHatching, ToonShaderDotted } from 'three/examples/jsm/shaders/ToonShader.js';
 import { WaterPass } from "./post/waterPass";
 
 import { outlineApi, playerApi, INITIAL_LIFE } from "./store";
@@ -95,6 +98,9 @@ function Effects() {
       <filmPass attachArray="passes" args={[0.15, 0.025, 648, false]} />
       <shaderPass attachArray="passes" ref={vignette} args={[VignetteShader]} uniforms-offset-value={0.95} uniforms-darkness-value={1.6} />
       <shaderPass attachArray="passes" args={[RGBShiftShader]} uniforms-amount-value={0.0005} />
+      <shaderPass attachArray="passes" args={[HorizontalBlurShader]} uniforms-h-value={0.0003} />
+      <shaderPass attachArray="passes" args={[VerticalBlurShader]} uniforms-v-value={0.0003} />
+
     </effectComposer>
   );
 }
