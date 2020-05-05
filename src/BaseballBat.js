@@ -11,7 +11,7 @@ import * as THREE from "three";
 import useSound from "use-sound";
 import { draco } from 'drei'
 
-import { useOutline, usePlayer, COLLISION_GROUP, useInteraction, coronaApi, CORONA_STATUS, playerApi } from "./store"
+import { useOutline, usePlayer, COLLISION_GROUP, useInteraction, useAssets } from "./store"
 import playerHitSfx from './sounds/Player_Hit.wav'
 
 const batMovements = {
@@ -52,13 +52,13 @@ function PhyBaseballBat(props) {
   return (
     <>
       <mesh ref={mybody} userData={{ type: COLLISION_GROUP.BAT }} />
-      <BaseballBat api={api} {...props} />
+      <BaseballBat api={api} body={mybody} {...props} />
     </>
   )
 }
 
 function BaseballBat(props) {
-  const { api, ...allTheRest } = props;
+  const { api, body, ...allTheRest } = props;
   
   const batRef = useRef()
   const batGroupRef = useRef()
@@ -67,10 +67,9 @@ function BaseballBat(props) {
   const [attacked, setAttacked] = useState(false)
 
   const addOutline = useOutline(s => s.addOutline)
-  const { setAttacking, resetAttacking } = usePlayer(s => s.actions)
   const life = usePlayer(s => s.life)
   const { addCallback } = useInteraction(s => s.actions)
-
+  const fiveTone = useAssets(s => s.fiveTone)
   const { nodes } = useLoader(GLTFLoader, "/baseball_bat.glb", draco());
 
   const [spring, set] = useSpring(() => ({
@@ -104,7 +103,7 @@ function BaseballBat(props) {
 
     if (time.current === init.t) {
 
-      setAttacking()
+      body.current.userData.isAttacking = true
       batGroupRef.current.rotation.x = Math.PI / 2;
       batGroupRef.current.rotation.y = 0;
       set({ ...init.spring });
@@ -115,7 +114,7 @@ function BaseballBat(props) {
 
     } else if (time.current === end.t) {
 
-      set({ ...end.spring, onRest: resetAttacking });
+      set({ ...end.spring, onRest: () => (body.current.userData.isAttacking = false) });
       
     } else if (time.current > idle.t) {
 
@@ -139,15 +138,17 @@ function BaseballBat(props) {
     <>
       <meshToonMaterial
         color={attacked ? 0x76747E : 0xB8B5C3}
-        shininess={0.3}
+        shininess={0}
         specular={0xaaaaaa}
         ref={metalResourceRef}
+        gradientMap={fiveTone}
       />
       <meshToonMaterial
         color={attacked ? 0x740000 : 0x454194}
-        shininess={0.3}
+        shininess={0}
         specular={0x888888}
         ref={handleResourceRef}
+        gradientMap={fiveTone}
       />
 
       <group ref={batGroupRef} {...allTheRest} rotation={[Math.PI / 2, 0, 0]} dispose={null}>
