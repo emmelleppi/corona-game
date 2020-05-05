@@ -23,6 +23,7 @@ function PhyCorona(props) {
 
   const attackPosition = useRef()
   const renderingGroup = useRef()
+  const additiveOrientation = useRef({ coords: [0, 0, 0], time: 0.5 })
   
   // ZUSTAND VARS & SUBSCRIBE
   const { ref, status, actions, isUnderAttack, seekAlert, orientation: orientationStore } = useMyCorona(s => s)
@@ -36,7 +37,7 @@ function PhyCorona(props) {
 
   // CANNON INIT
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
-    args: 0.2,
+    args: 0.3,
     mass: 0.1,
     position: initPosition,
     collisionFilter: COLLISION_GROUP.CORONA,
@@ -53,15 +54,19 @@ function PhyCorona(props) {
   const handleCollide = useCallback(
     function handleCollide(e) {
 
-      const { body } = e
-      const { isAttacking: isPlayerAttacking } = playerApi.getState()
+      const { body, contact } = e
+      
+      if (body?.userData?.type === COLLISION_GROUP.CORONA) {
+        const { rj } = contact
+        additiveOrientation.current = { coords: rj, time: 0.5 }
+      }
 
-      if (body?.userData?.type === COLLISION_GROUP.BAT && isPlayerAttacking) {
+      if (body?.userData?.type === COLLISION_GROUP.BAT && body?.userData?.isAttacking) {
         _handleAttack()
       }
 
     },
-    [_handleAttack]
+    [_handleAttack, additiveOrientation]
   )
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
 
@@ -103,16 +108,19 @@ function PhyCorona(props) {
   }, [status, handleAttack, handleDeath])
 
   useFrame(function () {
-
+    
     if (status === CORONA_STATUS.IDLE || status === CORONA_STATUS.SEEKING)  {
-
       const velocityFactor = status === CORONA_STATUS.IDLE ? 1 / 50 : 1 / 30
-
+      
+      const { coords, time } = additiveOrientation.current
+      
       lockApi.position.set(
-        lock.current.position.x + orientation.current.x * velocityFactor,
+        lock.current.position.x + (orientation.current.x + (coords[0] / time)) * velocityFactor,
         initPosition[1],
-        lock.current.position.z + orientation.current.z * velocityFactor
+        lock.current.position.z + (orientation.current.z + (coords[2] / time)) * velocityFactor
       )
+      
+      additiveOrientation.current.time += 0.01
     }
 
     renderingGroup.current.position.copy(coronaBody.current.position)
@@ -120,8 +128,8 @@ function PhyCorona(props) {
     if (status === CORONA_STATUS.DEAD) {
       renderingGroup.current.rotation.copy(coronaBody.current.rotation)
     }
-  })
 
+  })
 
   return (
     <>
@@ -177,7 +185,7 @@ const CoronaHowler = React.memo(function CoronaHowler({ isUnderAttack, seekAlert
   return null
 })
 
-const CoronaRenderer = React.memo(
+export const CoronaRenderer = React.memo(
   function CoronaRenderer(props) {
     const { id, status, onDeathAnimEnd } = props
 
@@ -190,7 +198,7 @@ const CoronaRenderer = React.memo(
     const coronaMesh = useRef()
     const positionGroup = useRef()
 
-    const { coronaNodes: nodes, coronaShadow: shadowTexture } = useAssets(s => s)
+    const { coronaNodes: nodes, coronaShadow: shadowTexture, fiveTone } = useAssets(s => s)
 
     const { addOutline, removeOutline } = useOutline(s => s)
 
@@ -228,7 +236,7 @@ const CoronaRenderer = React.memo(
 
       if (status === CORONA_STATUS.PRE_ATTACK) {
         rotationGroup.current.rotation.y = easeInQuad(time.current)
-        time.current += 0.001
+        time.current += 0.1
       }
     })
 
@@ -237,9 +245,10 @@ const CoronaRenderer = React.memo(
         <a.meshToonMaterial
           transparent
           color={status === CORONA_STATUS.DEAD ? 0xff0000 : 0x1E9983}
-          shininess={0.7}
+          shininess={0}
           specular={0xffffff}
           ref={resourceRef}
+          gradientMap={fiveTone}
           {...springProps}
         />
 

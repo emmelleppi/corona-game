@@ -8,7 +8,7 @@ import Quadtree from '@timohausmann/quadtree-js';
 import { addEffect } from 'react-three-fiber'
 
 export const INITIAL_LIFE = 100
-const NUMBER_OF_SPAWNS = 50
+const NUMBER_OF_SPAWNS = 4
 const NUMBER_OF_MAP_BBOX = 15
 const ORIENTATION_THRESHOLD = 0.5
 
@@ -36,12 +36,14 @@ export const [useGame, gameApi] = create((set, get) => ({
   initGame() {
     set({ isStartAnimation: true })
     setTimeout(() => set({ isStarted: true }), 500)
+
     const coronaSub = coronaApi.subscribe(({ coronas }) => {
       if (coronas.length === 0) {
         const { win } = get()
         win()
       }
     })
+    
     set({ coronaSub })
   },
   win() {
@@ -111,7 +113,6 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
 
 export const [usePlayer, playerApi] = create((set, get) => ({
   life: INITIAL_LIFE,
-  isAttacking: false,
   playerBody: createRef(),
   playerApi: null,
   raycast: new THREE.Raycaster(),
@@ -132,8 +133,6 @@ export const [usePlayer, playerApi] = create((set, get) => ({
       set(produce(state => void (state.life -= Math.floor(1 + Math.random() * 5))))
     },
     resetLife() { set({ life: INITIAL_LIFE }) },
-    setAttacking() { set({ isAttacking: true }) },
-    resetAttacking() { set({ isAttacking: false }) },
   }
 }))
 
@@ -208,22 +207,18 @@ function createNewCorona(getManager) {
   return create((set, get) => ({
     life: 2,
     status: CORONA_STATUS.IDLE,
-    orientation: create(set => ({
+    orientation: create((set, get) => ({
       coords: new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize(),
       setCoords(coords) { set({ coords }) },
     })),
     isUnderAttack: false,
     seekAlert: false,
     ref: createRef(),
-    lastSpawn: new Date().getTime(),
-    spawnTime: 5000 + (Math.random() * 10 * 1000),
     actions: {
       decreaseLife() {
         set(produce(state => {
           state.life -= Math.random() > 0.5 ? 1 : 2
-          if (state.life < 0) {
-            state.status = CORONA_STATUS.DEAD
-          }
+          state.status = state.life < 0 ? CORONA_STATUS.DEAD : CORONA_STATUS.PRE_ATTACK
         }))
       },
       setStatus(newStatus) {
@@ -257,13 +252,9 @@ function createNewCorona(getManager) {
       },
       resetSeekAlert() { set({ seekAlert: false }) },
       handleAttack() {
-        const isPlayerAttacking = playerApi.getState().isAttacking
-
-        if (isPlayerAttacking) {
           const actions = get().actions
           actions.decreaseLife()
           actions.setIsUnderAttack()
-        }
       },
       updateSeekingOrientation() {
         const { ref } = get()
@@ -280,27 +271,21 @@ function createNewCorona(getManager) {
         }
       },
       spawn() {
+        const { coronas } = getManager()
         const { ref } = get()
+        const { isStarted } = gameApi.getState()
 
-        // set({
-        //   lastSpawn: new Date().getTime(),
-        //   spawnTime: 5000 + (Math.random() * 10 * 1000)
-        // })
-
-        const position = ref.current.position.add(
+        if (!isStarted || !ref.current || coronas.length > 50) return
+        
+        const position = ref.current.position.clone().add(
           new THREE.Vector3(getRandomUnity(), 0, getRandomUnity())
         ).toArray()
-        coronaApi.getState().actions.spawn(position)
 
+        coronaApi.getState().actions.spawn(position)
       },
       update() {
-        const { spawnTime, lastSpawn, ref, orientation, status, actions } = get()
+        const { ref, orientation, status, actions } = get()
         if (!ref.current) return
-
-        
-        // if (new Date().getTime() > (lastSpawn + spawnTime)) {
-          //   actions.spawn()
-          // }
           
         if (status === CORONA_STATUS.DEAD || status === CORONA_STATUS.ATTACK) return
           
@@ -308,7 +293,7 @@ function createNewCorona(getManager) {
         const { x, y, z } = ref.current.position
         const { isIntersect } = getManager().actions
 
-        if (isIntersect([x + _orientation.x / 25, y, z + _orientation.z / 25])) {
+        if (isIntersect([x + _orientation.x, y, z + _orientation.z])) {
 
           const player = playerApi.getState().playerBody
           const distance = player.current.position.clone().distanceTo(ref.current.position)
