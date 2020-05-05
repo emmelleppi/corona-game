@@ -12,15 +12,19 @@ function useCoronaAssets() {
     const { nodes } = useLoader(GLTFLoader, '/corona.glb', draco())
     useEffect(() => void setCoronaNodes(nodes), [nodes, setCoronaNodes])
     
+    const [powTexture, shadow, fiveTone] = useLoader(THREE.TextureLoader, ["/pow.png", "/shadow.png", "/fiveTone.jpg"])
+
     // SHADOW
     const setCoronaShadow = useAssets(s => s.setCoronaShadow)
-    const shadow = useLoader(THREE.TextureLoader, "/shadow.png")
     useEffect(() => void setCoronaShadow(shadow), [shadow, setCoronaShadow])
 
     // POW TEXTURE
     const setPowTexture = useAssets(s => s.setPowTexture)
-    const powTexture = useLoader(THREE.TextureLoader, "/pow.png")
     useEffect(() => void setPowTexture(powTexture), [setPowTexture, powTexture])
+    
+    // FIVETONE TEXTURE
+    const setFiveTone = useAssets(s => s.setFiveTone)
+    useEffect(() => void setFiveTone(fiveTone), [setFiveTone, fiveTone])
     
     // EXCLAMATION CANVAS TEXTURE
     const setExclamationTexture = useAssets(s => s.setExclamationTexture)

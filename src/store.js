@@ -439,6 +439,8 @@ export const [useOutline, outlineApi] = create(set => ({
 export const [useAssets] = create(set => ({
   powTexture: null,
   setPowTexture: x => set({ powTexture: x }),
+  fiveTone: null,
+  setFiveTone: x => set({ fiveTone: x }),
   exclamationTexture: null,
   setExclamationTexture: x => set({ exclamationTexture: x }),
   coronaNodes: null,
