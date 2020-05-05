@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { usePlayer } from "../store"
-
-import Sprite from '../utility/Sprite'
 import { Vector3 } from "three";
 
-function SpeedLines(props) {
+import { playerApi } from "../store"
+import Sprite from '../utility/Sprite'
+
+function SpeedLines() {
 
     const scale = [window.innerWidth, window.innerHeight, 1]
-    const playerApi = usePlayer(s => s.playerApi)
     const TH = 8
 
     const [visible, setVisible] = useState(false)
+
     const handleV = React.useCallback((varr) => {
         const v = new Vector3(...varr).length()
 
@@ -22,8 +22,8 @@ function SpeedLines(props) {
     }, [setVisible])
 
     useEffect(() => {
-        if (playerApi && handleV) {
-            return playerApi.velocity.subscribe(handleV)
+        if (handleV) {
+            return playerApi.getState().playerApi.velocity.subscribe(handleV)
         }
     }, [playerApi, handleV])
 
@@ -32,7 +32,7 @@ function SpeedLines(props) {
             <Sprite
                 visible={visible}
                 opacity={visible}
-                IconPosition={[0, 0, 1]}
+                IconPosition={[0, 0, 0]}
                 IconSize={scale}
                 textureSrc="/speed-spritesheet.png"
                 plainAnimatorArgs={[1, 28, 28, 24]}
