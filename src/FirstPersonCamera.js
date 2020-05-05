@@ -69,10 +69,8 @@ function PhyPlayer(props) {
         const { status } = api.getState()
 
         if (status === CORONA_STATUS.ATTACK) {
-          const { actions, isAttacking } = playerApi.getState()
-          if (!isAttacking) {
+          const { actions } = playerApi.getState()
             actions.decreaseLife()
-          }
         }
       }
     },
