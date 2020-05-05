@@ -44,7 +44,7 @@ function Game() {
       >
         <color attach="background" args={[0x3b163a]} />
         <Main />
-        {/* <Hud /> */}
+        <Hud />
       </Canvas>
     </Suspense>
   )

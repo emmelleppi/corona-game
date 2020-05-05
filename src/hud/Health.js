@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react'
-import { TweenLite } from 'gsap'
+import React, { useEffect, useCallback } from 'react'
 import * as THREE from 'three'
-import { useFrame } from 'react-three-fiber'
-import { usePlayer } from '../store'
+import { playerApi } from '../store'
+import Heart from '../Heart'
 
 const colors = [
   "#161616",
@@ -25,59 +24,12 @@ class HealthBarController {
     };
 
     this.health = 100;
-    this.tempHealth = 100;
     this.canvas = canvas
     this.c = ctx
   }
 
-  drawClippedCircle(offset, color = colors[2]) {
-    this.c.save();
-    this.c.lineWidth = 1;
-    this.c.beginPath();
-    this.c.rect(
-      this.x + -10,
-      this.y + 4 + offset + this.offset.y,
-      this.radius * 2 + 20,
-      this.radius * 2 + this.border * 2
-    );
-    this.c.clip();
-    this.c.closePath();
-
-    this.c.beginPath();
-    this.c.arc(
-      this.x + this.radius + this.offset.x,
-      this.y + this.radius + this.offset.y,
-      this.radius,
-      0,
-      Math.PI * 2,
-      false
-    );
-    this.c.fillStyle = color;
-    this.c.fill();
-    this.c.closePath();
-
-    this.c.restore();
-  }
-
   draw() {
-    // shadow
-    this.c.beginPath();
-    this.c.arc(
-      this.x + this.radius + this.border + this.offset.x * 0.5,
-      this.y + this.radius + this.border + this.offset.y * 0.5,
-      this.radius,
-      0,
-      Math.PI * 2,
-      false
-    );
-    this.c.lineWidth = 8;
-    this.c.strokeStyle = colors[0];
-    this.c.stroke();
-
     // main
-    this.drawClippedCircle(100 - this.tempHealth, colors[1]);
-    this.drawClippedCircle(100 - this.health);
-
     this.c.font = "82px Bangers";
     this.c.textAlign = "center";
     this.c.fillStyle = "white";
@@ -104,75 +56,13 @@ class HealthBarController {
     );
 
     this.c.shadowColor = "transparent";
-
-    // outer
-    this.c.beginPath();
-    this.c.arc(
-      this.x + this.radius + this.offset.x,
-      this.y + this.radius + this.offset.y,
-      this.radius,
-      0,
-      Math.PI * 2,
-      false
-    );
-    this.c.fillStyle = "transparent";
-    this.c.strokeStyle = "#fff";
-    this.c.stroke();
-    this.c.closePath();
   }
 
-  damage(damage) {
-    this.health = this.health - damage;
-
-    const offset = {
-      x: 0,
-      y: 0
-    };
-
-    const shake = 4 * (damage / 20);
-
-    TweenLite.fromTo(
-      offset,
-      0.12,
-      {
-        x: -shake,
-        y: 0
-      },
-      {
-        x: shake,
-        y: 0,
-        repeat: 2,
-        yoyo: true,
-        onUpdate: () => {
-          this.offset.x = offset.x;
-          this.offset.y = offset.y;
-        },
-        onComplete: () => {
-          this.offset.x = 0;
-          this.offset.y = 0;
-        }
-      }
-    );
-  }
-
-  update(t) {
+  update(life = 100) {
+    this.health = life
     this.c.fillStyle = "transparent";
     this.c.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.draw();
-
-
-    if (this.tempHealth > this.health) {
-      this.tempHealth -= 0.5;
-    }
-
-    if (this.tempHealth < this.health) {
-      this.tempHealth = this.health;
-    }
-
-    if (this.health <= 0) {
-      this.health = 100;
-    }
   }
 }
 
@@ -183,8 +73,6 @@ export default function Health() {
   const healthController = React.useRef()
 
   const spriteMaterial = React.useRef()
-
-  const playerLife = usePlayer(s => s.life)
 
   useEffect(() => {
     canvas.current = document.createElement('canvas')
@@ -197,32 +85,30 @@ export default function Health() {
     ctx.current.scale(4, 4)
 
     healthController.current = new HealthBarController(40, 40, ctx.current, canvas.current)
-  }, [])
+    healthController.current.update()
+    spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current)
 
-  useEffect(() => {
-    healthController.current.damage(
-      healthController.current.health - playerLife
-    )
-  }, [playerLife])
+  }, [healthController, ctx, canvas])
 
-
-  useFrame(() => {
-    if (ctx.current) {
-      healthController.current.update()
-
-      const canvasTexture = new THREE.CanvasTexture(canvas.current);
-      spriteMaterial.current.map = canvasTexture
-    }
-  })
+  useEffect(() => playerApi.subscribe(
+    ({ life: playerLife }) => {
+      healthController.current.update(playerLife)
+      spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current)
+    }),
+    [healthController]
+  )
 
   return (
-    <sprite position={[-window.innerWidth / 2 + 120, -window.innerHeight / 2 + 80, 1]} scale={[256, 256, 256]}>
-      <spriteMaterial
-        attach="material"
-        fog={false}
-        ref={spriteMaterial}
-      />
-    </sprite>
+    <group position={[-window.innerWidth / 2 + 80, -window.innerHeight / 2 + 80, 1]}  >
+      <sprite position={[70, 0, 0]} scale={[256, 256, 256]} >
+        <spriteMaterial
+          attach="material"
+          fog={false}
+          ref={spriteMaterial}
+        />
+      </sprite>
+      <Heart scale={[256 * 5, 256 * 5, 256 * 5]} position={[0, 0, -50]} />
+    </group>
   )
 
 }

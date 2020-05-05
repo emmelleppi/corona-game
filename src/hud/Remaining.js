@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react'
-import { TweenLite } from 'gsap'
 import * as THREE from 'three'
-import { useFrame } from 'react-three-fiber'
 import { useCorona } from '../store'
+import { CoronaRenderer } from '../Corona'
 
 const colors = [
   "#161616",
@@ -60,42 +59,9 @@ class RemainingController {
     this.c.shadowColor = "transparent";
   }
 
-  remove() {
-    const offset = {
-      x: 0,
-      y: 0
-    };
-
-    const shake = 10;
-
-    TweenLite.fromTo(
-      offset,
-      0.12,
-      {
-        x: -shake,
-        y: 0
-      },
-      {
-        x: shake,
-        y: 0,
-        repeat: 2,
-        yoyo: true,
-        onUpdate: () => {
-          this.offset.x = offset.x;
-          this.offset.y = offset.y;
-        },
-        onComplete: () => {
-          this.offset.x = 0;
-          this.offset.y = 0;
-        }
-      }
-    );
-  }
-
-  update(t) {
+  update() {
     this.c.fillStyle = "transparent";
     this.c.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.draw();
   }
 }
@@ -126,26 +92,25 @@ export default function Health() {
 
   useEffect(() => {
     remainingController.current.remaining = coronas.length
-    remainingController.current.remove()
+    remainingController.current.update()
+    spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
   }, [coronas])
 
-  useFrame(() => {
-    if (ctx.current) {
-      remainingController.current.update()
-
-      const canvasTexture = new THREE.CanvasTexture(canvas.current);
-      spriteMaterial.current.map = canvasTexture
-    }
-  })
-
   return (
-    <sprite position={[window.innerWidth / 2 - 120, -window.innerHeight / 2 + 80, 1]} scale={[256, 256, 256]}>
-      <spriteMaterial
-        attach="material"
-        fog={false}
-        ref={spriteMaterial}
-      />
-    </sprite>
+    <>
+      <group position={[window.innerWidth / 2 - 120, -window.innerHeight / 2 + 80, 1]} >
+        <sprite scale={[256, 256, 256]} >
+          <spriteMaterial
+            attach="material"
+            fog={false}
+            ref={spriteMaterial}
+          />
+        </sprite>
+        <group position={[30, 10, -50]} scale={[40, 40, 40]}>
+          <CoronaRenderer />
+        </group>
+      </group>
+    </>
   )
 
 }

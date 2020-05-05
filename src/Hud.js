@@ -23,15 +23,11 @@ function Hud() {
       height / 2,
       - height / 2,
       1,
-      10
+      100
     );
 
     cam.position.z = 10;
-
-    cam.left = - width / 2;
-    cam.right = width / 2;
-    cam.top = height / 2;
-    cam.bottom = - height / 2;
+    cam.zoom = 10;
     cam.updateProjectionMatrix();
 
     return cam;
@@ -43,10 +39,13 @@ function Hud() {
     <>
       {isGameStarted && (
         <Suspense fallback={null}>
-          <Health />
-          <Remaining />
-          <SpeedLines />
-          <Cursor />
+          <group scale={[1/10, 1/10, 1/10]} >
+            <Health />
+            <Remaining />
+            <SpeedLines />
+            <Cursor />
+            <spotLight position={[window.innerWidth / 2, -window.innerHeight / 2, 1]} />
+          </group>
         </Suspense>
       )}
     </>,
