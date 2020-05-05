@@ -14,14 +14,17 @@ function Trampoline() {
   const [planeBody] = useBox(() => ({
     args: [1, 1, 1],
     position: [x, y - 1, z],
+    rotation: [-Math.PI / 2, 0, 0],
     type: "Static",
     collisionFilterGroup: COLLISION_GROUP.TILES,
   }))
 
-  return <mesh ref={planeBody}>
-    <boxBufferGeometry args={[1, 1, 1]} attach="geometry" />
-    <meshBasicMaterial attach="material" wireframe />
-  </mesh>
+  return (
+    <mesh ref={planeBody}  >
+      <circleBufferGeometry args={[1, 32, 32]} attach="geometry" />
+      <meshToonMaterial attach="material" color={0x333333} transparent opacity={0.7} />
+    </mesh>
+  )
 }
 
 function PhysicWorld() {
