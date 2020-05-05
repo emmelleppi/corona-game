@@ -6,6 +6,7 @@ import { vertexShader, fragmentShader } from "./utility/shaders";
 const TEXT = ["KILL", "THE", "CORONA", "STAY", "THE", "FUCK", "HOME!"];
 const WIDTH = Math.pow(2, 10);
 const HEIGHT = WIDTH * 2;
+const CANVAS_BG_COLOR = "#23213D";
 
 function ShaderSphere(props) {
   const ref = useRef();
@@ -63,6 +64,9 @@ function Sky() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    ctx.fillStyle = CANVAS_BG_COLOR;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -108,7 +112,7 @@ function Sky() {
           alphaTest={0.5}
         />
       </mesh>
-      <ShaderSphere />
+      {/* <ShaderSphere /> */}
     </group>
   );
 }
