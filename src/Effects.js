@@ -11,7 +11,6 @@ import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
 import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader.js';
 import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader.js';
-import { ToonShader1, ToonShader2, ToonShaderHatching, ToonShaderDotted } from 'three/examples/jsm/shaders/ToonShader.js';
 import { WaterPass } from "./post/waterPass";
 
 import { outlineApi, playerApi, INITIAL_LIFE } from "./store";

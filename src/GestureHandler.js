@@ -4,7 +4,7 @@ import { useSpring, a, config } from 'react-spring/three';
 import * as THREE from "three"
 
 import { PointerLockControls } from "./PointerLockControls";
-import { useInteraction, gameApi, useGame, playerApi, useCorona, coronaApi } from "./store";
+import { useInteraction, gameApi, useGame, playerApi, useCorona } from "./store";
 
 function PreGameMode() {
   const [index, setIndex] = useState(0)
