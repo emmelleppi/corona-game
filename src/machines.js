@@ -1,12 +1,13 @@
 import { createRef } from "react";
 import { Machine, actions, spawn } from "xstate";
 import { v4 as uuid } from 'uuid';
+import { addEffect } from "react-three-fiber"
 import * as THREE from "three";
 
 import { mapApi, raycasterApi, playerApi } from "./store";
 import { getRandomUnity } from "./utility/math"
 
-const NUMBER_OF_INIT_SPAWNS = 4
+const NUMBER_OF_INIT_SPAWNS = 8
 const NUMBER_OF_MAX_SPAWNS = 50
 const ORIENTATION_THRESHOLD = 0.5
 
@@ -310,25 +311,24 @@ const CORONA_MACHINE = Machine(
       idleUpdate: ({ orientation, phyRef }) => {
         const { isIntersect } = raycasterApi.getState().actions
 
-        const timer = setInterval(() => {
+        const timerId = setInterval(() => {
           if (!phyRef.current) return
-
           const { x, y, z } = phyRef.current.position
 
           if (!isIntersect([x + orientation.current.x, y, z + orientation.current.z])) {
             orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
           }
 
-        }, 500);
-
-        return () => clearInterval(timer);
+        }, 100);
+        return () => clearInterval(timerId)
       },
       seekingUpdate: ({ phyRef, orientation }) => {
         const { isIntersect } = raycasterApi.getState().actions
         const player = playerApi.getState().playerBody
         
-        const timer = setInterval(() => {
-        
+        const timerId = setInterval(() => {
+          if (!phyRef.current) return
+
           const { x, y, z } = phyRef.current.position
           if (isIntersect([x + orientation.current.x, y, z + orientation.current.z])) {
 
@@ -344,16 +344,16 @@ const CORONA_MACHINE = Machine(
             orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
           }
 
-        }, 500);
-
-        return () => clearInterval(timer);
+        }, 100);
+        return () => clearInterval(timerId)
       },
       preattackingUpdate: ({ phyRef, orientation }) => {
         const { isIntersect } = raycasterApi.getState().actions
         const player = playerApi.getState().playerBody
         
-        const timer = setInterval(() => {
-        
+        const timerId = setInterval(() => {
+          if (!phyRef.current) return
+
           const { x, y, z } = phyRef.current.position
         
           if (isIntersect([x + orientation.current.x, y, z + orientation.current.z])) {
@@ -368,9 +368,8 @@ const CORONA_MACHINE = Machine(
             orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
           }
 
-        }, 500);
-
-        return () => clearInterval(timer);
+        }, 100);
+        return () => clearInterval(timerId)
       }
     },
     delays: {
