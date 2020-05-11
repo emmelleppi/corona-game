@@ -1,15 +1,17 @@
 import React, { Suspense, useState } from "react";
 import { useFrame, createPortal } from "react-three-fiber";
 import * as THREE from "three";
+import { useService } from "@xstate/react";
 
 import SpeedLines from "./hud/SpeedLines";
 import Health from "./hud/Health";
 import Cursor from "./hud/Cursor";
 import Remaining from "./hud/Remaining";
-import { useGame } from "./store";
+import { serviceApi } from "./store";
 
 function Hud() {
-  const isGameStarted = useGame(s => s.isStarted)
+  const [current] = useService(serviceApi.getState().service);
+  const isGameStarted = current.matches('start')
 
   const [scene] = useState(() => new THREE.Scene())
   const [camera] = useState(() => {

@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useRef, useMemo, useState } from "react"
 import { useThree, useFrame } from "react-three-fiber";
 import { useSpring, a, config } from 'react-spring/three';
 import * as THREE from "three"
+import { useService } from "@xstate/react";
 
 import { PointerLockControls } from "./PointerLockControls";
-import { useInteraction, gameApi, useGame, playerApi, useCorona } from "./store";
+import { useInteraction, playerApi, serviceApi } from "./store";
 
 function PreGameMode() {
   const [index, setIndex] = useState(0)
@@ -12,26 +13,30 @@ function PreGameMode() {
   
   const { camera } = useThree();
 
-  const coronas = useCorona(s => s.coronas)
+  const [{ context }] = useService(serviceApi.getState().service);
+  const { coronas } = context
 
-  const { ref, orientation, coronaNum } = useMemo(() => {
-    const { ref, orientation } = coronas?.[index]?.store?.[1]?.getState() || {}
-    return { ref, orientation, coronaNum: coronas.length }
-  }, [coronas, index])
-  
+  const [corona] = useService(coronas[index].ref);
+
+  const { ref, orientation } = useMemo(() => {
+    const { context } = corona
+    const { phyRef, orientation } = context
+
+    return { ref: phyRef, orientation }
+  }, [corona])
+
   useFrame(({ clock }) => {
     t.current += clock.getDelta() * 1000
 
     if (t.current > 15) {
       t.current = 0;
-      setIndex(index => (index + 1) % coronaNum)
+      setIndex(index => (index + 1) % coronas.length)
     }
 
-    if (ref?.current) {
+    if (ref.current && orientation.current) {
       const { x, y, z } = ref.current.position
-      const _orientation = orientation[1].getState().coords
 
-      const lookAtVector = new THREE.Vector3(x - _orientation.x, y + 0.5, z - _orientation.z);
+      const lookAtVector = new THREE.Vector3(x - orientation.current.x, y + 0.5, z - orientation.current.z);
 
       camera.position.lerp(lookAtVector, 0.2);
       camera.lookAt(x, y, z);
@@ -51,7 +56,18 @@ function GestureHandler(props) {
 
   const playerBody = useMemo(() => playerApi.getState().playerBody, [])
 
-  const { isStarted: isGameStarted, isStartAnimation } = useGame(s => s)
+  const [current, send] = useService(serviceApi.getState().service);
+
+  const {
+    isGameStarted,
+    isStartAnimation,
+    isWaitingUser
+  } = useMemo(() => ({
+    isGameStarted: current.matches('start'),
+    isStartAnimation: current.matches('initAnimation'),
+    isWaitingUser: current.matches('waitUser'),
+  }), [current])
+
   const { boost } = useInteraction(s => s)
   const { onDocumentKeyDown, onDocumentKeyUp } = useInteraction(s => s.actions)
 
@@ -60,12 +76,11 @@ function GestureHandler(props) {
   const lockPointerLock = useCallback(
     function lockPointerLock() {
       if (controls.current) {
-        const { initGame } = gameApi.getState()
-        initGame()
+        send("ANIMATION")
         controls.current.lock();
       }
     },
-    [controls]
+    [send, controls]
   );
 
   useEffect(() => void (setDefaultCamera(camera.current)), [setDefaultCamera, camera])
@@ -118,7 +133,7 @@ function GestureHandler(props) {
         camera.updateProjectionMatrix()
       }}
     >
-      {!isStartAnimation && <PreGameMode />}
+      {isWaitingUser && <PreGameMode />}
       {isGameStarted && children}
     </a.perspectiveCamera>
   )

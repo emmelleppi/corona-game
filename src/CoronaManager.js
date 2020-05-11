@@ -1,12 +1,28 @@
-import React from "react";
-import Corona from "./Corona";
-import { useCorona } from "./store";
+import React, { useEffect, useState } from "react";
 import useCoronaAssets from "./utility/useCoronaAssets"
+import { useService } from "@xstate/react";
+
+import Corona from "./Corona";
+import { serviceApi } from "./store";
 
 function CoronaManager() {
     useCoronaAssets()
-    const coronas = useCorona(s => s.coronas)
-    return coronas.map(({ id, initPosition, store }) => <Corona key={id} id={id} initPosition={initPosition} store={store} />)
+
+    const [coronas, setCoronas] = useState([])
+
+    const [,,service] = useService(serviceApi.getState().service);
+
+    useEffect(() => {
+      const subscription = service.subscribe((state) => {
+        if (state.context.coronas.length !== coronas.length) {
+          setCoronas(state.context.coronas)
+        }
+      });
+    
+      return subscription.unsubscribe;
+    }, [service, setCoronas])
+
+    return coronas.map(({ id, ref }) => <Corona key={id} interpreter={ref} />)
 }
 
 export default CoronaManager

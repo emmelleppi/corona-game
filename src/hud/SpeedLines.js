@@ -25,7 +25,7 @@ function SpeedLines() {
         if (handleV) {
             return playerApi.getState().playerApi.velocity.subscribe(handleV)
         }
-    }, [playerApi, handleV])
+    }, [handleV])
 
     return (
         <>

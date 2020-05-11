@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react'
 import * as THREE from 'three'
-import { useCorona } from '../store'
+import { useService } from '@xstate/react'
+
 import { CoronaRenderer } from '../Corona'
+import { serviceApi } from '../store'
 
 const colors = [
   "#161616",
@@ -74,7 +76,8 @@ export default function Health() {
 
   const spriteMaterial = React.useRef()
 
-  const coronas = useCorona(s => s.coronas)
+  const [{ context }] = useService(serviceApi.getState().service);
+  const { coronas } = context
 
   useEffect(() => {
     canvas.current = document.createElement('canvas')

@@ -3,8 +3,9 @@ import { useThree, useFrame } from "react-three-fiber";
 import { useSphere, useCylinder } from "use-cannon";
 import * as THREE from "three";
 import useSound from 'use-sound'
+import { useService } from "@xstate/react";
 
-import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi, playerApi, CORONA_STATUS, coronaApi } from "./store";
+import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi, playerApi, serviceApi } from "./store";
 import BaseballBat from "./BaseballBat";
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
@@ -21,6 +22,8 @@ function PhyPlayer(props) {
   const onCollide = useRef()
 
   const { camera } = useThree()
+
+  const [{ context }] = useService(serviceApi.getState().service);
 
   const { actions, playerBody } = usePlayer(s => s)
 
@@ -60,25 +63,19 @@ function PhyPlayer(props) {
       const { type, id } = body?.userData
 
       if (type === COLLISION_GROUP.CORONA) {
-        const coronas = coronaApi.getState().coronas
-        const collidingCorona = coronas?.filter(item => item.id === id)?.[0]
+        const { coronas } = context
+        const collidingCorona = coronas?.filter(corona => corona.id === id)?.[0]
 
-        const { store } = collidingCorona
-        const [, api] = store
-
-        const { status } = api.getState()
-
-        if (status === CORONA_STATUS.ATTACK) {
+        if (collidingCorona?.ref?.state?.value?.live === "attacking") {
           const { actions } = playerApi.getState()
             actions.decreaseLife()
         }
       }
     },
-    []
+    [context]
   )
+
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
-
-
   useEffect(() => void actions.init(api), [actions, api])
   useEffect(() => api.position.subscribe(([x, y, z]) => void chestApi.position.set(x, y + 0.3, z)), [api, chestApi])
 
