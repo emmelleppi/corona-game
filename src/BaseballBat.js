@@ -43,7 +43,7 @@ function PhyBaseballBat(props) {
   const [] = useSound(playerHitSfx)
 
   const [mybody, api] = useBox(() => ({
-    args: [0.05, 1, 0.05],
+    args: [0.03, 0.6, 0.03],
     mass: 1,
     collisionFilterGroup: COLLISION_GROUP.BAT,
     collisionFilterMask: COLLISION_GROUP.CORONA,
