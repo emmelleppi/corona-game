@@ -1,13 +1,12 @@
 import { createRef } from "react";
 import { Machine, actions, spawn } from "xstate";
 import { v4 as uuid } from 'uuid';
-import { addEffect } from "react-three-fiber"
 import * as THREE from "three";
 
 import { mapApi, raycasterApi, playerApi } from "./store";
 import { getRandomUnity } from "./utility/math"
 
-const NUMBER_OF_INIT_SPAWNS = 8
+const NUMBER_OF_INIT_SPAWNS = 10
 const NUMBER_OF_MAX_SPAWNS = 50
 const ORIENTATION_THRESHOLD = 0.5
 
@@ -17,9 +16,8 @@ const createCorona = (isActive = false, initPosition = [0, 0, 0]) => {
   
   return {
     id: uuid(),
-    life: 2,
+    life: 3,
     isActive,
-    canSpawn: true,
     isUnderAttack: false,
     seekAlert: false,
     phyRef: createRef(),
@@ -58,12 +56,12 @@ export const GAME_ORCHESTRATOR = Machine(
         entry: [
           assign({
             coronas: () => {
+              const { mapBBoxes } = mapApi.getState()
+              const { actions } = raycasterApi.getState()
+
               const toSpawn = new Array(NUMBER_OF_INIT_SPAWNS)
                 .fill()
                 .map(() => {
-                  const { mapBBoxes } = mapApi.getState()
-                  const { actions } = raycasterApi.getState()
-        
                   let position = null
         
                   do {
@@ -112,20 +110,18 @@ export const GAME_ORCHESTRATOR = Machine(
     on: {
       "ORCHESTRATOR.addCorona": [
         {
-          actions: "disableSpawning",
-          cond: "isMaxCoronaNumber"
-        },
-        {
           actions: "addCorona",
           cond: "notMaxCoronaNumber"
         }
       ],
+      "ORCHESTRATOR.checkSpawning": [
+        {
+          actions: "skipSpawning",
+          cond: "isMaxCoronaNumber"
+        },
+      ],
       "ORCHESTRATOR.removeCorona": [
         { actions: "removeCorona" },
-        {
-          actions: "enableSpawning",
-          cond: "notMaxCoronaNumber"
-        }
       ]
     }
   },
@@ -143,13 +139,13 @@ export const GAME_ORCHESTRATOR = Machine(
           const { phyRef, id } = e.corona
           const { x, y, z } = phyRef.current.position
           
-          const newCorona = createCorona(true, [x, y, z]);
-          
           coronas.forEach(corona => {
             if (id === corona.id) {
-              corona.ref.send("IDLE");
+              corona.ref.send("IDLE")
             }
           });
+
+          const newCorona = createCorona(true, [x, y, z]);
 
           return coronas.concat({
             ...newCorona,
@@ -157,16 +153,17 @@ export const GAME_ORCHESTRATOR = Machine(
           });
         }
       }),
+      skipSpawning: ({ coronas }, e) => {
+        coronas.forEach(corona => {
+          if (e.corona.id === corona.id) {
+            corona.ref.send("IDLE")
+          }
+        });
+      },
       removeCorona: assign({
         coronas: ({ coronas }, e) =>
           coronas.filter(corona => corona.id !== e.corona.id)
       }),
-      enableSpawning: ({ coronas }) => {
-        coronas.forEach(corona => corona.ref.send("ENABLE_SPAWNING"));
-      },
-      disableSpawning: ({ coronas }) => {
-        coronas.forEach(corona => corona.ref.send("DISABLE_SPAWNING"));
-      }
     }
   }
 );
@@ -179,12 +176,11 @@ const CORONA_MACHINE = Machine(
       id: uuid(),
       life: 2,
       isActive: false,
-      canSpawn: true,
       isUnderAttack: false,
       seekAlert: false,
       phyRef: createRef(),
       orientation: createRef(),
-      initPosition: [0, 0, 0]
+      initPosition: [0, 0, 0],
     },
     on: {
       DEAD: { cond: "isDead", target: "dead" },
@@ -196,8 +192,6 @@ const CORONA_MACHINE = Machine(
         on: {
           GAME_ON: [{ actions: ["setIsActive", send("IDLE")] }],
           GAME_OFF: [{ actions: "resetIsActive" }],
-          ENABLE_SPAWNING: { actions: "setCanSpawn" },
-          DISABLE_SPAWNING: { actions: "resetCanSpawn" },
           RESET_IS_UNDER_ATTACK: { actions: "resetIsUnderAttack" },
           ATTACKED: {
             actions: [
@@ -218,12 +212,9 @@ const CORONA_MACHINE = Machine(
               SEEK: { target: "seeking", cond: "isActive" },
               IDLE: "idle"
             },
-            activities: ["idleUpdate"],
+            activities: ["update"],
             after: {
-              SPAWN_INTERVAL: {
-                target: "spawning",
-                cond: "canSpawn"
-              }
+              SPAWN_INTERVAL: "spawning"
             }
           },
           seeking: {
@@ -243,7 +234,9 @@ const CORONA_MACHINE = Machine(
               RESET_SEEK_ALERT: { actions: "resetSeekAlert" }
             },
             activities: ["seekingUpdate"],
-            after: { SPAWN_INTERVAL: "spawning" }
+            after: {              
+              SPAWN_INTERVAL: "spawning"
+            }
           },
           preattacking: {
             on: {
@@ -251,24 +244,34 @@ const CORONA_MACHINE = Machine(
               SEEK: { target: "seeking", actions: "resetIsUnderAttack" },
               ATTACK: { target: "attacking", actions: "resetIsUnderAttack" }
             },
-            activities: ["preattackingUpdate"],
+            activities: ["update"],
+            after: { 1000: "attacking" }
           },
           attacking: {
             on: {
               PRE_ATTACK: "preattacking",
-              ATTACKED: "preattacking"
             }
           },
           spawning: {
             entry: [
               sendParent(
-                ctx => ({ type: "ORCHESTRATOR.addCorona", corona: ctx }),
-                { delay: 1000 }
+                ctx => ({ type: "ORCHESTRATOR.checkSpawning", corona: ctx }),
               )
             ],
             on: {
               IDLE: "idle"
-            }
+            },
+            after: { 3000: "spawned" }
+          },
+          spawned: {
+            entry: [
+              sendParent(
+                ctx => ({ type: "ORCHESTRATOR.addCorona", corona: ctx }),
+              ),
+            ],
+            on: {
+              IDLE: "idle"
+            },
           }
         }
       },
@@ -293,14 +296,13 @@ const CORONA_MACHINE = Machine(
       isDead: ({ life }) => life <= 0,
       isActive: ({ isActive }) => isActive,
       isNotActive: ({ isActive }) => !isActive,
-      canSpawn: ({ canSpawn, isActive }) => isActive && canSpawn
     },
     actions: {
       decreaseLife: assign({ life: context => context.life - 1 }),
       setIsActive: assign({ isActive: true }),
       resetIsActive: assign({ isActive: false }),
-      setCanSpawn: assign({ canSpawn: true }),
-      resetCanSpawn: assign({ canSpawn: false }),
+      setAttack: assign({ attack: true }),
+      resetAttack: assign({ attack: false }),
       setSeekAlert: assign({ seekAlert: true }),
       resetSeekAlert: assign({ seekAlert: false }),
       setIsUnderAttack: assign({ isUnderAttack: true }),
@@ -308,7 +310,7 @@ const CORONA_MACHINE = Machine(
       initOrientation: ({ orientation }) => orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
     },
     activities: {
-      idleUpdate: ({ orientation, phyRef }) => {
+      update: ({ orientation, phyRef }) => {
         const { isIntersect } = raycasterApi.getState().actions
 
         const timerId = setInterval(() => {
@@ -322,10 +324,10 @@ const CORONA_MACHINE = Machine(
         }, 100);
         return () => clearInterval(timerId)
       },
-      seekingUpdate: ({ phyRef, orientation }) => {
+      seekingUpdate: ({ phyRef, orientation }, e) => {
         const { isIntersect } = raycasterApi.getState().actions
         const player = playerApi.getState().playerBody
-        
+
         const timerId = setInterval(() => {
           if (!phyRef.current) return
 
@@ -334,9 +336,7 @@ const CORONA_MACHINE = Machine(
 
             const distance = player.current.position.clone().distanceTo(phyRef.current.position)
       
-            if (distance <= 1) {
-              send("PRE_ATTACK")
-            } else {
+            if (distance > 1) {
               updateSeekingOrientation({ phyRef, orientation })
             }
 
@@ -347,33 +347,9 @@ const CORONA_MACHINE = Machine(
         }, 100);
         return () => clearInterval(timerId)
       },
-      preattackingUpdate: ({ phyRef, orientation }) => {
-        const { isIntersect } = raycasterApi.getState().actions
-        const player = playerApi.getState().playerBody
-        
-        const timerId = setInterval(() => {
-          if (!phyRef.current) return
-
-          const { x, y, z } = phyRef.current.position
-        
-          if (isIntersect([x + orientation.current.x, y, z + orientation.current.z])) {
-
-            const distance = player.current.position.clone().distanceTo(phyRef.current.position)
-            
-            if (distance > 1) {
-              send("IDLE")
-            }
-
-          } else {
-            orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
-          }
-
-        }, 100);
-        return () => clearInterval(timerId)
-      }
     },
     delays: {
-      SPAWN_INTERVAL: () => 5000 + Math.random() * 5000
+      SPAWN_INTERVAL: () => 3000 + Math.random() * 3000
     }
   }
 );

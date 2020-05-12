@@ -16,11 +16,10 @@ import alertSfx from './sounds/Alert.wav'
 import { COLLISION_GROUP, useOutline, useAssets, usePlayer } from "./store"
 import Exclamation from './Exclamation';
 import Pow from './Pow';
-import { easeInQuad } from "./utility/easing"
+import { easeInQuad, easeInElastic } from "./utility/easing"
 
 const PhyCorona = React.memo(function PhyCorona(props) {
   const { interpreter } = props
-
 
   const attackPosition = useRef()
   const renderingGroup = useRef()
@@ -35,7 +34,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     seekAlert,
     phyRef,
     orientation,
-    initPosition
+    initPosition,
   } = context
 
   const {
@@ -43,12 +42,14 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     isSeeking,
     isPreattacking,
     isAttacking,
+    isSpawning,
     isDead,
   } = useMemo(() => ({
     isIdle: state?.matches("live.idle"),
     isSeeking: state?.matches("live.seeking"),
     isPreattacking: state?.matches("live.preattacking"),
     isAttacking: state?.matches("live.attacking"),
+    isSpawning: state?.matches("live.spawning"),
     isDead: state?.matches("dead"),
   }), [state])
 
@@ -161,9 +162,10 @@ const PhyCorona = React.memo(function PhyCorona(props) {
           onDeathAnimEnd={() => send("DEATH")}
           isSeeking={isSeeking}
           isPreattacking={isPreattacking}
+          isSpawning={isSpawning}
           isDead={isDead}
         />
-        <CoronaUI seekAlert={seekAlert} isUnderAttack={isUnderAttack} />
+        {!isDead && <CoronaUI seekAlert={seekAlert} isUnderAttack={isUnderAttack} />}
       </group>
 
       <CoronaHowler isUnderAttack={isUnderAttack} seekAlert={seekAlert} />
@@ -203,6 +205,7 @@ export const CoronaRenderer = React.memo(
       isSeeking,
       isPreattacking,
       isDead,
+      isSpawning
     } = props
 
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
@@ -229,7 +232,7 @@ export const CoronaRenderer = React.memo(
 
     useEffect(() => void (isDead && handleDeath()), [isDead, handleDeath])
     
-    useEffect(() => void (isPreattacking && (time.current = 0)), [isPreattacking, time])
+    useEffect(() => void ((isPreattacking || isSpawning) && (time.current = 0)), [isPreattacking, isSpawning, time])
 
     useEffect(() => void addOutline(coronaMesh.current), [addOutline, group]);
 
@@ -254,6 +257,15 @@ export const CoronaRenderer = React.memo(
       if (isPreattacking) {
         rotationGroup.current.rotation.y = easeInQuad(time.current)
         time.current += 0.1
+      }
+      if (isSpawning) {
+        rotationGroup.current.rotation.y = easeInQuad(time.current)
+
+        coronaMesh.current.scale.x = 1 + 1.5 * easeInElastic(time.current / 8) 
+        coronaMesh.current.scale.z = 1 + 1.5 * easeInElastic(time.current / 8) 
+        coronaMesh.current.scale.y = 1 + 1.5 * easeInElastic(time.current / 8) 
+  
+        time.current += 0.05
       }
     })
 

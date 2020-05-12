@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from "react";
 import { useMachine } from '@xstate/react';
+import * as THREE from "three";
 
 import useInterval from "./utility/useInterval";
 import StartScreen from './StartScreen'
@@ -41,24 +42,36 @@ function App() {
           });
         }
   
-        const { x = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
+        const { x = 0, y = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
         const candidates = tree.retrieve({ x: x + 20, y: z + 20, width: 1, height: 1 })
   
         for (let i = 0; i < coronas.length; i++) {
+
           const { state, send } = coronas[i].ref
           const { context, value } = state
-          const { id } = context
-  
-          if (value?.live === "idle" || value?.live === "seeking") {
+          const { id, phyRef } = context
+          
+          if (value?.live === "idle" || value?.live === "seeking" || value?.live === "preattacking") {
+            
             const isCandidate = candidates.findIndex(candidate => id === candidate.id) !== -1
+            
             if (isCandidate) {
+              const distance = new THREE.Vector3(x, y, z).distanceTo(phyRef.current.position)
+              
               if (value?.live === "idle") {
                 send("SEEK")
+              } else if (value?.live === "seeking" && distance <= 1) {
+                send("PRE_ATTACK")
+              } else if (value?.live === "preattacking" && distance > 1) {
+                send("SEEK")
               }
+
             } else {
-              if (value?.live === "seeking") {
+              
+              if (value?.live === "seeking" || value?.live === "preattacking") {
                 send("IDLE")
               }
+
             }
           }
   
