@@ -46,7 +46,7 @@ function StartScreen({ hidden }) {
       >
         {/* Title Block */}
         <div>
-          <small css={`margin-left: 1rem;`}>mlperego presents</small>
+          {/* <small css={`margin-left: 1rem;`}>mlperego presents</small> */}
           <h1
             css={`
               margin-bottom: 2rem;
