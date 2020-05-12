@@ -28,7 +28,16 @@ const easing = {
     // decelerating to zero velocity
     easeOutQuint: t => 1 + (--t) * t * t * t * t,
     // acceleration until halfway, then deceleration 
-    easeInOutQuint: t => t < .5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t
+    easeInOutQuint: t => t < .5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t,
+    easeInElastic: x => {
+      const c4 = (2 * Math.PI) / 3;
+      
+      return x === 0
+        ? 0
+        : x === 1
+        ? 1
+        : -Math.pow(2, 10 * x - 10) * Math.sin((x * 10 - 10.75) * c4);
+      }
 }
 
 module.exports = easing
