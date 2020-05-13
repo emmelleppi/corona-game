@@ -7,7 +7,7 @@
   "dependencies": {
     "@timohausmann/quadtree-js": "^1.2.1",
     "@xstate/react": "^0.8.1",
-    "drei": "^0.0.16",
+    "drei": "^0.0.32",
     "gsap": "^3.2.6",
     "immer": "^6.0.3",
     "lerp": "^1.0.3",

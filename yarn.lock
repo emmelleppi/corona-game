@@ -3479,14 +3479,16 @@ dotenv@6.2.0:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-6.2.0.tgz#941c0410535d942c8becf28d3f357dbd9d476064"
   integrity sha512-HygQCKUBSFl8wKQZBSemMywRWcEDNidvNbjGVyZu3nbZ8qq9ubiPoGLMdRDpfSrpkkm9BXYFkpKxxFX38o/76w==
 
-drei@^0.0.16:
-  version "0.0.16"
-  resolved "https://registry.yarnpkg.com/drei/-/drei-0.0.16.tgz#7c86a42b745703a71dc2bed57c2ef426d5eb46eb"
-  integrity sha512-D4wK0ppPMN1N2ZCgKtn3xAO4Rt0PnEgxIAEoYeLv71EXlInV6tFR/bV2UR/MNTMCD4JxrLkX7rCYcbJyAmESaQ==
+drei@^0.0.32:
+  version "0.0.32"
+  resolved "https://registry.yarnpkg.com/drei/-/drei-0.0.32.tgz#1d3a1a94a3dc05f256390377046189bcdb67d5ef"
+  integrity sha512-QBmQHNQh6kKJR2f6xswxmvhGDOUGOAFhw1+F40o/6WA+6XrEGOFKuko/cKaxsCsAXGS/cAmgUc+3WmXgaqejew==
   dependencies:
     "@babel/runtime" "^7.9.2"
     postprocessing "^6.13.3"
     react-merge-refs "^1.0.0"
+    stats.js "^0.17.0"
+    utility-types "^3.10.0"
 
 duplexer@^0.1.1:
   version "0.1.1"
@@ -9003,6 +9005,11 @@ static-extend@^0.1.1:
   dependencies:
     define-property "^0.2.5"
     object-copy "^0.1.0"
+
+stats.js@^0.17.0:
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/stats.js/-/stats.js-0.17.0.tgz#b1c3dc46d94498b578b7fd3985b81ace7131cc7d"
+  integrity sha1-scPcRtlEmLV4t/05hbgaznExzH0=
 
 "statuses@>= 1.4.0 < 2", "statuses@>= 1.5.0 < 2", statuses@~1.5.0:
   version "1.5.0"
