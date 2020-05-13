@@ -25,23 +25,25 @@ function PreGameMode() {
     return { ref: phyRef, orientation }
   }, [corona])
 
-  useFrame(({ clock }) => {
-    t.current += clock.getDelta() * 1000
+  useFrame(
+    function({ clock }) {
+      t.current += clock.getDelta() * 1000
 
-    if (t.current > 50) {
-      t.current = 0;
-      setIndex(index => (index + 1) % coronas.length)
+      if (t.current > 50) {
+        t.current = 0;
+        setIndex(index => (index + 1) % coronas.length)
+      }
+
+      if (ref.current && orientation.current) {
+        const { x, y, z } = ref.current.position
+
+        const lookAtVector = new THREE.Vector3(x - 2 * orientation.current.x, y + 1, z - 2 * orientation.current.z);
+
+        camera.position.lerp(lookAtVector, 0.2);
+        camera.lookAt(x, y, z);
+      }
     }
-
-    if (ref.current && orientation.current) {
-      const { x, y, z } = ref.current.position
-
-      const lookAtVector = new THREE.Vector3(x - 2 * orientation.current.x, y + 1, z - 2 * orientation.current.z);
-
-      camera.position.lerp(lookAtVector, 0.2);
-      camera.lookAt(x, y, z);
-    }
-  })
+  )
 
   return null
 }
@@ -112,16 +114,18 @@ function GestureHandler(props) {
 
   useEffect(() => void (isStartAnimation && camera.current.lookAt(0, -1, -0.5)), [isStartAnimation, camera])
 
-  useFrame(() => {
-    if (playerBody.current) {
-      if (isGameStarted) {
-        camera.current.position.copy(playerBody.current.position)
-      }
-      if (isStartAnimation) {
-        camera.current.position.lerp(playerBody.current.position, 0.1)
+  useFrame(
+    function() {
+      if (playerBody.current) {
+        if (isGameStarted) {
+          camera.current.position.copy(playerBody.current.position)
+        }
+        if (isStartAnimation) {
+          camera.current.position.lerp(playerBody.current.position, 0.1)
+        }
       }
     }
-  })
+  )
 
   return (
     <a.perspectiveCamera

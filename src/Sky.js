@@ -25,13 +25,14 @@ function ShaderSphere(props) {
     };
   }, []);
     
-  useFrame(() => {
-    ref.current.rotation.x += 0.01;
-    ref.current.rotation.y += 0.01;
-    ref.current.rotation.z += 0.01;
-    matRef.current.uniforms.u_time.value += 0.001;
-      
-  });
+  useFrame(
+    function() {
+      ref.current.rotation.x += 0.01;
+      ref.current.rotation.y += 0.01;
+      ref.current.rotation.z += 0.01;
+      matRef.current.uniforms.u_time.value += 0.001;
+    }
+  );
 
   return (
     <mesh ref={ref} {...props}>
@@ -88,13 +89,15 @@ function Sky() {
 
   }, [text, canvas])
 
-  useFrame(() => {
-    time.current += 1;
-    if (time.current === 100) {
-      setText(s => (s + 1) % TEXT.length);
-      time.current = 0;
+  useFrame(
+    function() {
+      time.current += 1;
+      if (time.current === 100) {
+        setText(s => (s + 1) % TEXT.length);
+        time.current = 0;
+      }
     }
-  });
+  );
 
   return (
     <group position={[0, 20, 0]} scale={[6, 6, 6]}>

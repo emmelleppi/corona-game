@@ -86,43 +86,45 @@ function PhyPlayer(props) {
   useEffect(() => void actions.init(api), [actions, api])
   useEffect(() => api.position.subscribe(([x, y, z]) => void chestApi.position.set(x, y + Y_AXIS, z)), [api, chestApi])
 
-  useFrame(() => {
-    const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
+  useFrame(
+    function() {
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
 
-    let x = 0;
-    let y = 0;
+      let x = 0;
+      let y = 0;
 
-    if (backward) {
-      x += direction.z;
-      y += -direction.x;
-    } else if (forward) {
-      x += -direction.z;
-      y += direction.x;
+      if (backward) {
+        x += direction.z;
+        y += -direction.x;
+      } else if (forward) {
+        x += -direction.z;
+        y += direction.x;
+      }
+      if (left) {
+        x += -direction.x;
+        y += -direction.z;
+      } else if (right) {
+        x += direction.x;
+        y += direction.z;
+      }
+
+      x = Math.min(1, Math.max(x, -1));
+      y = Math.min(1, Math.max(y, -1));
+
+      if (x !== 0 || y !== 0) {
+        const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
+        api.angularVelocity.set(velocity * x, 0, velocity * y);
+      } else {
+        api.angularVelocity.set(0, 0, 0);
+      }
+
+      if (jump && isOnTiles.current) {
+        api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
+        isOnTiles.current = false
+      }
     }
-    if (left) {
-      x += -direction.x;
-      y += -direction.z;
-    } else if (right) {
-      x += direction.x;
-      y += direction.z;
-    }
-
-    x = Math.min(1, Math.max(x, -1));
-    y = Math.min(1, Math.max(y, -1));
-
-    if (x !== 0 || y !== 0) {
-      const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1)
-      api.angularVelocity.set(velocity * x, 0, velocity * y);
-    } else {
-      api.angularVelocity.set(0, 0, 0);
-    }
-
-    if (jump && isOnTiles.current) {
-      api.applyImpulse([JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x], [0, 0, 0]);
-      isOnTiles.current = false
-    }
-  })
+  )
 
   return (
     <>

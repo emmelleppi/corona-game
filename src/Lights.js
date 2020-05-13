@@ -6,11 +6,13 @@ function Lights() {
   const blueTarget = useRef()
   const group = useRef()
 
-  useFrame(({ clock }) => {
-    const time = clock.getElapsedTime()
-    group.current.rotation.y = time / 2
-    group.current.position.y += Math.sin(time) / 10
-  })
+  useFrame(
+    function({ clock }) {
+      const time = clock.getElapsedTime()
+      group.current.rotation.y = time / 2
+      group.current.position.y += Math.sin(time) / 10
+    }
+  )
 
   return (
     <>

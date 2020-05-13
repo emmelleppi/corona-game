@@ -14,11 +14,7 @@ function Sprite(props) {
     // And useFrame takes care of render-loop effects
     // This effect is cleared automatically when the component unmounts
 
-    useFrame(() => {
-        if (visible) {
-            animator.animate()
-        }
-    })
+    useFrame(() => void (visible && animator.animate()))
 
     return (
         <mesh position={IconPosition} visible={visible} >

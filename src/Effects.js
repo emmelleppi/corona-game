@@ -65,19 +65,20 @@ function Effects() {
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [composer,size])
   
-  useFrame(({ gl }) => {
-    const { playerBody } = playerApi.getState()
-    if (playerBody.current) {
-      const { y } = playerBody.current.position
-      if (y < 0) {
-        water.current.factor = -y / 10
-        vignette.current.uniforms.offset.value = 0.95 + y / 10
-        vignette.current.uniforms.darkness.value = 1.6 - y / 10
+  useFrame(
+    function({ gl }) {
+      const { playerBody } = playerApi.getState()
+      if (playerBody.current) {
+        const { y } = playerBody.current.position
+        if (y < 0) {
+          water.current.factor = -y / 10
+          vignette.current.uniforms.offset.value = 0.95 + y / 10
+          vignette.current.uniforms.darkness.value = 1.6 - y / 10
+        }
       }
-    }
-    gl.autoClear = true
-    composer.current.render()
-  }, 1)
+      gl.autoClear = true
+      composer.current.render()
+    }, 1)
 
   return (
     <effectComposer ref={composer} args={[gl]}>

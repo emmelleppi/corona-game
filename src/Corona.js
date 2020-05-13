@@ -137,9 +137,8 @@ const PhyCorona = React.memo(function PhyCorona(props) {
   }, [isAttacking, isDead, handleAttack, handleDeath])
 
   useFrame(function () {
-    
     if (isIdle || isSeeking)  {
-      const velocityFactor = isIdle ? IDLE_VELOCITY : SEEK_VELOCITY
+      const velocityFactor = (isIdle ? IDLE_VELOCITY : SEEK_VELOCITY)
       
       const { coords, time } = additiveOrientation.current
       
@@ -243,34 +242,36 @@ export const CoronaRenderer = React.memo(
 
     useEffect(() => void addOutline(coronaMesh.current), [addOutline, group]);
 
-    useFrame(({ clock }) => {
-      if (isDead) return
+    useFrame(
+      function({ clock }) {
+        if (isDead) return
 
-      const multiplier = 10 * (isSeeking ? 2 : 1)
+        const multiplier = 10 * (isSeeking ? 2 : 1)
 
-      positionGroup.current.position.y = Math.sin(rand.current + clock.elapsedTime * multiplier) * 0.5
+        positionGroup.current.position.y = Math.sin(rand.current + clock.elapsedTime * multiplier) * 0.5
 
-      const h = 1 - Math.sin(rand.current + clock.elapsedTime * multiplier) / 8
-      const v = 1 + Math.sin(rand.current + clock.elapsedTime * multiplier) / 10
+        const h = 1 - Math.sin(rand.current + clock.elapsedTime * multiplier) / 8
+        const v = 1 + Math.sin(rand.current + clock.elapsedTime * multiplier) / 10
 
-      coronaMesh.current.scale.x = h
-      coronaMesh.current.scale.z = h
-      coronaMesh.current.scale.y = v
+        coronaMesh.current.scale.x = h
+        coronaMesh.current.scale.z = h
+        coronaMesh.current.scale.y = v
 
-      if (isPreattacking) {
-        rotationGroup.current.rotation.y = easeInQuad(time.current)
-        time.current += 0.07
+        if (isPreattacking) {
+          rotationGroup.current.rotation.y = easeInQuad(time.current)
+          time.current += 0.07
+        }
+        if (isSpawning) {
+          rotationGroup.current.rotation.y = easeInQuad(time.current)
+
+          coronaMesh.current.scale.x = 1 + 1.5 * easeInElastic(time.current / 8) 
+          coronaMesh.current.scale.z = 1 + 1.5 * easeInElastic(time.current / 8) 
+          coronaMesh.current.scale.y = 1 + 1.5 * easeInElastic(time.current / 8) 
+    
+          time.current += 0.05
+        }
       }
-      if (isSpawning) {
-        rotationGroup.current.rotation.y = easeInQuad(time.current)
-
-        coronaMesh.current.scale.x = 1 + 1.5 * easeInElastic(time.current / 8) 
-        coronaMesh.current.scale.z = 1 + 1.5 * easeInElastic(time.current / 8) 
-        coronaMesh.current.scale.y = 1 + 1.5 * easeInElastic(time.current / 8) 
-  
-        time.current += 0.05
-      }
-    })
+    )
 
     return (
       <>
@@ -308,11 +309,13 @@ const CoronaShadow = React.memo(
 
     const shadowTexture = useAssets(s => s.coronaShadow)
 
-    useFrame(() => {
-      shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, positionGroup.current.position.y);
-      shadow.current.scale.x = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
-      shadow.current.scale.y = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
-    })
+    useFrame(
+      function() {
+        shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, positionGroup.current.position.y);
+        shadow.current.scale.x = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
+        shadow.current.scale.y = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
+      }
+    )
 
     return (
       <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} visible={!isDead} >

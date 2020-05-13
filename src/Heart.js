@@ -15,16 +15,18 @@ function Heart(props) {
   const fiveTone = useAssets(s => s.fiveTone)
 
 
-  useFrame(({ clock }) => {
-    const h = 1 - Math.sin(10 * clock.elapsedTime) / 8
-    const v = 1 + Math.sin(10 * clock.elapsedTime) / 10
+  useFrame(
+    function({ clock }) {
+      const h = 1 - Math.sin(10 * clock.elapsedTime) / 8
+      const v = 1 + Math.sin(10 * clock.elapsedTime) / 10
 
-    mesh.current.position.y = Math.sin(clock.elapsedTime * 10) * 0.01
+      mesh.current.position.y = Math.sin(clock.elapsedTime * 10) * 0.01
 
-    mesh.current.scale.x = h
-    mesh.current.scale.z = h
-    mesh.current.scale.y = v
-  })
+      mesh.current.scale.x = h
+      mesh.current.scale.z = h
+      mesh.current.scale.y = v
+    }
+  )
 
   return (
     <group {...props} dispose={null} >
