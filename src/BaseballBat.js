@@ -43,7 +43,7 @@ const batMovements = {
 function PhyBaseballBat(props) {
   const [] = useSound(playerHitSfx)
 
-  const [mybody, api] = useBox(() => ({
+  const [body, api] = useBox(() => ({
     args: [0.05, 1.5, 0.05],
     mass: 1,
     collisionFilterGroup: COLLISION_GROUP.BAT,
@@ -52,8 +52,8 @@ function PhyBaseballBat(props) {
 
   return (
     <>
-      <mesh ref={mybody} userData={{ type: COLLISION_GROUP.BAT }} />
-      <BaseballBat api={api} body={mybody} {...props} />
+      <mesh ref={body} userData={{ type: COLLISION_GROUP.BAT }} />
+      <BaseballBat api={api} body={body} {...props} />
     </>
   )
 }
@@ -91,50 +91,51 @@ function BaseballBat(props) {
   const [handleResourceRef, handleMaterial] = useResource()
 
   useEffect(() => void setAttacked(true), [life])
-
-  useEffect(() => void (attacked && setTimeout(() => setAttacked(false), 200)), [attacked])
+  useEffect(() => void (attacked && setTimeout(() => setAttacked(false), 500)), [setAttacked, attacked])
 
   useEffect(() => void addCallback(handleClick), [handleClick, addCallback]);
 
   useEffect(() => void addOutline(batGroupRef.current), [addOutline, batGroupRef]);
 
-  useFrame(() => {
-    const { init, half, end, idle } = batMovements
-    time.current += 1;
+  useFrame(
+    function() {
+      const { init, half, end, idle } = batMovements
+      time.current += 1;
 
-    if (time.current === init.t) {
+      if (time.current === init.t) {
 
-      body.current.userData.isAttacking = true
-      batGroupRef.current.rotation.x = Math.PI / 2;
-      batGroupRef.current.rotation.y = 0;
-      set({ ...init.spring });
+        body.current.userData.isAttacking = true
+        batGroupRef.current.rotation.x = Math.PI / 2;
+        batGroupRef.current.rotation.y = 0;
+        set({ ...init.spring });
 
-    } else if (time.current === half.t) {
+      } else if (time.current === half.t) {
 
-      set({ ...half.spring });
+        set({ ...half.spring });
 
-    } else if (time.current === end.t) {
+      } else if (time.current === end.t) {
+        
+        body.current.userData.isAttacking = false
+        set({ ...end.spring });
+        
+      } else if (time.current > idle.t) {
+
+        batGroupRef.current.rotation.x = Math.PI / 2 + Math.cos(time.current / 10) / 6
+        batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
+
+      }
       
-      body.current.userData.isAttacking = false
-      set({ ...end.spring });
-      
-    } else if (time.current > idle.t) {
-
-      batGroupRef.current.rotation.x = Math.PI / 2 + Math.cos(time.current / 10) / 6
-      batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
-
-    }
+      const position = new THREE.Vector3();
+      const quaternion = new THREE.Quaternion();
+      const euler = new THREE.Euler();
     
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
-    const euler = new THREE.Euler();
-  
-    batRef.current.matrixWorld.decompose(position, quaternion, {});
-    euler.setFromQuaternion(quaternion)
-  
-    api.position.set(position.x, position.y, position.z);
-    api.rotation.set(euler.x, euler.y, euler.z);
-  });
+      batRef.current.matrixWorld.decompose(position, quaternion, {});
+      euler.setFromQuaternion(quaternion)
+    
+      api.position.set(position.x, position.y, position.z);
+      api.rotation.set(euler.x, euler.y, euler.z);
+    }
+  );
 
   return (
     <>
