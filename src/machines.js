@@ -5,10 +5,23 @@ import * as THREE from "three";
 
 import { mapApi, raycasterApi, playerApi } from "./store";
 import { getRandomUnity } from "./utility/math"
+import { CORONA, GAME } from "./config";
 
-const NUMBER_OF_INIT_SPAWNS = 10
-const NUMBER_OF_MAX_SPAWNS = 50
-const ORIENTATION_THRESHOLD = 0.5
+const {
+  NUMBER_OF_INIT_SPAWNS,
+  NUMBER_OF_MAX_SPAWNS,
+  INIT_ANIMATION_DURATION
+} = GAME
+const {
+  LIFE,
+  Y_AXIS,
+  ORIENTATION_THRESHOLD,
+  SEEK_ALERT_DURATION,
+  PREATTACK_DURATION,
+  UNDER_ATTACK_DURATION,
+  SPAWN_ANIMATION_DURATION,
+  SPAWN_INTERVAL,
+} = CORONA
 
 const { send, sendParent, assign } = actions;
 
@@ -16,7 +29,7 @@ const createCorona = (isActive = false, initPosition = [0, 0, 0]) => {
   
   return {
     id: uuid(),
-    life: 3,
+    life: LIFE,
     isActive,
     isUnderAttack: false,
     seekAlert: false,
@@ -69,7 +82,7 @@ export const GAME_ORCHESTRATOR = Machine(
                     const x = bbox.min.x + (bbox.max.x - bbox.min.x) * Math.random()
                     const z = bbox.min.z + (bbox.max.z - bbox.min.z) * Math.random()
                     if (actions.isIntersect([x, 1, z])) {
-                      position = [x, 0.6, z]
+                      position = [x, Y_AXIS, z]
                     }
                   } while (!position)
         
@@ -96,7 +109,7 @@ export const GAME_ORCHESTRATOR = Machine(
       },
       initAnimation: {
         after: {
-          500: "start"
+          INIT_ANIMATION_DURATION: "start"
         }
       },
       start: {
@@ -164,6 +177,9 @@ export const GAME_ORCHESTRATOR = Machine(
         coronas: ({ coronas }, e) =>
           coronas.filter(corona => corona.id !== e.corona.id)
       }),
+    },
+    delays: {
+      INIT_ANIMATION_DURATION
     }
   }
 );
@@ -174,7 +190,7 @@ const CORONA_MACHINE = Machine(
     initial: "live",
     context: {
       id: uuid(),
-      life: 2,
+      life: LIFE,
       isActive: false,
       isUnderAttack: false,
       seekAlert: false,
@@ -198,7 +214,7 @@ const CORONA_MACHINE = Machine(
               "decreaseLife",
               "setIsUnderAttack",
               send("RESET_IS_UNDER_ATTACK", {
-                delay: 300,
+                delay: UNDER_ATTACK_DURATION,
                 id: "resetIsUnderAttackTimerFromPreattacking"
               }),
               send("DEAD")
@@ -221,7 +237,7 @@ const CORONA_MACHINE = Machine(
             entry: [
               "setSeekAlert",
               send("RESET_SEEK_ALERT", {
-                delay: 2000,
+                delay: SEEK_ALERT_DURATION,
                 id: "resetSeekTimer"
               })
             ],
@@ -245,7 +261,7 @@ const CORONA_MACHINE = Machine(
               ATTACK: { target: "attacking", actions: "resetIsUnderAttack" }
             },
             activities: ["update"],
-            after: { 1000: "attacking" }
+            after: { PREATTACK_DURATION: "attacking" }
           },
           attacking: {
             on: {
@@ -261,7 +277,7 @@ const CORONA_MACHINE = Machine(
             on: {
               IDLE: "idle"
             },
-            after: { 3000: "spawned" }
+            after: { SPAWN_ANIMATION_DURATION: "spawned" }
           },
           spawned: {
             entry: [
@@ -313,22 +329,22 @@ const CORONA_MACHINE = Machine(
       update: ({ orientation, phyRef }) => {
         const { isIntersect } = raycasterApi.getState().actions
 
-        const timerId = setInterval(() => {
+        const intervalId = window.requestInterval(() => {
           if (!phyRef.current) return
+
           const { x, y, z } = phyRef.current.position
 
           if (!isIntersect([x + orientation.current.x, y, z + orientation.current.z])) {
             orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
           }
-
-        }, 100);
-        return () => clearInterval(timerId)
+        }, 100)
+        return () => window.clearRequestInterval(intervalId)
       },
       seekingUpdate: ({ phyRef, orientation }, e) => {
         const { isIntersect } = raycasterApi.getState().actions
         const player = playerApi.getState().playerBody
 
-        const timerId = setInterval(() => {
+        const intervalId = window.requestInterval(() => {
           if (!phyRef.current) return
 
           const { x, y, z } = phyRef.current.position
@@ -343,13 +359,14 @@ const CORONA_MACHINE = Machine(
           } else {
             orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
           }
-
-        }, 100);
-        return () => clearInterval(timerId)
+        }, 100)
+        return () => window.clearRequestInterval(intervalId)
       },
     },
     delays: {
-      SPAWN_INTERVAL: () => 3000 + Math.random() * 3000
+      SPAWN_INTERVAL: () => SPAWN_INTERVAL + Math.random() * SPAWN_INTERVAL,
+      SPAWN_ANIMATION_DURATION,
+      PREATTACK_DURATION
     }
   }
 );

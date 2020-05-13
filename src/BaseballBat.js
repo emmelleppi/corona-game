@@ -11,8 +11,9 @@ import * as THREE from "three";
 import useSound from "use-sound";
 import { draco } from 'drei'
 
-import { useOutline, usePlayer, COLLISION_GROUP, useInteraction, useAssets } from "./store"
+import { useOutline, usePlayer, useInteraction, useAssets } from "./store"
 import playerHitSfx from './sounds/Player_Hit.wav'
+import { COLLISION_GROUP } from "./config";
 
 const batMovements = {
   init: {

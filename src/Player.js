@@ -5,15 +5,21 @@ import * as THREE from "three";
 import useSound from 'use-sound'
 import { useService } from "@xstate/react";
 
-import { COLLISION_GROUP, usePlayer, useInteraction, interactionApi, playerApi, serviceApi } from "./store";
+import { usePlayer, useInteraction, interactionApi, playerApi, serviceApi } from "./store";
 import BaseballBat from "./BaseballBat";
 import jumpSfx from './sounds/Jump.wav'
 import boostSfx from './sounds/Sprint.wav'
 import GestureHandler from "./GestureHandler";
+import { PLAYER, COLLISION_GROUP } from "./config";
 
-const JUMP_IMPULSE = 10;
-const VELOCITY = 12
-const BOOST_FACTOR = 3
+const {
+  JUMP_IMPULSE,
+  VELOCITY,
+  BOOST_FACTOR,
+  BODY_RADIUS,
+  BODY_LINEAR_DAMPING,
+  BODY_ANGULAR_DAMPING,
+} = PLAYER
 
 function PhyPlayer(props) {
   const { position } = props;
@@ -31,11 +37,11 @@ function PhyPlayer(props) {
 
   const [mybody, api] = useSphere(() => ({
     mass: 1,
-    args: 0.5,
+    args: BODY_RADIUS,
     type: "Dynamic",
     position,
-    linearDamping: 0.3,
-    angularDamping: 0.9,
+    linearDamping: BODY_LINEAR_DAMPING,
+    angularDamping: BODY_ANGULAR_DAMPING,
     collisionFilterGroup: COLLISION_GROUP.BODY,
     collisionFilterMask: COLLISION_GROUP.TILES,
     onCollide: e => {

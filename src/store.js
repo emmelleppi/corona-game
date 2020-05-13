@@ -3,25 +3,7 @@ import produce from "immer"
 import * as THREE from "three";
 import { createRef } from "react"
 import Quadtree from '@timohausmann/quadtree-js';
-
-export const INITIAL_LIFE = 100
-export const NUMBER_OF_MAP_BBOX = 43
-
-export const CORONA_STATUS = {
-  IDLE: 0,
-  SEEKING: 1,
-  PRE_ATTACK: 2,
-  ATTACK: 3,
-  DEAD: 4
-}
-
-export const COLLISION_GROUP = {
-  CORONA: 1,
-  TILES: 4,
-  BODY: 8,
-  CHEST: 16,
-  BAT: 32,
-}
+import { MAP, PLAYER } from './config';
 
 export const [useGameService, serviceApi] = create(set => ({
   service: null,
@@ -87,7 +69,7 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
 
 
 export const [usePlayer, playerApi] = create((set, get) => ({
-  life: INITIAL_LIFE,
+  life: PLAYER.INITIAL_LIFE,
   playerBody: createRef(),
   playerApi: null,
   actions: {
@@ -103,7 +85,7 @@ export const [usePlayer, playerApi] = create((set, get) => ({
     decreaseLife() {
       set(produce(state => void (state.life -= Math.floor(1 + Math.random() * 5))))
     },
-    resetLife() { set({ life: INITIAL_LIFE }) },
+    resetLife() { set({ life: PLAYER.INITIAL_LIFE }) },
   }
 }))
 
@@ -135,7 +117,7 @@ export const [useMap, mapApi] = create(set => ({
     mapBBoxes.push(box)
     mapBBox.union(box)
 
-    if (mapItems.length === NUMBER_OF_MAP_BBOX) {
+    if (mapItems.length === MAP.NUMBER_OF_BBOX) {
       const { initQuadtree } = quadtreeApi.getState()
       initQuadtree()
     }

@@ -4,16 +4,17 @@ import { extend, useThree, useFrame } from "react-three-fiber";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
-import { GlitchPass } from "./post/glitchPass";
 import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
 import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader.js';
 import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader.js';
-import { WaterPass } from "./post/waterPass";
 
-import { outlineApi, playerApi, INITIAL_LIFE } from "./store";
+import { GlitchPass } from "./post/glitchPass";
+import { WaterPass } from "./post/waterPass";
+import { outlineApi, playerApi } from "./store";
+import { PLAYER } from "./config";
 
 const OUTLINE_COLOR = 0xffffff;
 
@@ -37,7 +38,7 @@ function Effects() {
   const glitch = useRef();
   const water = useRef();
   const vignette = useRef();
-  const currLife = React.useRef(INITIAL_LIFE)
+  const currLife = React.useRef(PLAYER.INITIAL_LIFE)
 
   useEffect(() => void (glitch.current.factor = 0), [glitch])
 

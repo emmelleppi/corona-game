@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import * as THREE from 'three'
 import { playerApi } from '../store'
 import Heart from '../Heart'
+import { PLAYER } from '../config'
 
 const colors = [
   "#161616",
@@ -23,7 +24,7 @@ class HealthBarController {
       y: 0
     };
 
-    this.health = 100;
+    this.health = PLAYER.INITIAL_LIFE;
     this.canvas = canvas
     this.c = ctx
   }
@@ -58,7 +59,7 @@ class HealthBarController {
     this.c.shadowColor = "transparent";
   }
 
-  update(life = 100) {
+  update(life = PLAYER.INITIAL_LIFE) {
     this.health = life
     this.c.fillStyle = "transparent";
     this.c.clearRect(0, 0, this.canvas.width, this.canvas.height);

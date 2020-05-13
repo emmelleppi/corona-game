@@ -37,11 +37,7 @@ function Game() {
 
   return (
     <Suspense fallback={"LOADING"} >
-      <Canvas
-        colorManagement
-        camera={{ position: [0, 100, 0] }}
-        onClick={handleClick}
-      >
+      <Canvas colorManagement onClick={handleClick} >
         <color attach="background" args={[0x3b163a]} />
         <Main />
         <Hud />

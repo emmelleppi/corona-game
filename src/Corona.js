@@ -13,10 +13,13 @@ import { useService } from "@xstate/react";
 import HitSfx from './sounds/Player_Hit.wav'
 import HitSfx2 from './sounds/Player_Hit_2.wav'
 import alertSfx from './sounds/Alert.wav'
-import { COLLISION_GROUP, useOutline, useAssets, usePlayer } from "./store"
+import { useOutline, useAssets, usePlayer } from "./store"
 import Exclamation from './Exclamation';
 import Pow from './Pow';
 import { easeInQuad, easeInElastic } from "./utility/easing"
+import { COLLISION_GROUP, CORONA } from './config';
+
+const { ATTACK_DURATION, IDLE_VELOCITY, SEEK_VELOCITY } = CORONA
 
 const PhyCorona = React.memo(function PhyCorona(props) {
   const { interpreter } = props
@@ -119,7 +122,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
       const { x, y, z } = attackPosition.current
       lockApi.position.set(x, y, z)
       send("PRE_ATTACK")
-    }, 200)
+    }, ATTACK_DURATION)
   },
   [send, playerBody, lock, coronaBody, lockApi, attackPosition])
 
@@ -131,7 +134,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
   useFrame(function () {
     
     if (isIdle || isSeeking)  {
-      const velocityFactor = isIdle ? 1 / 50 : 1 / 30
+      const velocityFactor = isIdle ? IDLE_VELOCITY : SEEK_VELOCITY
       
       const { coords, time } = additiveOrientation.current
       
@@ -187,13 +190,13 @@ const CoronaUI = React.memo(function CoronaUI({
 })
 
 const CoronaHowler = React.memo(function CoronaHowler({ isUnderAttack, seekAlert }) {
-  const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
 
-  const [playHitSfx] = useSound(rand.current > 5 ? HitSfx : HitSfx2)
+  const [playHitSfx] = useSound(HitSfx)
+  const [playHitSfx2] = useSound(HitSfx2)
   const [playAlertSfx] = useSound(alertSfx)
 
   useEffect(() => void (seekAlert && playAlertSfx()), [seekAlert, playAlertSfx])
-  useEffect(() => void (isUnderAttack && playHitSfx()), [isUnderAttack, playHitSfx])
+  useEffect(() => void (isUnderAttack && (Math.random() > 0.5 ? playHitSfx() : playHitSfx2())), [isUnderAttack, playHitSfx, playHitSfx2])
 
   return null
 })
@@ -211,13 +214,12 @@ export const CoronaRenderer = React.memo(
     const rand = React.useRef(Math.floor(Math.random() * 10) + 1)
 
     const time = useRef()
-    const shadow = useRef()
     const group = useRef()
     const rotationGroup = useRef()
     const coronaMesh = useRef()
     const positionGroup = useRef()
 
-    const { coronaNodes: nodes, coronaShadow: shadowTexture, fiveTone } = useAssets(s => s)
+    const { coronaNodes: nodes, fiveTone } = useAssets(s => s)
 
     const { addOutline, removeOutline } = useOutline(s => s)
 
@@ -250,10 +252,6 @@ export const CoronaRenderer = React.memo(
       coronaMesh.current.scale.z = h
       coronaMesh.current.scale.y = v
 
-      shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, positionGroup.current.position.y);
-      shadow.current.scale.x = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
-      shadow.current.scale.y = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
-
       if (isPreattacking) {
         rotationGroup.current.rotation.y = easeInQuad(time.current)
         time.current += 0.1
@@ -282,21 +280,14 @@ export const CoronaRenderer = React.memo(
         />
 
         <group ref={group} dispose={null} >
+
           <group ref={rotationGroup}>
             <group ref={positionGroup}>
-              <mesh material={material} ref={coronaMesh} geometry={nodes?.Cube?.geometry} name="Corona" />
+              <mesh material={material} ref={coronaMesh} geometry={nodes?.Cube?.geometry} />
             </group>
           </group>
 
-          <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[4, 4, 4]} visible={!isDead} >
-            <planeBufferGeometry attach="geometry" args={[0.5, 0.5]} />
-            <meshBasicMaterial
-              attach="material"
-              map={shadowTexture}
-              transparent={true}
-              depthWrite={false}
-            />
-          </mesh>
+          <CoronaShadow isDead={isDead} positionGroup={positionGroup} />
 
         </group>
 
@@ -304,5 +295,31 @@ export const CoronaRenderer = React.memo(
     )
   }
 )
+
+const CoronaShadow = React.memo(
+  function CoronaShadow(props) {
+    const { isDead, positionGroup } = props
+    const shadow = useRef()
+
+    const shadowTexture = useAssets(s => s.coronaShadow)
+
+    useFrame(() => {
+      shadow.current.material.opacity = THREE.MathUtils.lerp(.6, .1, positionGroup.current.position.y);
+      shadow.current.scale.x = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
+      shadow.current.scale.y = THREE.MathUtils.lerp(4, 2, positionGroup.current.position.y);
+    })
+
+    return (
+      <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[4, 4, 4]} visible={!isDead} >
+        <planeBufferGeometry attach="geometry" args={[0.5, 0.5]} />
+        <meshBasicMaterial
+          attach="material"
+          map={shadowTexture}
+          transparent={true}
+          depthWrite={false}
+        />
+      </mesh>
+    )
+})
 
 export default PhyCorona

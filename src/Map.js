@@ -6,7 +6,8 @@ import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry'
 import * as THREE from "three";
 import { draco } from 'drei'
 
-import { COLLISION_GROUP, useMap } from "./store"
+import { useMap } from "./store"
+import { COLLISION_GROUP } from "./config";
 
 function ConvexPolyBody(props) {
   const { position, geometry, material } = props

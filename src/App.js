@@ -2,13 +2,14 @@ import React, { useEffect, useCallback } from "react";
 import { useMachine } from '@xstate/react';
 import * as THREE from "three";
 
-import useInterval from "./utility/useInterval";
 import StartScreen from './StartScreen'
 import Game from './Game'
 import { GAME_ORCHESTRATOR } from "./machines";
-import { mapApi, quadtreeApi, playerApi, NUMBER_OF_MAP_BBOX, serviceApi } from "./store";
+import { mapApi, quadtreeApi, playerApi, serviceApi } from "./store";
 
+import "./utility/requestInterval"
 import "./styles.css";
+import { MAP } from "./config";
 
 function App() {
   const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
@@ -82,9 +83,12 @@ function App() {
     [current, send]
   )
   
-  useInterval(update, 500)
+  useEffect(() => {
+    const intervalId = window.requestInterval(update, 500)
+    return () => window.clearRequestInterval(intervalId)
+  }, [update])
 
-  useEffect(() => mapApi.subscribe(({ mapItems }) => { if (mapItems.length === NUMBER_OF_MAP_BBOX) { send("INIT") } }), [send])
+  useEffect(() => mapApi.subscribe(({ mapItems }) => { if (mapItems.length === MAP.NUMBER_OF_MAP_BBOX) { send("INIT") } }), [send])
   useEffect(() => void (serviceApi.getState().setService(service)), [service])
 
   return (

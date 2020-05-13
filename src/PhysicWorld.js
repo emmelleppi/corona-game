@@ -1,10 +1,10 @@
 import React, { Suspense } from "react";
 import { Physics, useBox } from "use-cannon";
 
-import FirstPersonCamera from "./FirstPersonCamera";
+import Player from "./Player";
 import Map from "./Map";
 import CoronaManager from './CoronaManager'
-import { COLLISION_GROUP } from "./store";
+import { COLLISION_GROUP } from "./config";
 
 const PLAYER_INITIAL_POSITION = [0, 30, 10]
 
@@ -33,7 +33,7 @@ function PhysicWorld() {
 
   return (
     <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
-      <FirstPersonCamera position={PLAYER_INITIAL_POSITION} />
+      <Player position={PLAYER_INITIAL_POSITION} />
       <Trampoline />
       <Suspense fallback={null}>
         <Map />
