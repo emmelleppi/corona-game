@@ -19,6 +19,7 @@ const {
   BODY_RADIUS,
   BODY_LINEAR_DAMPING,
   BODY_ANGULAR_DAMPING,
+  Y_AXIS
 } = PLAYER
 
 function PhyPlayer(props) {
@@ -83,7 +84,7 @@ function PhyPlayer(props) {
 
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
   useEffect(() => void actions.init(api), [actions, api])
-  useEffect(() => api.position.subscribe(([x, y, z]) => void chestApi.position.set(x, y + 0.3, z)), [api, chestApi])
+  useEffect(() => api.position.subscribe(([x, y, z]) => void chestApi.position.set(x, y + Y_AXIS, z)), [api, chestApi])
 
   useFrame(() => {
     const direction = new THREE.Vector3();

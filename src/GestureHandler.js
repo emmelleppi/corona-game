@@ -28,7 +28,7 @@ function PreGameMode() {
   useFrame(({ clock }) => {
     t.current += clock.getDelta() * 1000
 
-    if (t.current > 15) {
+    if (t.current > 50) {
       t.current = 0;
       setIndex(index => (index + 1) % coronas.length)
     }
@@ -36,7 +36,7 @@ function PreGameMode() {
     if (ref.current && orientation.current) {
       const { x, y, z } = ref.current.position
 
-      const lookAtVector = new THREE.Vector3(x - orientation.current.x, y + 0.5, z - orientation.current.z);
+      const lookAtVector = new THREE.Vector3(x - 2 * orientation.current.x, y + 1, z - 2 * orientation.current.z);
 
       camera.position.lerp(lookAtVector, 0.2);
       camera.lookAt(x, y, z);

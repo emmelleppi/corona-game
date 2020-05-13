@@ -6,10 +6,7 @@ import StartScreen from './StartScreen'
 import Game from './Game'
 import { GAME_ORCHESTRATOR } from "./machines";
 import { mapApi, quadtreeApi, playerApi, serviceApi } from "./store";
-
-import "./utility/requestInterval"
-import "./styles.css";
-import { MAP } from "./config";
+import { MAP, CORONA } from "./config";
 
 function App() {
   const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
@@ -32,19 +29,21 @@ function App() {
           const { context } = state
           const { id, phyRef } = context
   
-          const { x = 0, z = 0 } = phyRef?.current?.position
-  
-          tree.insert({
-            id,
-            x: x + 20,
-            y: z + 20,
-            width: 1,
-            height: 1,
-          });
+          if (phyRef?.current) {
+            const { x = 0, z = 0 } = phyRef?.current?.position
+
+            tree.insert({
+              id,
+              x: x + 55,
+              y: z + 85,
+              width: 1,
+              height: 1,
+            });
+          }
         }
   
         const { x = 0, y = 0, z = 0 } = playerApi.getState()?.playerBody?.current?.position
-        const candidates = tree.retrieve({ x: x + 20, y: z + 20, width: 1, height: 1 })
+        const candidates = tree.retrieve({ x: x + 55, y: z + 85, width: 1, height: 1 })
   
         for (let i = 0; i < coronas.length; i++) {
 
@@ -61,9 +60,9 @@ function App() {
               
               if (value?.live === "idle") {
                 send("SEEK")
-              } else if (value?.live === "seeking" && distance <= 1) {
-                send("PRE_ATTACK")
-              } else if (value?.live === "preattacking" && distance > 1) {
+              } else if (value?.live === "seeking" && distance <= CORONA.ATTACK_DISTANCE) {
+                send("ATTACK")
+              } else if (value?.live === "preattacking" && distance > CORONA.ATTACK_DISTANCE) {
                 send("SEEK")
               }
 
@@ -84,11 +83,11 @@ function App() {
   )
   
   useEffect(() => {
-    const intervalId = window.requestInterval(update, 500)
+    const intervalId = window.requestInterval(update, 250)
     return () => window.clearRequestInterval(intervalId)
   }, [update])
 
-  useEffect(() => mapApi.subscribe(({ mapItems }) => { if (mapItems.length === MAP.NUMBER_OF_MAP_BBOX) { send("INIT") } }), [send])
+  useEffect(() => mapApi.subscribe(({ mapItems }) => { if (mapItems.length === MAP.NUMBER_OF_BBOX) { send("INIT") } }), [send])
   useEffect(() => void (serviceApi.getState().setService(service)), [service])
 
   return (

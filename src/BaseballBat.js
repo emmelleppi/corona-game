@@ -44,7 +44,7 @@ function PhyBaseballBat(props) {
   const [] = useSound(playerHitSfx)
 
   const [mybody, api] = useBox(() => ({
-    args: [0.03, 0.6, 0.03],
+    args: [0.05, 1.5, 0.05],
     mass: 1,
     collisionFilterGroup: COLLISION_GROUP.BAT,
     collisionFilterMask: COLLISION_GROUP.CORONA,
@@ -114,8 +114,9 @@ function BaseballBat(props) {
       set({ ...half.spring });
 
     } else if (time.current === end.t) {
-
-      set({ ...end.spring, onRest: () => (body.current.userData.isAttacking = false) });
+      
+      body.current.userData.isAttacking = false
+      set({ ...end.spring });
       
     } else if (time.current > idle.t) {
 

@@ -41,10 +41,10 @@ function Lights() {
       <ambientLight intensity={0.8} />
       <spotLight
         color={"lightyellow"}
-        position={[0, 32, 0]}
+        position={[0, 64, 0]}
         distance={100}
         intensity={1}
-        angle={Math.PI / 4}
+        angle={Math.PI / 3}
         castShadow
         shadow-mapSize-width={1024 / 2}
         shadow-mapSize-height={1024 / 2}

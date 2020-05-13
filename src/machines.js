@@ -21,9 +21,22 @@ const {
   UNDER_ATTACK_DURATION,
   SPAWN_ANIMATION_DURATION,
   SPAWN_INTERVAL,
+  ATTACK_DISTANCE
 } = CORONA
 
 const { send, sendParent, assign } = actions;
+
+function getRandDamage() {
+  const rand = Math.random()
+
+  if (rand < 0.1 || rand > 0.9) {
+    return 3
+  }
+  if (rand < 0.2 || rand > 0.8) {
+    return 2
+  }
+  return 1
+}
 
 const createCorona = (isActive = false, initPosition = [0, 0, 0]) => {
   
@@ -125,7 +138,11 @@ export const GAME_ORCHESTRATOR = Machine(
         {
           actions: "addCorona",
           cond: "notMaxCoronaNumber"
-        }
+        },
+        {
+          actions: "skipSpawning",
+          cond: "isMaxCoronaNumber"
+        },
       ],
       "ORCHESTRATOR.checkSpawning": [
         {
@@ -230,7 +247,7 @@ const CORONA_MACHINE = Machine(
             },
             activities: ["update"],
             after: {
-              SPAWN_INTERVAL: "spawning"
+              SPAWN_INTERVAL: { target: "spawning", cond: "isActive"}
             }
           },
           seeking: {
@@ -243,8 +260,8 @@ const CORONA_MACHINE = Machine(
             ],
             on: {
               IDLE: { target: "idle", actions: "resetSeekAlert" },
-              PRE_ATTACK: {
-                target: "preattacking",
+              ATTACK: {
+                target: "attacking",
                 actions: "resetSeekAlert"
               },
               RESET_SEEK_ALERT: { actions: "resetSeekAlert" }
@@ -266,6 +283,7 @@ const CORONA_MACHINE = Machine(
           attacking: {
             on: {
               PRE_ATTACK: "preattacking",
+              ATTACKED: "preattacking"
             }
           },
           spawning: {
@@ -314,7 +332,7 @@ const CORONA_MACHINE = Machine(
       isNotActive: ({ isActive }) => !isActive,
     },
     actions: {
-      decreaseLife: assign({ life: context => context.life - 1 }),
+      decreaseLife: assign({ life: context => context.life - getRandDamage() }),
       setIsActive: assign({ isActive: true }),
       resetIsActive: assign({ isActive: false }),
       setAttack: assign({ attack: true }),
@@ -328,7 +346,7 @@ const CORONA_MACHINE = Machine(
     activities: {
       update: ({ orientation, phyRef }) => {
         const { isIntersect } = raycasterApi.getState().actions
-
+        
         const intervalId = window.requestInterval(() => {
           if (!phyRef.current) return
 
@@ -340,10 +358,11 @@ const CORONA_MACHINE = Machine(
         }, 100)
         return () => window.clearRequestInterval(intervalId)
       },
-      seekingUpdate: ({ phyRef, orientation }, e) => {
+      seekingUpdate: ({ phyRef, orientation }) => {
+        
         const { isIntersect } = raycasterApi.getState().actions
         const player = playerApi.getState().playerBody
-
+        
         const intervalId = window.requestInterval(() => {
           if (!phyRef.current) return
 
@@ -352,7 +371,7 @@ const CORONA_MACHINE = Machine(
 
             const distance = player.current.position.clone().distanceTo(phyRef.current.position)
       
-            if (distance > 1) {
+            if (distance > ATTACK_DISTANCE) {
               updateSeekingOrientation({ phyRef, orientation })
             }
 

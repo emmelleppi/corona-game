@@ -19,7 +19,7 @@ import Pow from './Pow';
 import { easeInQuad, easeInElastic } from "./utility/easing"
 import { COLLISION_GROUP, CORONA } from './config';
 
-const { ATTACK_DURATION, IDLE_VELOCITY, SEEK_VELOCITY } = CORONA
+const { ATTACK_DURATION, IDLE_VELOCITY, SEEK_VELOCITY, BODY_RADIUS, ATTACK_DISTANCE } = CORONA
 
 const PhyCorona = React.memo(function PhyCorona(props) {
   const { interpreter } = props
@@ -61,10 +61,11 @@ const PhyCorona = React.memo(function PhyCorona(props) {
 
   // CANNON INIT
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
-    args: 0.3,
+    args: BODY_RADIUS,
     mass: 0.1,
     position: initPosition,
     collisionFilter: COLLISION_GROUP.CORONA,
+    linearDamping: 0.1,
     collisionFilterMask: COLLISION_GROUP.CHEST | COLLISION_GROUP.BAT | COLLISION_GROUP.CORONA | COLLISION_GROUP.TILES,
     onCollide: e => onCollide.current(e)
   }))
@@ -87,10 +88,14 @@ const PhyCorona = React.memo(function PhyCorona(props) {
 
       if (body?.userData?.type === COLLISION_GROUP.BAT && body?.userData?.isAttacking) {
         send("ATTACKED")
+        const dir = new THREE.Vector3()
+        dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
+        const { x, z } = lock.current.position
+        lockApi.position.set(x - 1.3 * dir.x, initPosition[1], z - 1.3 * dir.z)
       }
 
     },
-    [send, additiveOrientation]
+    [send, additiveOrientation, lockApi]
   )
   useEffect(() => void (onCollide.current = handleCollide), [onCollide, handleCollide])
 
@@ -115,8 +120,8 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     const dir = new THREE.Vector3()
     dir.subVectors(playerBody.current.position, coronaBody.current.position).normalize();
 
-    const { x, y, z } = dir.multiplyScalar(0.75).add(coronaBody.current.position)
-    lockApi.position.set(x, y, z)
+    const { x, z } = dir.multiplyScalar(ATTACK_DISTANCE * 0.8).add(coronaBody.current.position)
+    lockApi.position.set(x, initPosition[1], z)
 
     setTimeout(() => {
       const { x, y, z } = attackPosition.current
@@ -160,7 +165,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
       <mesh ref={lock} />
       <mesh ref={coronaBody} userData={{ type: COLLISION_GROUP.CORONA, id }} />
 
-      <group ref={renderingGroup} scale={[0.2, 0.2, 0.2]}>
+      <group ref={renderingGroup} scale={[0.4, 0.4, 0.4]}>
         <CoronaRenderer
           onDeathAnimEnd={() => send("DEATH")}
           isSeeking={isSeeking}
@@ -254,7 +259,7 @@ export const CoronaRenderer = React.memo(
 
       if (isPreattacking) {
         rotationGroup.current.rotation.y = easeInQuad(time.current)
-        time.current += 0.1
+        time.current += 0.07
       }
       if (isSpawning) {
         rotationGroup.current.rotation.y = easeInQuad(time.current)
@@ -310,8 +315,8 @@ const CoronaShadow = React.memo(
     })
 
     return (
-      <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[4, 4, 4]} visible={!isDead} >
-        <planeBufferGeometry attach="geometry" args={[0.5, 0.5]} />
+      <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} visible={!isDead} >
+        <planeBufferGeometry attach="geometry" args={[0.7, 0.7]} />
         <meshBasicMaterial
           attach="material"
           map={shadowTexture}

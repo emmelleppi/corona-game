@@ -1,5 +1,6 @@
 import React, { useCallback, Suspense } from "react";
 import { Canvas, useThree, createPortal } from "react-three-fiber";
+import { Stats } from "drei"
 
 import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
