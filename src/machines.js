@@ -353,7 +353,9 @@ const CORONA_MACHINE = Machine(
           const { x, y, z } = phyRef.current.position
 
           if (!isIntersect([x + orientation.current.x, y, z + orientation.current.z])) {
-            orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
+            const axis = new THREE.Vector3( 0, 1, 0 );
+            const angle = Math.PI / 2 + Math.random() * Math.PI;
+            orientation.current.applyAxisAngle( axis, angle );
           }
         }, 100)
         return () => window.clearRequestInterval(intervalId)
@@ -376,7 +378,9 @@ const CORONA_MACHINE = Machine(
             }
 
           } else {
-            orientation.current = new THREE.Vector3(getRandomUnity(), 0, getRandomUnity()).normalize()
+            const axis = new THREE.Vector3( 0, 1, 0 );
+            const angle = Math.PI / 2 + Math.random() * Math.PI;
+            orientation.current.applyAxisAngle( axis, angle );
           }
         }, 100)
         return () => window.clearRequestInterval(intervalId)
