@@ -7,7 +7,7 @@ import Sprite from '../utility/Sprite'
 function SpeedLines() {
 
     const scale = [window.innerWidth, window.innerHeight, 1]
-    const TH = 8
+    const TH = 14
 
     const [visible, setVisible] = useState(false)
 

@@ -29,10 +29,8 @@ function Trampoline() {
 
 function PhysicWorld() {
 
-
-
   return (
-    <Physics gravity={[0, -20, 0]} tolerance={0.0001} allowSleep={false} >
+    <Physics gravity={[0, -40, 0]} tolerance={0.0001} allowSleep={false} >
       <Player position={PLAYER_INITIAL_POSITION} />
       <Trampoline />
       <Suspense fallback={null}>
