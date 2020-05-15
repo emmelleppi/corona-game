@@ -2,7 +2,9 @@ import React, { useEffect, useCallback } from "react";
 import { useMachine } from "@xstate/react";
 import * as THREE from "three";
 
-import StartScreen from "./StartScreen";
+import StartScreen from "./dom/StartScreen";
+import GameOverScreen from "./dom/GameOverScreen";
+import WinScreen from "./dom/WinScreen";
 import Game from "./Game";
 import { GAME_ORCHESTRATOR } from "./machines";
 import { mapApi, quadtreeApi, playerApi, serviceApi } from "./store";
@@ -117,6 +119,8 @@ function App() {
     <>
       <Game />
       <StartScreen hidden={!current.matches("waitUser")} />
+      {/* <GameOverScreen hidden={!current.matches("waitUser")} /> */}
+      {/* <WinScreen hidden={!current.matches("waitUser")} /> */}
     </>
   );
 }

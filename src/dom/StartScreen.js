@@ -1,5 +1,7 @@
 import React from "react";
-import styled from "styled-components/macro";
+import "styled-components/macro";
+
+import { Wrapper, ActionsWrapper, BlinkingCta } from "./styled";
 
 const actions = [
   {
@@ -76,7 +78,6 @@ function StartScreen(props) {
       >
         {/* Title Block */}
         <div>
-          {/* <small css={`margin-left: 1rem;`}>mlperego presents</small> */}
           <h1
             css={`
               margin-bottom: 2rem;
@@ -110,80 +111,20 @@ function StartScreen(props) {
           </h3>
 
           {/* BTNS */}
-          <ActionsWarapper>
+          <ActionsWrapper>
             {actions.map(({ id, action, keycaps }) => (
               <Action key={id} keycaps={keycaps} action={action} />
             ))}
-          </ActionsWarapper>
+          </ActionsWrapper>
 
           {/* CTA */}
-          <BlinkingCta>LEFT CLICK to start the game</BlinkingCta>
+          <div css={`margin-top: 2rem;`} >
+            <BlinkingCta>LEFT CLICK to start the game</BlinkingCta>
+          </div>
         </div>
       </div>
     </Wrapper>
   );
 }
-
-const Wrapper = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-
-  width: 100vw;
-  height: 100vh;
-
-  z-index: 10;
-
-  font-family: "Bangers", sans-serif;
-  color: white;
-  letter-spacing: 0.2em;
-
-  pointer-events: none;
-
-  ${(props) => (props.hidden ? "opacity: 0;" : "opacity: 1;")}
-
-  transition: opacity .6s ease;
-
-  h1,
-  h2,
-  h3 {
-    margin: 0;
-  }
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-const BlinkingCta = styled.div`
-  margin-top: 4rem;
-
-  animation: blinkingText 1.2s infinite;
-
-  @keyframes blinkingText {
-    0% {
-      color: white;
-    }
-    49% {
-      color: white;
-    }
-    60% {
-      color: transparent;
-    }
-    99% {
-      color: transparent;
-    }
-    100% {
-      color: white;
-    }
-  }
-`;
-const ActionsWarapper = styled.div`
-  margin-top: 4rem;
-
-  > * + * {
-    margin-top: 0.5rem;
-  }
-`;
 
 export default StartScreen;
