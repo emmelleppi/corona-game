@@ -1,14 +1,12 @@
-import React, { useEffect } from 'react'
-import * as THREE from 'three'
-import { playerApi } from '../store'
-import Heart from '../Heart'
-import { PLAYER } from '../config'
+import React, { useEffect } from "react";
+import * as THREE from "three";
+import { playerApi } from "../store";
+import Heart from "../Heart";
+import { PLAYER } from "../config";
 
-const colors = [
-  "#161616",
-  "#780F5F",
-  "#F35B5B",
-].map(col => `#${new THREE.Color(col).convertSRGBToLinear().getHexString()}`)
+const colors = ["#161616", "#780F5F", "#F35B5B"].map(
+  (col) => `#${new THREE.Color(col).convertSRGBToLinear().getHexString()}`
+);
 
 // Objects
 class HealthBarController {
@@ -21,12 +19,12 @@ class HealthBarController {
 
     this.offset = {
       x: 0,
-      y: 0
+      y: 0,
     };
 
     this.health = PLAYER.INITIAL_LIFE;
-    this.canvas = canvas
-    this.c = ctx
+    this.canvas = canvas;
+    this.c = ctx;
   }
 
   draw() {
@@ -50,17 +48,13 @@ class HealthBarController {
     this.c.font = "16px Bangers";
 
     this.c.textAlign = "left";
-    this.c.fillText(
-      "h e a l t h",
-      this.x + 20,
-      this.y + this.radius + 30
-    );
+    this.c.fillText("h e a l t h", this.x + 20, this.y + this.radius + 30);
 
     this.c.shadowColor = "transparent";
   }
 
   update(life = PLAYER.INITIAL_LIFE) {
-    this.health = life
+    this.health = life;
     this.c.fillStyle = "transparent";
     this.c.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.draw();
@@ -68,48 +62,49 @@ class HealthBarController {
 }
 
 export default function Health() {
+  const canvas = React.useRef();
+  const ctx = React.useRef();
+  const healthController = React.useRef();
 
-  const canvas = React.useRef()
-  const ctx = React.useRef()
-  const healthController = React.useRef()
-
-  const spriteMaterial = React.useRef()
+  const spriteMaterial = React.useRef();
 
   useEffect(() => {
-    canvas.current = document.createElement('canvas')
+    canvas.current = document.createElement("canvas");
 
-    canvas.current.width = 1024
-    canvas.current.height = 1024
+    canvas.current.width = 1024;
+    canvas.current.height = 1024;
 
-    ctx.current = canvas.current.getContext('2d')
+    ctx.current = canvas.current.getContext("2d");
 
-    ctx.current.scale(4, 4)
+    ctx.current.scale(4, 4);
 
-    healthController.current = new HealthBarController(40, 40, ctx.current, canvas.current)
-    healthController.current.update()
-    spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current)
+    healthController.current = new HealthBarController(
+      40,
+      40,
+      ctx.current,
+      canvas.current
+    );
+    healthController.current.update();
+    spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
+  }, [healthController, ctx, canvas]);
 
-  }, [healthController, ctx, canvas])
-
-  useEffect(() => playerApi.subscribe(
-    ({ life: playerLife }) => {
-      healthController.current.update(playerLife)
-      spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current)
-    }),
+  useEffect(
+    () =>
+      playerApi.subscribe(({ life: playerLife }) => {
+        healthController.current.update(playerLife);
+        spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
+      }),
     [healthController]
-  )
+  );
 
   return (
-    <group position={[-window.innerWidth / 2 + 80, -window.innerHeight / 2 + 80, 1]}  >
-      <sprite position={[70, 0, 0]} scale={[256, 256, 256]} >
-        <spriteMaterial
-          attach="material"
-          fog={false}
-          ref={spriteMaterial}
-        />
+    <group
+      position={[-window.innerWidth / 2 + 80, -window.innerHeight / 2 + 80, 1]}
+    >
+      <sprite position={[70, 0, 0]} scale={[256, 256, 256]}>
+        <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
       </sprite>
       <Heart scale={[256 * 5, 256 * 5, 256 * 5]} position={[0, 0, -50]} />
     </group>
-  )
-
+  );
 }

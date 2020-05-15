@@ -2,10 +2,10 @@ import React from "react";
 import { useAssets } from "./store";
 
 function Exclamation(props) {
-  const exclamationTexture = useAssets(s => s.exclamationTexture)
+  const exclamationTexture = useAssets((s) => s.exclamationTexture);
 
   return (
-    <sprite {...props} >
+    <sprite {...props}>
       <spriteMaterial
         attach="material"
         color={0xffffff}

@@ -5,7 +5,7 @@
 
 import { Euler, EventDispatcher, Vector3 } from "three";
 
-var PointerLockControls = function(camera, domElement) {
+var PointerLockControls = function (camera, domElement) {
   if (domElement === undefined) {
     console.warn(
       'THREE.PointerLockControls: The second parameter "domElement" is now mandatory.'
@@ -68,13 +68,13 @@ var PointerLockControls = function(camera, domElement) {
     console.error("THREE.PointerLockControls: Unable to use Pointer Lock API");
   }
 
-  this.connect = function() {
+  this.connect = function () {
     document.addEventListener("mousemove", onMouseMove, false);
     document.addEventListener("pointerlockchange", onPointerlockChange, false);
     document.addEventListener("pointerlockerror", onPointerlockError, false);
   };
 
-  this.disconnect = function() {
+  this.disconnect = function () {
     document.removeEventListener("mousemove", onMouseMove, false);
     document.removeEventListener(
       "pointerlockchange",
@@ -84,25 +84,25 @@ var PointerLockControls = function(camera, domElement) {
     document.removeEventListener("pointerlockerror", onPointerlockError, false);
   };
 
-  this.dispose = function() {
+  this.dispose = function () {
     this.disconnect();
   };
 
-  this.getObject = function() {
+  this.getObject = function () {
     // retaining this method for backward compatibility
 
     return camera;
   };
 
-  this.getDirection = (function() {
+  this.getDirection = (function () {
     var direction = new Vector3(0, 0, -1);
 
-    return function(v) {
+    return function (v) {
       return v.copy(direction).applyQuaternion(camera.quaternion);
     };
   })();
 
-  this.moveForward = function(distance) {
+  this.moveForward = function (distance) {
     // move forward parallel to the xz-plane
     // assumes camera.up is y-up
 
@@ -113,17 +113,17 @@ var PointerLockControls = function(camera, domElement) {
     camera.position.addScaledVector(vec, distance);
   };
 
-  this.moveRight = function(distance) {
+  this.moveRight = function (distance) {
     vec.setFromMatrixColumn(camera.matrix, 0);
 
     camera.position.addScaledVector(vec, distance);
   };
 
-  this.lock = function() {
+  this.lock = function () {
     this.domElement.requestPointerLock();
   };
 
-  this.unlock = function() {
+  this.unlock = function () {
     document.exitPointerLock();
   };
 

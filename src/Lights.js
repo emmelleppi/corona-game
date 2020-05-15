@@ -2,21 +2,18 @@ import React, { useRef } from "react";
 import { useFrame } from "react-three-fiber";
 
 function Lights() {
-  const redTarget = useRef()
-  const blueTarget = useRef()
-  const group = useRef()
+  const redTarget = useRef();
+  const blueTarget = useRef();
+  const group = useRef();
 
-  useFrame(
-    function({ clock }) {
-      const time = clock.getElapsedTime()
-      group.current.rotation.y = time / 2
-      group.current.position.y += Math.sin(time) / 10
-    }
-  )
+  useFrame(function ({ clock }) {
+    const time = clock.getElapsedTime();
+    group.current.rotation.y = time / 2;
+    group.current.position.y += Math.sin(time) / 10;
+  });
 
   return (
     <>
-
       <group ref={group} position={[0, 40, 0]}>
         <mesh ref={redTarget} position={[10, 0, 10]}></mesh>
         <mesh ref={blueTarget} position={[-10, 0, -10]}></mesh>
@@ -52,7 +49,7 @@ function Lights() {
         shadow-mapSize-height={1024 / 2}
       />
     </>
-  )
+  );
 }
 
-export default Lights
+export default Lights;

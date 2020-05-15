@@ -6,8 +6,8 @@ export const PLAYER = {
   BODY_RADIUS: 0.5,
   BODY_LINEAR_DAMPING: 0.1,
   BODY_ANGULAR_DAMPING: 0.1,
-  Y_AXIS: 0.75
-}
+  Y_AXIS: 0.75,
+};
 
 export const CORONA = {
   ORIENTATION_THRESHOLD: 0.5,
@@ -22,14 +22,14 @@ export const CORONA = {
   BODY_RADIUS: 0.5,
   IDLE_VELOCITY: 1 / 50,
   SEEK_VELOCITY: 1 / 30,
-  ATTACK_DISTANCE: 2
-}
+  ATTACK_DISTANCE: 2,
+};
 
 export const GAME = {
   NUMBER_OF_INIT_SPAWNS: 8,
   NUMBER_OF_MAX_SPAWNS: 30,
   INIT_ANIMATION_DURATION: 500,
-}
+};
 
 export const COLLISION_GROUP = {
   CORONA: 1,
@@ -37,8 +37,8 @@ export const COLLISION_GROUP = {
   BODY: 8,
   CHEST: 16,
   BAT: 32,
-}
+};
 
 export const MAP = {
-  NUMBER_OF_BBOX: 43
-}
+  NUMBER_OF_BBOX: 43,
+};

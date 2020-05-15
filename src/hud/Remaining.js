@@ -1,15 +1,13 @@
-import React, { useEffect } from 'react'
-import * as THREE from 'three'
-import { useService } from '@xstate/react'
+import React, { useEffect } from "react";
+import * as THREE from "three";
+import { useService } from "@xstate/react";
 
-import { CoronaRenderer } from '../Corona'
-import { serviceApi } from '../store'
+import { CoronaRenderer } from "../Corona";
+import { serviceApi } from "../store";
 
-const colors = [
-  "#161616",
-  "#333333",
-  "#1E9983",
-].map(col => `#${new THREE.Color(col).convertSRGBToLinear().getHexString()}`)
+const colors = ["#161616", "#333333", "#1E9983"].map(
+  (col) => `#${new THREE.Color(col).convertSRGBToLinear().getHexString()}`
+);
 
 // Objects
 class RemainingController {
@@ -22,17 +20,16 @@ class RemainingController {
 
     this.offset = {
       x: 0,
-      y: 0
+      y: 0,
     };
 
-    this.max = n
+    this.max = n;
     this.remaining = this.max;
-    this.canvas = canvas
-    this.c = ctx
+    this.canvas = canvas;
+    this.c = ctx;
   }
 
   draw() {
-
     // main
     this.c.font = "82px Bangers";
     this.c.textAlign = "center";
@@ -69,51 +66,57 @@ class RemainingController {
 }
 
 export default function Health() {
+  const canvas = React.useRef();
+  const ctx = React.useRef();
+  const remainingController = React.useRef();
 
-  const canvas = React.useRef()
-  const ctx = React.useRef()
-  const remainingController = React.useRef()
-
-  const spriteMaterial = React.useRef()
+  const spriteMaterial = React.useRef();
 
   const [{ context }] = useService(serviceApi.getState().service);
-  const { coronas } = context
+  const { coronas } = context;
 
   useEffect(() => {
-    canvas.current = document.createElement('canvas')
+    canvas.current = document.createElement("canvas");
 
-    canvas.current.width = 1024
-    canvas.current.height = 1024
+    canvas.current.width = 1024;
+    canvas.current.height = 1024;
 
-    ctx.current = canvas.current.getContext('2d')
+    ctx.current = canvas.current.getContext("2d");
 
-    ctx.current.scale(4, 4)
+    ctx.current.scale(4, 4);
 
     // set this to number of initial coronas, to draw proportianl fill of green circle
-    remainingController.current = new RemainingController(40, 40, ctx.current, canvas.current, 20)
-  }, [])
+    remainingController.current = new RemainingController(
+      40,
+      40,
+      ctx.current,
+      canvas.current,
+      20
+    );
+  }, []);
 
   useEffect(() => {
-    remainingController.current.remaining = coronas.length
-    remainingController.current.update()
+    remainingController.current.remaining = coronas.length;
+    remainingController.current.update();
     spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-  }, [coronas])
+  }, [coronas]);
 
   return (
     <>
-      <group position={[window.innerWidth / 2 - 120, -window.innerHeight / 2 + 80, 1]} >
-        <sprite scale={[256, 256, 256]} >
-          <spriteMaterial
-            attach="material"
-            fog={false}
-            ref={spriteMaterial}
-          />
+      <group
+        position={[
+          window.innerWidth / 2 - 120,
+          -window.innerHeight / 2 + 80,
+          1,
+        ]}
+      >
+        <sprite scale={[256, 256, 256]}>
+          <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
         </sprite>
         <group position={[30, 10, -50]} scale={[40, 40, 40]}>
           <CoronaRenderer />
         </group>
       </group>
     </>
-  )
-
+  );
 }

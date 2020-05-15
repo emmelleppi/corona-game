@@ -11,19 +11,18 @@ import { serviceApi } from "./store";
 
 function Hud() {
   const [current] = useService(serviceApi.getState().service);
-  const isGameStarted = current.matches('start')
+  const isGameStarted = current.matches("start");
 
-  const [scene] = useState(() => new THREE.Scene())
+  const [scene] = useState(() => new THREE.Scene());
   const [camera] = useState(() => {
-
     const width = window.innerWidth;
     const height = window.innerHeight;
 
     const cam = new THREE.OrthographicCamera(
-      - width / 2,
+      -width / 2,
       width / 2,
       height / 2,
-      - height / 2,
+      -height / 2,
       1,
       100
     );
@@ -35,18 +34,24 @@ function Hud() {
     return cam;
   });
 
-  useFrame(({ gl }) => void ((gl.autoClear = false), gl.clearDepth(), gl.render(scene, camera)), 10)
+  useFrame(
+    ({ gl }) =>
+      void ((gl.autoClear = false), gl.clearDepth(), gl.render(scene, camera)),
+    10
+  );
 
   return createPortal(
     <>
       {isGameStarted && (
         <Suspense fallback={null}>
-          <group scale={[1/10, 1/10, 1/10]} >
+          <group scale={[1 / 10, 1 / 10, 1 / 10]}>
             <Health />
             <Remaining />
             <SpeedLines />
             <Cursor />
-            <spotLight position={[window.innerWidth / 2, -window.innerHeight / 2, 1]} />
+            <spotLight
+              position={[window.innerWidth / 2, -window.innerHeight / 2, 1]}
+            />
           </group>
         </Suspense>
       )}
@@ -55,4 +60,4 @@ function Hud() {
   );
 }
 
-export default Hud
+export default Hud;
