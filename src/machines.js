@@ -3,9 +3,9 @@ import { Machine, actions, spawn } from "xstate";
 import { v4 as uuid } from "uuid";
 import * as THREE from "three";
 
-import { mapApi, raycasterApi, playerApi } from "./store";
+import { mapApi, raycasterApi } from "./store";
 import { getRandomUnity } from "./utility/math";
-import { CORONA, GAME } from "./config";
+import { CORONA, GAME, PLAYER } from "./config";
 
 const {
   NUMBER_OF_INIT_SPAWNS,
@@ -38,7 +38,7 @@ function getRandDamage() {
   return 1;
 }
 
-const createCorona = (isActive = false, initPosition = [0, 0, 0]) => {
+const createCorona = (isActive = false, initPosition = [0, 0, 0], playerBody) => {
   return {
     id: uuid(),
     life: LIFE,
@@ -47,29 +47,19 @@ const createCorona = (isActive = false, initPosition = [0, 0, 0]) => {
     seekAlert: false,
     phyRef: createRef(),
     orientation: createRef(),
+    playerBody,
     initPosition,
   };
 };
-
-function updateSeekingOrientation({ phyRef, orientation }) {
-  const player = playerApi.getState().playerBody;
-
-  const dir = player.current.position
-    .clone()
-    .sub(phyRef.current.position)
-    .normalize();
-  dir.y = 0;
-  const diff = dir.clone().sub(orientation.current);
-
-  if (diff.length() > ORIENTATION_THRESHOLD) {
-    orientation.current = dir;
-  }
-}
 
 export const GAME_ORCHESTRATOR = Machine(
   {
     id: "GAME_ORCHESTRATOR",
     context: {
+      playerLife: PLAYER.INITIAL_LIFE,
+      playerBody: createRef(),
+      playerApi: null,
+      showPlayer: false,
       coronas: [],
     },
     initial: "waitForInit",
@@ -81,46 +71,16 @@ export const GAME_ORCHESTRATOR = Machine(
       },
       initializing: {
         entry: [
-          assign({
-            coronas: () => {
-              const { mapBBoxes } = mapApi.getState();
-              const { actions } = raycasterApi.getState();
-
-              const toSpawn = new Array(NUMBER_OF_INIT_SPAWNS)
-                .fill()
-                .map(() => {
-                  let position = null;
-
-                  do {
-                    const bbox =
-                      mapBBoxes[
-                        Math.round(Math.random() * (mapBBoxes.length - 1))
-                      ];
-                    const x =
-                      bbox.min.x + (bbox.max.x - bbox.min.x) * Math.random();
-                    const z =
-                      bbox.min.z + (bbox.max.z - bbox.min.z) * Math.random();
-                    if (actions.isIntersect([x, 1, z])) {
-                      position = [x, Y_AXIS, z];
-                    }
-                  } while (!position);
-
-                  return createCorona(false, position);
-                });
-
-              return toSpawn.map((corona) => ({
-                ...corona,
-                ref: spawn(CORONA_MACHINE.withContext(corona)),
-              }));
-            },
-          }),
-          send("WAIT_USER"),
+          "resetCorona",
+          "resetPlayer",
+          "init",
         ],
         on: {
-          WAIT_USER: "waitUser",
-        },
+          "": { target: "waitUser", cond: "isPlayerReady" }
+        }
       },
       waitUser: {
+        entry: ["setPlayerInitPosition"],
         on: {
           ANIMATION: "initAnimation",
         },
@@ -131,12 +91,43 @@ export const GAME_ORCHESTRATOR = Machine(
         },
       },
       start: {
-        entry: ["activateCoronas"],
+        entry: ["activateCoronas", "showPlayer"],
         on: {
-          "": { target: "end", cond: "isGameEnded" },
+          "": [
+            { target: "win", cond: "isGameEnded" },
+            { target: "gameover", cond: "isPlayerDead" }
+          ],
+          ATTACKED: { actions: "decreaseLife" },
+          GAMEOVER: "gameover"
         },
       },
-      end: {},
+      win: {
+        on: {
+          RESTART: {
+            target: "initAnimation",
+            actions: [
+              "resetCorona",
+              "resetPlayer",
+              "init",
+              "setPlayerInitPosition",
+            ]
+          },
+        },
+      },
+      gameover: {
+        entry: ["deactivateCoronas", "hidePlayer"],
+        on: {
+          RESTART: {
+            target: "initAnimation",
+            actions: [
+              "resetCorona",
+              "resetPlayer",
+              "init",
+              "setPlayerInitPosition",
+            ]
+          },
+        },
+      },
     },
     on: {
       "ORCHESTRATOR.addCorona": [
@@ -156,21 +147,59 @@ export const GAME_ORCHESTRATOR = Machine(
         },
       ],
       "ORCHESTRATOR.removeCorona": [{ actions: "removeCorona" }],
+      "PLAYER_READY": { actions: "initPlayer" },
     },
   },
   {
     guards: {
       isGameEnded: ({ coronas }) => coronas.length === 0,
+      isPlayerDead: ({ playerLife }) => playerLife <= 0,
+      isPlayerReady: ({ playerApi }) => playerApi !== null,
       isMaxCoronaNumber: ({ coronas }) =>
         coronas.length >= NUMBER_OF_MAX_SPAWNS,
       notMaxCoronaNumber: ({ coronas }) =>
         coronas.length < NUMBER_OF_MAX_SPAWNS,
     },
     actions: {
+      init: assign({
+        coronas: ({ playerBody }) => {
+          const { mapBBoxes } = mapApi.getState();
+          const { actions } = raycasterApi.getState();
+
+          const toSpawn = new Array(NUMBER_OF_INIT_SPAWNS)
+            .fill()
+            .map(() => {
+              let position = null;
+
+              do {
+                const bbox =
+                  mapBBoxes[
+                    Math.round(Math.random() * (mapBBoxes.length - 1))
+                  ];
+                const x =
+                  bbox.min.x + (bbox.max.x - bbox.min.x) * Math.random();
+                const z =
+                  bbox.min.z + (bbox.max.z - bbox.min.z) * Math.random();
+                if (actions.isIntersect([x, 1, z])) {
+                  position = [x, Y_AXIS, z];
+                }
+              } while (!position);
+
+              return createCorona(false, position, playerBody);
+            });
+
+          return toSpawn.map((corona) => ({
+            ...corona,
+            ref: spawn(CORONA_MACHINE.withContext(corona)),
+          }));
+        },
+      }),
       activateCoronas: ({ coronas }) =>
         coronas.forEach((corona) => corona.ref.send("GAME_ON")),
+      deactivateCoronas: ({ coronas }) =>
+        coronas.forEach((corona) => corona.ref.send("GAME_OFF")),
       addCorona: assign({
-        coronas: ({ coronas }, e) => {
+        coronas: ({ coronas, playerBody }, e) => {
           const { phyRef, id } = e.corona;
           const { x, y, z } = phyRef.current.position;
 
@@ -180,7 +209,7 @@ export const GAME_ORCHESTRATOR = Machine(
             }
           });
 
-          const newCorona = createCorona(true, [x, y, z]);
+          const newCorona = createCorona(true, [x, y, z], playerBody);
 
           return coronas.concat({
             ...newCorona,
@@ -199,6 +228,23 @@ export const GAME_ORCHESTRATOR = Machine(
         coronas: ({ coronas }, e) =>
           coronas.filter((corona) => corona.id !== e.corona.id),
       }),
+      resetCorona: assign({
+        coronas: []
+      }),
+      initPlayer: assign((_, e) => {
+        return {
+          playerApi: e.payload.api
+        }
+      }),
+      setPlayerInitPosition: ({ playerApi }) => void (playerApi.position.set(...PLAYER.INIT_POSITION), playerApi.velocity.set(0,0,0)),
+      decreaseLife: assign({
+        playerLife: ({ playerLife }) => playerLife - Math.floor(1 + Math.random() * 5)
+      }),
+      showPlayer: assign({ showPlayer: true }),
+      hidePlayer: assign({ showPlayer: false }),
+      resetPlayer: assign({
+        playerLife: PLAYER.INITIAL_LIFE,
+      })
     },
     delays: {
       INIT_ANIMATION_DURATION,
@@ -218,6 +264,7 @@ const CORONA_MACHINE = Machine(
       seekAlert: false,
       phyRef: createRef(),
       orientation: createRef(),
+      playerBody: null,
       initPosition: [0, 0, 0],
     },
     on: {
@@ -229,7 +276,7 @@ const CORONA_MACHINE = Machine(
         entry: ["initOrientation"],
         on: {
           GAME_ON: [{ actions: ["setIsActive", send("IDLE")] }],
-          GAME_OFF: [{ actions: "resetIsActive" }],
+          GAME_OFF: [{ actions: ["resetIsActive", send("IDLE")] }],
           RESET_IS_UNDER_ATTACK: { actions: "resetIsUnderAttack" },
           ATTACKED: {
             actions: [
@@ -289,6 +336,7 @@ const CORONA_MACHINE = Machine(
             on: {
               PRE_ATTACK: "preattacking",
               ATTACKED: "preattacking",
+              IDLE: { target: "idle", actions: "resetIsUnderAttack" },
             },
           },
           spawning: {
@@ -380,9 +428,8 @@ const CORONA_MACHINE = Machine(
         }, 100);
         return () => window.clearRequestInterval(intervalId);
       },
-      seekingUpdate: ({ phyRef, orientation }) => {
+      seekingUpdate: ({ phyRef, orientation, playerBody }) => {
         const { isIntersect } = raycasterApi.getState().actions;
-        const player = playerApi.getState().playerBody;
 
         const intervalId = window.requestInterval(() => {
           if (!phyRef.current) return;
@@ -395,12 +442,23 @@ const CORONA_MACHINE = Machine(
               z + orientation.current.z,
             ])
           ) {
-            const distance = player.current.position
+            const distance = playerBody.current ? playerBody.current.position
               .clone()
-              .distanceTo(phyRef.current.position);
+              .distanceTo(phyRef.current.position) : 0
 
             if (distance > ATTACK_DISTANCE) {
-              updateSeekingOrientation({ phyRef, orientation });
+
+              const dir = playerBody.current.position
+                .clone()
+                .sub(phyRef.current.position)
+                .normalize();
+              dir.y = 0;
+              const diff = dir.clone().sub(orientation.current);
+            
+              if (diff.length() > ORIENTATION_THRESHOLD) {
+                orientation.current = dir;
+              }
+
             }
           } else {
             const axis = new THREE.Vector3(0, 1, 0);
@@ -408,6 +466,7 @@ const CORONA_MACHINE = Machine(
             orientation.current.applyAxisAngle(axis, angle);
           }
         }, 100);
+        
         return () => window.clearRequestInterval(intervalId);
       },
     },

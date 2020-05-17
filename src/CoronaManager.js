@@ -10,12 +10,12 @@ function CoronaManager() {
 
   const [coronas, setCoronas] = useState([]);
 
-  const [, , service] = useService(serviceApi.getState().service);
+  const [,, service] = useService(serviceApi.getState().service);
 
   useEffect(() => {
-    const subscription = service.subscribe((state) => {
-      if (state.context.coronas.length !== coronas.length) {
-        setCoronas(state.context.coronas);
+    const subscription = service.subscribe(({ context }) => {
+      if (context.coronas.length !== coronas.length) {
+        setCoronas(context.coronas);
       }
     });
 

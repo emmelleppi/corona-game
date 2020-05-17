@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Vector3 } from "three";
 
-import { playerApi } from "../store";
 import Sprite from "../utility/Sprite";
+import { useService } from "@xstate/react";
+import { serviceApi } from "../store";
 
 function SpeedLines() {
   const scale = [window.innerWidth, window.innerHeight, 1];
   const TH = 14;
 
   const [visible, setVisible] = useState(false);
+
+  const [{ context }] = useService(serviceApi.getState().service);
+  const { playerApi } = context
 
   const handleV = React.useCallback(
     (varr) => {
@@ -23,11 +27,7 @@ function SpeedLines() {
     [setVisible]
   );
 
-  useEffect(() => {
-    if (handleV) {
-      return playerApi.getState().playerApi.velocity.subscribe(handleV);
-    }
-  }, [handleV]);
+  useEffect(() => playerApi?.velocity?.subscribe(handleV), [handleV, playerApi]);
 
   return (
     <>

@@ -11,36 +11,21 @@ import * as THREE from "three";
 import { useService } from "@xstate/react";
 
 import { PointerLockControls } from "./PointerLockControls";
-import { useInteraction, playerApi, serviceApi } from "./store";
+import { useInteraction, serviceApi } from "./store";
+import useInterval from "./utility/useInterval"
 
-function PreGameMode() {
-  const [index, setIndex] = useState(0);
-  const t = useRef(0);
+function FollowCorona(props) {
+  const { interpreter } = props
 
   const { camera } = useThree();
 
-  const [{ context }] = useService(serviceApi.getState().service);
-  const { coronas } = context;
+  const [{ context }] = useService(interpreter);
 
-  const [corona] = useService(coronas[index].ref);
-
-  const { ref, orientation } = useMemo(() => {
-    const { context } = corona;
+  useFrame(function () {
     const { phyRef, orientation } = context;
 
-    return { ref: phyRef, orientation };
-  }, [corona]);
-
-  useFrame(function ({ clock }) {
-    t.current += clock.getDelta() * 1000;
-
-    if (t.current > 50) {
-      t.current = 0;
-      setIndex((index) => (index + 1) % coronas.length);
-    }
-
-    if (ref.current && orientation.current) {
-      const { x, y, z } = ref.current.position;
+    if (phyRef.current && orientation.current) {
+      const { x, y, z } = phyRef.current.position;
 
       const lookAtVector = new THREE.Vector3(
         x - 2 * orientation.current.x,
@@ -53,7 +38,17 @@ function PreGameMode() {
     }
   });
 
-  return null;
+  return null
+}
+
+function PreGameMode(props) {
+  const { coronas } = props
+
+  const [index, setIndex] = useState(0);
+
+  useInterval(() => setIndex((index) => (index + 1) % coronas.length), 3000)
+
+  return <FollowCorona interpreter={coronas[index]?.ref} />;
 }
 
 function GestureHandler(props) {
@@ -63,16 +58,14 @@ function GestureHandler(props) {
 
   const controls = useRef();
   const camera = useRef();
-
-  const playerBody = useMemo(() => playerApi.getState().playerBody, []);
-
+  
   const [current, send] = useService(serviceApi.getState().service);
+  const { playerBody, showPlayer, coronas } = current?.context
 
-  const { isGameStarted, isStartAnimation, isWaitingUser } = useMemo(
+  const { isGameStarted, isStartAnimation } = useMemo(
     () => ({
-      isGameStarted: current.matches("start"),
+      isGameStarted: current.matches("start") || current.matches("win"),
       isStartAnimation: current.matches("initAnimation"),
-      isWaitingUser: current.matches("waitUser"),
     }),
     [current]
   );
@@ -150,8 +143,8 @@ function GestureHandler(props) {
         camera.updateProjectionMatrix();
       }}
     >
-      {isWaitingUser && <PreGameMode />}
-      {isGameStarted && children}
+      {!showPlayer && coronas.length > 0 && <PreGameMode coronas={coronas} />}
+      {children}
     </a.perspectiveCamera>
   );
 }

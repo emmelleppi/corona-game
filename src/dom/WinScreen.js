@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "styled-components/macro";
 import { useSpring, animated as a, config } from 'react-spring'
 
-import { Wrapper, BlinkingCta } from "./styled";
+import { Wrapper } from "./styled";
 import useInterval from "../utility/useInterval"
 import congrats from "./win-congrats"
 

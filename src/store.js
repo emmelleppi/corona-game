@@ -35,8 +35,12 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
       }
 
       if (keyCode === 32 && jump !== value) {
-        const { isIntersect } = playerApi.getState().actions;
-        set({ jump: value && isIntersect() });
+        const { isIntersect } = raycasterApi.getState().actions;
+
+        const playerBody = serviceApi.getState().service.state.context.playerBody;
+        const { x, y, z } = playerBody.current.position;
+
+        set({ jump: value && isIntersect([x, y, z]) });
       }
 
       if (keyCode === 16 && boost !== value) {
@@ -55,33 +59,6 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
     },
     addCallback(callback) {
       set(produce((state) => void state.callbacks.push(callback)));
-    },
-  },
-}));
-
-export const [usePlayer, playerApi] = create((set, get) => ({
-  life: PLAYER.INITIAL_LIFE,
-  playerBody: createRef(),
-  playerApi: null,
-  actions: {
-    init(playerApi) {
-      set({ playerApi });
-    },
-    isIntersect() {
-      const { playerBody } = get();
-      const { isIntersect } = raycasterApi.getState().actions;
-      const { x, y, z } = playerBody.current.position;
-      return isIntersect([x, y, z]);
-    },
-    decreaseLife() {
-      set(
-        produce(
-          (state) => void (state.life -= Math.floor(1 + Math.random() * 5))
-        )
-      );
-    },
-    resetLife() {
-      set({ life: PLAYER.INITIAL_LIFE });
     },
   },
 }));
@@ -137,7 +114,7 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
         width: max.x - min.x,
         height: max.z - min.z,
       },
-      5
+      6
     );
 
     set({ tree });

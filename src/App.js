@@ -7,7 +7,7 @@ import GameOverScreen from "./dom/GameOverScreen";
 import WinScreen from "./dom/WinScreen";
 import Game from "./Game";
 import { GAME_ORCHESTRATOR } from "./machines";
-import { mapApi, quadtreeApi, playerApi, serviceApi } from "./store";
+import { mapApi, quadtreeApi, serviceApi } from "./store";
 import { MAP, CORONA } from "./config";
 
 function App() {
@@ -19,11 +19,11 @@ function App() {
 
       if (!tree) return;
 
-      const isGameStarted = current.matches("start");
+      const isGameStarted = current.matches("start")
 
       if (isGameStarted) {
         const { context } = current;
-        const { coronas } = context;
+        const { coronas, playerBody } = context;
         tree.clear();
 
         for (let i = 0; i < coronas.length; i++) {
@@ -48,7 +48,7 @@ function App() {
           x = 0,
           y = 0,
           z = 0,
-        } = playerApi.getState()?.playerBody?.current?.position;
+        } = playerBody?.current?.position || {};
         const candidates = tree.retrieve({
           x: x + 55,
           y: z + 85,
@@ -113,14 +113,25 @@ function App() {
       }),
     [send]
   );
+
+  useEffect(() => {
+    if (current.matches("win") || current.matches("gameover")) {
+      const onClick = () => send("RESTART")
+
+      document.addEventListener("click", onClick, false);
+  
+      return () => void document.removeEventListener("click", onClick)
+    }
+  }, [current])
+
   useEffect(() => void serviceApi.getState().setService(service), [service]);
 
   return (
     <>
       <Game />
       <StartScreen hidden={!current.matches("waitUser")} />
-      {/* <GameOverScreen hidden={!current.matches("waitUser")} /> */}
-      {/* <WinScreen hidden={!current.matches("waitUser")} /> */}
+      <GameOverScreen hidden={!current.matches("gameover")} />
+      <WinScreen hidden={!current.matches("win")} />
     </>
   );
 }

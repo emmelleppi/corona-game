@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components/macro";
+import "styled-components/macro";
 
 import { Wrapper, BlinkingCta } from "./styled";
 

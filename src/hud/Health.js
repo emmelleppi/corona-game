@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
 import * as THREE from "three";
-import { playerApi } from "../store";
+import { serviceApi } from "../store";
 import Heart from "../Heart";
 import { PLAYER } from "../config";
+import { useService } from "@xstate/react";
 
 const colors = ["#161616", "#780F5F", "#F35B5B"].map(
   (col) => `#${new THREE.Color(col).convertSRGBToLinear().getHexString()}`
@@ -68,6 +69,9 @@ export default function Health() {
 
   const spriteMaterial = React.useRef();
 
+  const [,, service] = useService(serviceApi.getState().service);
+
+
   useEffect(() => {
     canvas.current = document.createElement("canvas");
 
@@ -89,11 +93,15 @@ export default function Health() {
   }, [healthController, ctx, canvas]);
 
   useEffect(
-    () =>
-      playerApi.subscribe(({ life: playerLife }) => {
+    () => {
+      const subscription = service.subscribe(({ context }) => {
+        const { playerLife } = context
         healthController.current.update(playerLife);
         spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-      }),
+      })
+
+      return subscription.unsubscribe
+    },
     [healthController]
   );
 

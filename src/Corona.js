@@ -19,7 +19,7 @@ import { useService } from "@xstate/react";
 import HitSfx from "./sounds/Player_Hit.wav";
 import HitSfx2 from "./sounds/Player_Hit_2.wav";
 import alertSfx from "./sounds/Alert.wav";
-import { useOutline, useAssets, usePlayer } from "./store";
+import { useOutline, useAssets } from "./store";
 import Exclamation from "./Exclamation";
 import Pow from "./Pow";
 import { easeInQuad, easeInElastic } from "./utility/easing";
@@ -50,6 +50,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     phyRef,
     orientation,
     initPosition,
+    playerBody
   } = context;
 
   const {
@@ -70,9 +71,6 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     }),
     [state]
   );
-
-  // ZUSTAND
-  const playerBody = usePlayer((s) => s.playerBody);
 
   // CANNON INIT
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
@@ -96,6 +94,18 @@ const PhyCorona = React.memo(function PhyCorona(props) {
 
   const [, , { disable }] = useLockConstraint(coronaBody, lock);
 
+  const getDirectionFromPlayer = useCallback(
+    function getDirectionFromPlayer() {
+      const dir = new THREE.Vector3();
+      
+      return playerBody.current ? dir
+        .subVectors(playerBody.current.position, coronaBody.current.position)
+        .normalize()
+      : dir
+    },
+    [playerBody, coronaBody]
+  )
+
   // HANDLE CORONA BODY ON COLLIDE
   const onCollide = useRef();
   const handleCollide = useCallback(
@@ -112,15 +122,14 @@ const PhyCorona = React.memo(function PhyCorona(props) {
         body?.userData?.isAttacking
       ) {
         send("ATTACKED");
-        const dir = new THREE.Vector3();
-        dir
-          .subVectors(playerBody.current.position, coronaBody.current.position)
-          .normalize();
+
+        const dir = getDirectionFromPlayer()
         const { x, z } = lock.current.position;
+        
         lockApi.position.set(x - 1.3 * dir.x, initPosition[1], z - 1.3 * dir.z);
       }
     },
-    [send, additiveOrientation, lockApi]
+    [send, additiveOrientation, lockApi, getDirectionFromPlayer]
   );
   useEffect(() => void (onCollide.current = handleCollide), [
     onCollide,
@@ -132,36 +141,35 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     function handleDeath() {
       disable();
 
-      const dir = new THREE.Vector3();
-      dir
-        .subVectors(playerBody.current.position, coronaBody.current.position)
-        .normalize();
-
+      const dir = getDirectionFromPlayer()
       coronaBodyApi.applyLocalImpulse([-4 * dir.x, 2, -4 * dir.z], [0, 0, 0]);
     },
-    [disable, coronaBody, coronaBodyApi, playerBody]
+    [disable, coronaBody, coronaBodyApi, getDirectionFromPlayer]
   );
 
   // HANDLE CORONA ATTACK STATE
   const handleAttack = useCallback(() => {
     attackPosition.current = lock.current.position.clone();
 
-    const dir = new THREE.Vector3();
-    dir
-      .subVectors(playerBody.current.position, coronaBody.current.position)
-      .normalize();
-
+    const dir = getDirectionFromPlayer()
     const { x, z } = dir
       .multiplyScalar(ATTACK_DISTANCE * 0.8)
       .add(coronaBody.current.position);
     lockApi.position.set(x, initPosition[1], z);
 
+    coronaBody.current.userData.attacking = true
+    
     setTimeout(() => {
-      const { x, y, z } = attackPosition.current;
-      lockApi.position.set(x, y, z);
-      send("PRE_ATTACK");
+      if (coronaBody.current) {
+        const { x, y, z } = attackPosition.current;
+        lockApi.position.set(x, y, z);
+  
+        coronaBody.current.userData.attacking = false
+        
+        send("PRE_ATTACK");
+      }
     }, ATTACK_DURATION);
-  }, [send, playerBody, lock, coronaBody, lockApi, attackPosition]);
+  }, [send, lock, coronaBody, lockApi, attackPosition, getDirectionFromPlayer]);
 
   useEffect(() => {
     if (isAttacking) {
@@ -199,7 +207,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
   return (
     <>
       <mesh ref={lock} />
-      <mesh ref={coronaBody} userData={{ type: COLLISION_GROUP.CORONA, id }} />
+      <mesh ref={coronaBody} userData={{ type: COLLISION_GROUP.CORONA, id, attacking: false }} />
 
       <group ref={renderingGroup} scale={[0.4, 0.4, 0.4]}>
         <CoronaRenderer

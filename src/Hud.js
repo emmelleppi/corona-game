@@ -41,21 +41,17 @@ function Hud() {
   );
 
   return createPortal(
-    <>
-      {isGameStarted && (
-        <Suspense fallback={null}>
-          <group scale={[1 / 10, 1 / 10, 1 / 10]}>
-            <Health />
-            <Remaining />
-            <SpeedLines />
-            <Cursor />
-            <spotLight
-              position={[window.innerWidth / 2, -window.innerHeight / 2, 1]}
-            />
-          </group>
-        </Suspense>
-      )}
-    </>,
+    <Suspense fallback={null}>
+      <group scale={[1 / 10, 1 / 10, 1 / 10]} visible={isGameStarted}>
+        <Health />
+        <Remaining />
+        <SpeedLines />
+        <Cursor />
+        <spotLight
+          position={[window.innerWidth / 2, -window.innerHeight / 2, 1]}
+        />
+      </group>
+    </Suspense>,
     scene
   );
 }

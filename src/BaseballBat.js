@@ -11,9 +11,10 @@ import * as THREE from "three";
 import useSound from "use-sound";
 import { draco } from "drei";
 
-import { useOutline, usePlayer, useInteraction, useAssets } from "./store";
+import { useOutline, useInteraction, useAssets, serviceApi } from "./store";
 import playerHitSfx from "./sounds/Player_Hit.wav";
 import { COLLISION_GROUP } from "./config";
+import { useService } from "@xstate/react";
 
 const batMovements = {
   init: {
@@ -67,8 +68,10 @@ function BaseballBat(props) {
 
   const [attacked, setAttacked] = useState(false);
 
+  const [{ context }] = useService(serviceApi.getState().service);
+  const life = context.playerLife
+
   const addOutline = useOutline((s) => s.addOutline);
-  const life = usePlayer((s) => s.life);
   const { addCallback } = useInteraction((s) => s.actions);
   const fiveTone = useAssets((s) => s.fiveTone);
   const { nodes } = useLoader(GLTFLoader, "/baseball_bat.glb", draco());

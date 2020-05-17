@@ -13,8 +13,9 @@ import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShade
 
 import { GlitchPass } from "./post/glitchPass";
 import { WaterPass } from "./post/waterPass";
-import { outlineApi, playerApi } from "./store";
+import { outlineApi, serviceApi } from "./store";
 import { PLAYER } from "./config";
+import { useService } from "@xstate/react";
 
 const OUTLINE_COLOR = 0xffffff;
 
@@ -30,6 +31,8 @@ extend({
 
 function Effects() {
   const { scene, gl, size, camera } = useThree();
+
+  const [current,, service] = useService(serviceApi.getState().service);
 
   const aspect = useMemo(() => new THREE.Vector2(size.width, size.height), [
     size,
@@ -56,10 +59,12 @@ function Effects() {
   useEffect(() => {
     let timeout;
 
-    playerApi.subscribe(({ life }) => {
-      if (life < currLife.current) {
+    const subscription = service.subscribe(({ context }) => {
+      const { playerLife } = context
+
+      if (playerLife < currLife.current) {
         glitch.current.factor = 0.5;
-        currLife.current = life;
+        currLife.current = playerLife;
       }
 
       timeout = setTimeout(() => {
@@ -67,7 +72,10 @@ function Effects() {
       }, 300);
     });
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    };
   }, [glitch, currLife]);
 
   useEffect(() => void composer.current.setSize(size.width, size.height), [
@@ -76,13 +84,18 @@ function Effects() {
   ]);
 
   useFrame(function ({ gl }) {
-    const { playerBody } = playerApi.getState();
+    const { playerBody } = current?.context
+
     if (playerBody.current) {
-      const { y } = playerBody.current.position;
-      if (y < 0) {
+    
+      const y = current.matches("initAnimation") ? 0 : playerBody.current.position.y;
+    
+      if (y <= 0) {
+
         water.current.factor = -y / 10;
         vignette.current.uniforms.offset.value = 0.95 + y / 10;
         vignette.current.uniforms.darkness.value = 1.6 - y / 10;
+
       }
     }
     gl.autoClear = true;
