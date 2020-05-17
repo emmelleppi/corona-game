@@ -7,6 +7,7 @@ export const PLAYER = {
   BODY_LINEAR_DAMPING: 0.1,
   BODY_ANGULAR_DAMPING: 0.1,
   Y_AXIS: 0.75,
+  INIT_POSITION: [0, 30, 10]
 };
 
 export const CORONA = {
@@ -26,7 +27,7 @@ export const CORONA = {
 };
 
 export const GAME = {
-  NUMBER_OF_INIT_SPAWNS: 8,
+  NUMBER_OF_INIT_SPAWNS: 1,
   NUMBER_OF_MAX_SPAWNS: 30,
   INIT_ANIMATION_DURATION: 500,
 };
