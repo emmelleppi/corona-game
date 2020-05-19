@@ -10,45 +10,10 @@ import { GAME_ORCHESTRATOR } from "./machines";
 import { mapApi, quadtreeApi, serviceApi } from "./store";
 import { MAP, CORONA } from "./config";
 
-
-function AppEntryPoint() {
-  const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
-
-  const game = useRef()
-
-  useEffect(() => {
-    const subscription = service.subscribe(gameState => void (game.current = gameState));
-    return subscription.unsubscribe;
-  }, [service]);
-
-  useEffect(() => void serviceApi.getState().setService(service), [service]);
-
-  useEffect(() => {
-    if (current.matches("win") || current.matches("gameover")) {
-      const onClick = () => send("RESTART")
-      document.addEventListener("click", onClick, false);
-  
-      return () => void document.removeEventListener("click", onClick)
-    }
-  }, [current, send])
-
-  return (
-    <>
-      <App game={game} send={send} />
-      <StartScreen hidden={!current.matches("waitUser")} />
-      <GameOverScreen hidden={!current.matches("gameover")} />
-      <WinScreen hidden={!current.matches("win")} />
-    </>
-  )
-}
-
 const App = React.memo(
-
   function App(props) {
     const { game, send } = props
   
-    console.log("bella zio")
-
     const update = useCallback(
       function update() {
         const { tree } = quadtreeApi.getState();
@@ -137,7 +102,7 @@ const App = React.memo(
           }
         }
       },
-      []
+      [game]
     );
       
     useEffect(() => {
@@ -158,5 +123,36 @@ const App = React.memo(
     return <Game />
   }
 )
+
+function AppEntryPoint() {
+  const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
+
+  const game = useRef()
+
+  useEffect(() => {
+    const subscription = service.subscribe(gameState => void (game.current = gameState));
+    return subscription.unsubscribe;
+  }, [service]);
+
+  useEffect(() => void serviceApi.getState().setService(service), [service]);
+
+  useEffect(() => {
+    if (current.matches("win") || current.matches("gameover")) {
+      const onClick = () => send("RESTART")
+      document.addEventListener("click", onClick, false);
+  
+      return () => void document.removeEventListener("click", onClick)
+    }
+  }, [current, send])
+
+  return (
+    <>
+      <App game={game} send={send} />
+      <StartScreen hidden={!current.matches("waitUser")} />
+      <GameOverScreen hidden={!current.matches("gameover")} />
+      <WinScreen hidden={!current.matches("win")} />
+    </>
+  )
+}
 
 export default AppEntryPoint;

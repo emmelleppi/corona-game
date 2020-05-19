@@ -5,9 +5,16 @@ import { useService } from "@xstate/react";
 import Corona from "./Corona";
 import { serviceApi } from "./store";
 
-function CoronaManager() {
-  useCoronaAssets();
+const CoronaManager = React.memo(
+  function CoronaManager(props) {
+    const { coronas } = props
+    useCoronaAssets();
 
+    return coronas.map(({ id, ref }) => <Corona key={id} interpreter={ref} />);
+  }
+)
+
+function CoronaManagerEntryPoint() {
   const [coronas, setCoronas] = useState([]);
 
   const [,, service] = useService(serviceApi.getState().service);
@@ -21,7 +28,7 @@ function CoronaManager() {
     return subscription.unsubscribe;
   }, [service, setCoronas, coronas]);
 
-  return coronas.map(({ id, ref }) => <Corona key={id} interpreter={ref} />);
+  return <CoronaManager coronas={coronas} />
 }
 
-export default CoronaManager;
+export default CoronaManagerEntryPoint;

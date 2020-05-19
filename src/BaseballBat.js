@@ -51,131 +51,139 @@ function PhyBaseballBat() {
   return (
     <>
       <mesh ref={body} userData={{ type: COLLISION_GROUP.BAT }} />
-      <BaseballBat api={api} body={body} />
+      <BaseballBatEntryPoint api={api} body={body} />
     </>
   );
 }
 
-function BaseballBat(props) {
-  const { api, body } = props;
+function BaseballBatEntryPoint(props) {
+  const [{context}] = useService(serviceApi.getState().service);
+  const { playerLife, showPlayer } = context
 
-  const batRef = useRef();
-  const batGroupRef = useRef();
-  const time = useRef(batMovements.idle.t);
+  return <BaseballBat {...props} life={playerLife} showPlayer={showPlayer} />
+}
 
-  const [attacked, setAttacked] = useState(false);
+const BaseballBat = React.memo(
+  function BaseballBat(props) {
+    const { api, body, life, showPlayer } = props;
+  
+    const [isUnderAttack, setIsUnderAttack] = useState(false);
 
-  const [{ context }] = useService(serviceApi.getState().service);
-  const { playerLife: life, showPlayer } = context
-
-  const fiveTone = useAssets((s) => s.fiveTone);
-  const { nodes } = useLoader(GLTFLoader, "/baseball_bat.glb", draco());
-
-  const [spring, set] = useSpring(() => ({
-    ...batMovements.end.spring,
-    config: { mass: 1, tension: 210, friction: 10 },
-  }));
-
-  const [metalResourceRef, metalMaterial] = useResource();
-  const [handleResourceRef, handleMaterial] = useResource();
-
-  function handleClick() {
-    if (time.current > batMovements.end.t) {
-      time.current = 0;
+    const batRef = useRef();
+    const batGroupRef = useRef();
+    const time = useRef(batMovements.idle.t);
+  
+    const fiveTone = useAssets((s) => s.fiveTone);
+    const { nodes } = useLoader(GLTFLoader, "/baseball_bat.glb", draco());
+  
+    const [spring, set] = useSpring(() => ({
+      ...batMovements.end.spring,
+      config: { mass: 1, tension: 210, friction: 10 },
+    }));
+  
+    const [metalResourceRef, metalMaterial] = useResource();
+    const [handleResourceRef, handleMaterial] = useResource();
+  
+    function handleClick() {
+      if (time.current > batMovements.end.t) {
+        time.current = 0;
+      }
     }
+  
+    useEffect(() => void setIsUnderAttack(true), [life]);
+
+    useEffect(
+      () => void (isUnderAttack && setTimeout(() => setIsUnderAttack(false), 500)),
+      [setIsUnderAttack, isUnderAttack]
+    );
+    
+    useEffect(() => {
+      const { addCallback } = interactionApi.getState().actions
+      addCallback(handleClick)
+  
+      const { addOutline } = outlineApi.getState()
+      addOutline(batGroupRef.current)
+    }, [])
+  
+    useFrame(function () {
+      const { init, half, end, idle } = batMovements;
+      time.current += 1;
+  
+      if (time.current === init.t) {
+  
+        body.current.userData.isAttacking = true;
+        batGroupRef.current.rotation.x = Math.PI / 2;
+        batGroupRef.current.rotation.y = 0;
+        set({ ...init.spring });
+  
+      } else if (time.current === half.t) {
+        
+        set({ ...half.spring });
+  
+      } else if (time.current === end.t) {
+        
+        body.current.userData.isAttacking = false;
+        set({ ...end.spring });
+  
+      } else if (time.current > idle.t) {
+        
+        batGroupRef.current.rotation.x =
+          Math.PI / 2 + Math.cos(time.current / 10) / 6;
+        batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
+  
+      }
+  
+      const position = new THREE.Vector3();
+      const quaternion = new THREE.Quaternion();
+      const euler = new THREE.Euler();
+  
+      batRef.current.matrixWorld.decompose(position, quaternion, {});
+      euler.setFromQuaternion(quaternion);
+  
+      api.position.set(position.x, position.y, position.z);
+      api.rotation.set(euler.x, euler.y, euler.z);
+    });
+  
+    return (
+      <>
+        <meshToonMaterial
+          color={isUnderAttack ? 0x76747e : 0xb8b5c3}
+          shininess={0}
+          specular={0xaaaaaa}
+          ref={metalResourceRef}
+          gradientMap={fiveTone}
+        />
+        <meshToonMaterial
+          color={isUnderAttack ? 0x740000 : 0x454194}
+          shininess={0}
+          specular={0x888888}
+          ref={handleResourceRef}
+          gradientMap={fiveTone}
+        />
+  
+        <group
+          ref={batGroupRef}
+          position={[0.1, -0.3, -0.5]}
+          rotation={[Math.PI / 2, 0, 0]}
+          visible={showPlayer}
+          dispose={null}
+        >
+          <a.group scale={[0.02, 0.12, 0.02]} {...spring}>
+            <mesh position={[0, 0, 0]} ref={batRef} />
+            <mesh material={metalMaterial} geometry={nodes.Cylinder_1.geometry} />
+            <mesh
+              material={handleMaterial}
+              geometry={nodes.Cylinder_0.geometry}
+            />
+            <mesh
+              material={handleMaterial}
+              geometry={nodes.Cylinder_2.geometry}
+            />
+          </a.group>
+        </group>
+      </>
+    );
   }
-
-  useEffect(() => void setAttacked(true), [life]);
-  useEffect(
-    () => void (attacked && setTimeout(() => setAttacked(false), 500)),
-    [setAttacked, attacked]
-  );
-  useEffect(() => {
-    const { addCallback } = interactionApi.getState().actions
-    addCallback(handleClick)
-
-    const { addOutline } = outlineApi.getState()
-    addOutline(batGroupRef.current)
-  }, [])
-
-  useFrame(function () {
-    const { init, half, end, idle } = batMovements;
-    time.current += 1;
-
-    if (time.current === init.t) {
-
-      body.current.userData.isAttacking = true;
-      batGroupRef.current.rotation.x = Math.PI / 2;
-      batGroupRef.current.rotation.y = 0;
-      set({ ...init.spring });
-
-    } else if (time.current === half.t) {
-      
-      set({ ...half.spring });
-
-    } else if (time.current === end.t) {
-      
-      body.current.userData.isAttacking = false;
-      set({ ...end.spring });
-
-    } else if (time.current > idle.t) {
-      
-      batGroupRef.current.rotation.x =
-        Math.PI / 2 + Math.cos(time.current / 10) / 6;
-      batGroupRef.current.rotation.y = Math.sin(time.current / 10) / 6;
-
-    }
-
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
-    const euler = new THREE.Euler();
-
-    batRef.current.matrixWorld.decompose(position, quaternion, {});
-    euler.setFromQuaternion(quaternion);
-
-    api.position.set(position.x, position.y, position.z);
-    api.rotation.set(euler.x, euler.y, euler.z);
-  });
-
-  return (
-    <>
-      <meshToonMaterial
-        color={attacked ? 0x76747e : 0xb8b5c3}
-        shininess={0}
-        specular={0xaaaaaa}
-        ref={metalResourceRef}
-        gradientMap={fiveTone}
-      />
-      <meshToonMaterial
-        color={attacked ? 0x740000 : 0x454194}
-        shininess={0}
-        specular={0x888888}
-        ref={handleResourceRef}
-        gradientMap={fiveTone}
-      />
-
-      <group
-        ref={batGroupRef}
-        position={[0.1, -0.3, -0.5]}
-        rotation={[Math.PI / 2, 0, 0]}
-        visible={showPlayer}
-        dispose={null}
-      >
-        <a.group scale={[0.02, 0.12, 0.02]} {...spring}>
-          <mesh position={[0, 0, 0]} ref={batRef} />
-          <mesh material={metalMaterial} geometry={nodes.Cylinder_1.geometry} />
-          <mesh
-            material={handleMaterial}
-            geometry={nodes.Cylinder_0.geometry}
-          />
-          <mesh
-            material={handleMaterial}
-            geometry={nodes.Cylinder_2.geometry}
-          />
-        </a.group>
-      </group>
-    </>
-  );
-}
+)
 
 export default PhyBaseballBat;

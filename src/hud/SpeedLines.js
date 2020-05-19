@@ -5,42 +5,50 @@ import { useService } from "@xstate/react";
 import Sprite from "../utility/Sprite";
 import { serviceApi } from "../store";
 
-function SpeedLines() {
-  const [visible, setVisible] = useState(false);
+const SpeedLines = React.memo(
+  function SpeedLines(props) {
+    const { playerApi } = props
+  
+    const [visible, setVisible] = useState(false);
+  
+    const scale = [window.innerWidth, window.innerHeight, 1];
+    const TH = 14;
+  
+    const handleV = React.useCallback(
+      (varr) => {
+        const v = new Vector3(...varr).length();
+  
+        if (v > TH) {
+          setVisible((v - TH) / TH);
+        } else {
+          setVisible(false);
+        }
+      },
+      [setVisible]
+    );
+  
+    useEffect(() => playerApi?.velocity?.subscribe(handleV), [handleV, playerApi]);
+  
+    return (
+      <>
+        <Sprite
+          visible={visible}
+          opacity={visible}
+          IconPosition={[0, 0, 0]}
+          IconSize={scale}
+          textureSrc="/speed-spritesheet.png"
+          plainAnimatorArgs={[1, 28, 28, 24]}
+        />
+      </>
+    );
+  }
+)
 
-  const scale = [window.innerWidth, window.innerHeight, 1];
-  const TH = 14;
-
+function SpeedLinesEntryPoint() {
   const [{ context }] = useService(serviceApi.getState().service);
   const { playerApi } = context
 
-  const handleV = React.useCallback(
-    (varr) => {
-      const v = new Vector3(...varr).length();
-
-      if (v > TH) {
-        setVisible((v - TH) / TH);
-      } else {
-        setVisible(false);
-      }
-    },
-    [setVisible]
-  );
-
-  useEffect(() => playerApi?.velocity?.subscribe(handleV), [handleV, playerApi]);
-
-  return (
-    <>
-      <Sprite
-        visible={visible}
-        opacity={visible}
-        IconPosition={[0, 0, 0]}
-        IconSize={scale}
-        textureSrc="/speed-spritesheet.png"
-        plainAnimatorArgs={[1, 28, 28, 24]}
-      />
-    </>
-  );
+  return <SpeedLines playerApi={playerApi} />
 }
 
-export default SpeedLines;
+export default SpeedLinesEntryPoint;

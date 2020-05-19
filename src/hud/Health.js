@@ -63,58 +63,62 @@ class HealthBarController {
   }
 }
 
-function Health() {
-  const canvas = React.useRef();
-  const ctx = React.useRef();
-  const healthController = React.useRef();
+const Health = React.memo(
+  function Health(props) {
+    const { playerLife } = props
 
-  const spriteMaterial = React.useRef();
-
-  const [,, service] = useService(serviceApi.getState().service);
-
-  useEffect(() => {
-    canvas.current = document.createElement("canvas");
-
-    canvas.current.width = 1024;
-    canvas.current.height = 1024;
-
-    ctx.current = canvas.current.getContext("2d");
-
-    ctx.current.scale(4, 4);
-
-    healthController.current = new HealthBarController(
-      40,
-      40,
-      ctx.current,
-      canvas.current
-    );
-    healthController.current.update();
-    spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-  }, []);
-
-  useEffect(
-    () => {
-      const subscription = service.subscribe(({ context }) => {
-        const { playerLife } = context
+    const canvas = React.useRef();
+    const ctx = React.useRef();
+    const healthController = React.useRef();
+  
+    const spriteMaterial = React.useRef();
+  
+    useEffect(() => {
+      canvas.current = document.createElement("canvas");
+  
+      canvas.current.width = 1024;
+      canvas.current.height = 1024;
+  
+      ctx.current = canvas.current.getContext("2d");
+  
+      ctx.current.scale(4, 4);
+  
+      healthController.current = new HealthBarController(
+        40,
+        40,
+        ctx.current,
+        canvas.current
+      );
+      healthController.current.update();
+      spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
+    }, []);
+  
+    useEffect(
+      () => {
         healthController.current.update(playerLife);
         spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-      })
+      },
+      [playerLife]
+    );
+  
+    return (
+      <group
+        position={[-window.innerWidth / 2 + 80, -window.innerHeight / 2 + 80, 1]}
+      >
+        <sprite position={[70, 0, 0]} scale={[256, 256, 256]}>
+          <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
+        </sprite>
+        <Heart scale={[256 * 5, 256 * 5, 256 * 5]} position={[0, 0, -50]} />
+      </group>
+    );
+  }
+)
 
-      return subscription.unsubscribe
-    },
-    [service]
-  );
+function HealthEntryPoint() {
+  const [{ context }] = useService(serviceApi.getState().service);
+  const { playerLife } = context
 
-  return (
-    <group
-      position={[-window.innerWidth / 2 + 80, -window.innerHeight / 2 + 80, 1]}
-    >
-      <sprite position={[70, 0, 0]} scale={[256, 256, 256]}>
-        <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
-      </sprite>
-      <Heart scale={[256 * 5, 256 * 5, 256 * 5]} position={[0, 0, -50]} />
-    </group>
-  );
+  return <Health playerLife={playerLife} />
 }
 
-export default Health
+export default HealthEntryPoint

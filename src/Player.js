@@ -35,8 +35,6 @@ const PhyPlayer = React.memo(
   function PhyPlayer(props) {
     const { position, playerBody, showPlayer, send } = props;
   
-    console.log("PhyPlayer")
-  
     const isOnTiles = useRef(false);
     const onCollide = useRef();
     const movementKeys = useRef()

@@ -9,51 +9,58 @@ import Cursor from "./hud/Cursor";
 import Remaining from "./hud/Remaining";
 import { serviceApi } from "./store";
 
-function Hud() {
-  const [current] = useService(serviceApi.getState().service);
-  const isGameStarted = current.matches("start");
+const Hud = React.memo(
+  function Hud(props) {
+    const { isGameStarted } = props
 
-  const [scene] = useState(() => new THREE.Scene());
-  const [camera] = useState(() => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    const cam = new THREE.OrthographicCamera(
-      -width / 2,
-      width / 2,
-      height / 2,
-      -height / 2,
-      1,
-      100
+    const [scene] = useState(() => new THREE.Scene());
+    const [camera] = useState(() => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+  
+      const cam = new THREE.OrthographicCamera(
+        -width / 2,
+        width / 2,
+        height / 2,
+        -height / 2,
+        1,
+        100
+      );
+  
+      cam.position.z = 10;
+      cam.zoom = 10;
+      cam.updateProjectionMatrix();
+  
+      return cam;
+    });
+  
+    useFrame(
+      ({ gl }) =>
+        void ((gl.autoClear = false), gl.clearDepth(), gl.render(scene, camera)),
+      10
     );
+  
+    return createPortal(
+      <Suspense fallback={null}>
+        <group scale={[1 / 10, 1 / 10, 1 / 10]} visible={isGameStarted}>
+          <Health />
+          <Remaining />
+          <SpeedLines />
+          <Cursor />
+          <spotLight
+            position={[window.innerWidth / 2, -window.innerHeight / 2, 1]}
+          />
+        </group>
+      </Suspense>,
+      scene
+    );
+  }
+)
 
-    cam.position.z = 10;
-    cam.zoom = 10;
-    cam.updateProjectionMatrix();
+function HudEntryPoint() {
+  const [current] = useService(serviceApi.getState().service);
 
-    return cam;
-  });
-
-  useFrame(
-    ({ gl }) =>
-      void ((gl.autoClear = false), gl.clearDepth(), gl.render(scene, camera)),
-    10
-  );
-
-  return createPortal(
-    <Suspense fallback={null}>
-      <group scale={[1 / 10, 1 / 10, 1 / 10]} visible={isGameStarted}>
-        <Health />
-        <Remaining />
-        <SpeedLines />
-        <Cursor />
-        <spotLight
-          position={[window.innerWidth / 2, -window.innerHeight / 2, 1]}
-        />
-      </group>
-    </Suspense>,
-    scene
-  );
+  return <Hud isGameStarted={current.matches("start")} />
 }
 
-export default Hud;
+export default HudEntryPoint;

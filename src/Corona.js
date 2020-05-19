@@ -411,17 +411,19 @@ function CoronaEntryPoint(props) {
     [state]
   );
 
-  return <PhyCorona
-    {...states}
-    send={send}
-    id={id}
-    isUnderAttack={isUnderAttack}
-    seekAlert={seekAlert}
-    phyRef={phyRef}
-    orientation={orientation}
-    initPosition={initPosition}
-    playerBody={playerBody}
-  />
+  return (
+    <PhyCorona
+      {...states}
+      send={send}
+      id={id}
+      isUnderAttack={isUnderAttack}
+      seekAlert={seekAlert}
+      phyRef={phyRef}
+      orientation={orientation}
+      initPosition={initPosition}
+      playerBody={playerBody}
+    />
+    )
 }
 
 export default CoronaEntryPoint;

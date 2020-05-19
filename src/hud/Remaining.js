@@ -65,65 +65,71 @@ class RemainingController {
   }
 }
 
-export default function Health() {
-  const canvas = React.useRef();
-  const ctx = React.useRef();
-  const remainingController = React.useRef();
+const Remaining = React.memo(
+  function Remaining(props) {
+    const { coronasNum } = props
 
-  const spriteMaterial = React.useRef();
-
-  const [,,service] = useService(serviceApi.getState().service);
-
-  useEffect(() => {
-    canvas.current = document.createElement("canvas");
-
-    canvas.current.width = 1024;
-    canvas.current.height = 1024;
-
-    ctx.current = canvas.current.getContext("2d");
-
-    ctx.current.scale(4, 4);
-
-    // set this to number of initial coronas, to draw proportianl fill of green circle
-    remainingController.current = new RemainingController(
-      40,
-      40,
-      ctx.current,
-      canvas.current,
-      20
-    );
-  }, []);
-
-  useEffect(
-    () => {
-      const subscription = service.subscribe(({ context }) => {
-        const { coronas } = context
-        remainingController.current.remaining = coronas.length;
+    const canvas = React.useRef();
+    const ctx = React.useRef();
+    const remainingController = React.useRef();
+  
+    const spriteMaterial = React.useRef();
+  
+    useEffect(() => {
+      canvas.current = document.createElement("canvas");
+  
+      canvas.current.width = 1024;
+      canvas.current.height = 1024;
+  
+      ctx.current = canvas.current.getContext("2d");
+  
+      ctx.current.scale(4, 4);
+  
+      // set this to number of initial coronas, to draw proportianl fill of green circle
+      remainingController.current = new RemainingController(
+        40,
+        40,
+        ctx.current,
+        canvas.current,
+        20
+      );
+    }, []);
+  
+    useEffect(
+      () => {
+        remainingController.current.remaining = coronasNum;
         remainingController.current.update();
         spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-      })
-
-      return subscription.unsubscribe
-    },
-    [service]
-  );
-
-  return (
-    <>
-      <group
-        position={[
-          window.innerWidth / 2 - 120,
-          -window.innerHeight / 2 + 80,
-          1,
-        ]}
-      >
-        <sprite scale={[256, 256, 256]}>
-          <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
-        </sprite>
-        <group position={[30, 10, -50]} scale={[40, 40, 40]}>
-          <CoronaRenderer />
+      },
+      [coronasNum]
+    );
+  
+    return (
+      <>
+        <group
+          position={[
+            window.innerWidth / 2 - 120,
+            -window.innerHeight / 2 + 80,
+            1,
+          ]}
+        >
+          <sprite scale={[256, 256, 256]}>
+            <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
+          </sprite>
+          <group position={[30, 10, -50]} scale={[40, 40, 40]}>
+            <CoronaRenderer />
+          </group>
         </group>
-      </group>
-    </>
-  );
+      </>
+    );
+  }
+)
+
+function RemainingEntryPoint() {
+  const [{ context }] = useService(serviceApi.getState().service);
+  const { coronas } = context
+
+  return <Remaining coronasNum={coronas.length} />
 }
+
+export default RemainingEntryPoint
