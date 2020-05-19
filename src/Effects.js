@@ -45,7 +45,7 @@ function Effects() {
   const vignette = useRef();
   const currLife = React.useRef(PLAYER.INITIAL_LIFE);
 
-  useEffect(() => void (glitch.current.factor = 0), [glitch]);
+  useEffect(() => void (glitch.current.factor = 0), []);
 
   useEffect(
     () =>
@@ -76,12 +76,9 @@ function Effects() {
       clearTimeout(timeout)
       subscription.unsubscribe()
     };
-  }, [glitch, currLife]);
+  }, [service]);
 
-  useEffect(() => void composer.current.setSize(size.width, size.height), [
-    composer,
-    size,
-  ]);
+  useEffect(() => void composer.current.setSize(size.width, size.height), [size]);
 
   useFrame(function ({ gl }) {
     const { playerBody } = current?.context
@@ -98,6 +95,7 @@ function Effects() {
 
       }
     }
+    
     gl.autoClear = true;
     composer.current.render();
   }, 1);

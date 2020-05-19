@@ -18,9 +18,8 @@ function CoronaManager() {
         setCoronas(context.coronas);
       }
     });
-
     return subscription.unsubscribe;
-  }, [service, setCoronas]);
+  }, [service, setCoronas, coronas]);
 
   return coronas.map(({ id, ref }) => <Corona key={id} interpreter={ref} />);
 }

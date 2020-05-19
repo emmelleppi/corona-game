@@ -16,12 +16,12 @@ function WinScreen(props) {
     to: { opacity: 1 },
     config: config.molasses
   }), [])
+
   useEffect(() => void animate({
     from: { opacity: 0 },
     to: { opacity: 1 },
     config: config.molasses
-
-  }), [index])
+  }), [index, animate])
 
   useInterval(() => setIndex(s => (s + 1) % (congrats.length - 1)), 1500)
 

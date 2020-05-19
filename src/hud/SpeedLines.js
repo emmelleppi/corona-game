@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Vector3 } from "three";
+import { useService } from "@xstate/react";
 
 import Sprite from "../utility/Sprite";
-import { useService } from "@xstate/react";
 import { serviceApi } from "../store";
 
 function SpeedLines() {
+  const [visible, setVisible] = useState(false);
+
   const scale = [window.innerWidth, window.innerHeight, 1];
   const TH = 14;
-
-  const [visible, setVisible] = useState(false);
 
   const [{ context }] = useService(serviceApi.getState().service);
   const { playerApi } = context

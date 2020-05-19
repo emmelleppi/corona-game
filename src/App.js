@@ -16,88 +16,95 @@ function App() {
   const update = useCallback(
     function update() {
       const { tree } = quadtreeApi.getState();
-
-      if (!tree) return;
-
       const isGameStarted = current.matches("start")
 
-      if (isGameStarted) {
-        const { context } = current;
-        const { coronas, playerBody } = context;
-        tree.clear();
+      if (!(tree && isGameStarted)) return;
 
-        for (let i = 0; i < coronas.length; i++) {
-          const { state } = coronas[i].ref;
-          const { context } = state;
-          const { id, phyRef } = context;
+      const { context } = current;
+      const { coronas, playerBody } = context;
+      tree.clear();
 
-          if (phyRef?.current) {
-            const { x = 0, z = 0 } = phyRef?.current?.position;
+      for (let i = 0; i < coronas.length; i++) {
+        const { state } = coronas[i].ref;
+        const { context } = state;
+        const { id, phyRef } = context;
 
-            tree.insert({
-              id,
-              x: x + 55,
-              y: z + 85,
-              width: 1,
-              height: 1,
-            });
-          }
+        if (phyRef?.current) {
+          const { x = 0, z = 0 } = phyRef?.current?.position;
+
+          tree.insert({
+            id,
+            x: x + 55,
+            y: z + 85,
+            width: 1,
+            height: 1,
+          });
         }
+      }
 
-        const {
-          x = 0,
-          y = 0,
-          z = 0,
-        } = playerBody?.current?.position || {};
-        const candidates = tree.retrieve({
-          x: x + 55,
-          y: z + 85,
-          width: 1,
-          height: 1,
-        });
+      const {
+        x = 0,
+        y = 0,
+        z = 0,
+      } = playerBody?.current?.position || {};
+      
+      const candidates = tree.retrieve({
+        x: x + 55,
+        y: z + 85,
+        width: 1,
+        height: 1,
+      });
 
-        for (let i = 0; i < coronas.length; i++) {
-          const { state, send } = coronas[i].ref;
-          const { context, value } = state;
-          const { id, phyRef } = context;
+      for (let i = 0; i < coronas.length; i++) {
+        const { state, send } = coronas[i].ref;
+        const { context, value } = state;
+        const { id, phyRef } = context;
 
-          if (
-            value?.live === "idle" ||
-            value?.live === "seeking" ||
-            value?.live === "preattacking"
-          ) {
-            const isCandidate =
-              candidates.findIndex((candidate) => id === candidate.id) !== -1;
+        if (
+          value?.live === "idle" ||
+          value?.live === "seeking" ||
+          value?.live === "preattacking"
+        ) {
+          const isCandidate =
+            candidates.findIndex((candidate) => id === candidate.id) !== -1;
 
-            if (isCandidate) {
-              const distance = new THREE.Vector3(x, y, z).distanceTo(
-                phyRef.current.position
-              );
+          if (isCandidate) {
+            const distance = new THREE.Vector3(x, y, z).distanceTo(
+              phyRef.current.position
+            );
 
-              if (value?.live === "idle") {
-                send("SEEK");
-              } else if (
-                value?.live === "seeking" &&
-                distance <= CORONA.ATTACK_DISTANCE
-              ) {
-                send("ATTACK");
-              } else if (
-                value?.live === "preattacking" &&
-                distance > CORONA.ATTACK_DISTANCE
-              ) {
-                send("SEEK");
-              }
-            } else {
-              if (value?.live === "seeking" || value?.live === "preattacking") {
-                send("IDLE");
-              }
+            if (value?.live === "idle") {
+
+              send("SEEK");
+
+            } else if (
+              value?.live === "seeking" &&
+              distance <= CORONA.ATTACK_DISTANCE
+            ) {
+
+              send("ATTACK");
+
+            } else if (
+              value?.live === "preattacking" &&
+              distance > CORONA.ATTACK_DISTANCE
+            ) {
+
+              send("SEEK");
+
+            }
+
+          } else {
+            if (value?.live === "seeking" || value?.live === "preattacking") {
+              send("IDLE");
             }
           }
         }
       }
     },
-    [current, send]
+    [current]
   );
+  
+  useEffect(() => void serviceApi.getState().setService(service), [service]);
 
   useEffect(() => {
     const intervalId = window.requestInterval(update, 250);
@@ -117,14 +124,11 @@ function App() {
   useEffect(() => {
     if (current.matches("win") || current.matches("gameover")) {
       const onClick = () => send("RESTART")
-
       document.addEventListener("click", onClick, false);
   
       return () => void document.removeEventListener("click", onClick)
     }
-  }, [current])
-
-  useEffect(() => void serviceApi.getState().setService(service), [service]);
+  }, [current, send])
 
   return (
     <>

@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame, useUpdate } from "react-three-fiber";
 import * as THREE from "three";
+
 import { vertexShader, fragmentShader } from "./utility/shaders";
+import useInterval from "./utility/useInterval";
 
 const TEXT = ["KILL", "THE", "CORONA", "STAY", "THE", "FUCK", "HOME!"];
 const WIDTH = Math.pow(2, 10);
@@ -47,16 +49,15 @@ function ShaderSphere(props) {
 }
 
 function Sky() {
-  const time = useRef(0);
   const ref = useRef();
 
   const [canvas] = useState(document.createElement("canvas"));
   const [text, setText] = useState(0);
 
-  useEffect(() => {
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
-  }, [canvas]);
+  useEffect(() => void (
+    canvas.width = WIDTH,
+    canvas.height = HEIGHT
+  ), [canvas]);
 
   const materialRef = useUpdate(
     (material) => {
@@ -89,13 +90,7 @@ function Sky() {
     [text, canvas]
   );
 
-  useFrame(function () {
-    time.current += 1;
-    if (time.current === 100) {
-      setText((s) => (s + 1) % TEXT.length);
-      time.current = 0;
-    }
-  });
+  useInterval(() => setText((s) => (s + 1) % TEXT.length), 3000)
 
   return (
     <group position={[0, 20, 0]} scale={[6, 6, 6]}>
@@ -110,7 +105,6 @@ function Sky() {
           alphaTest={0.5}
         />
       </mesh>
-      {/* <ShaderSphere /> */}
     </group>
   );
 }

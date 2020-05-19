@@ -72,8 +72,7 @@ export default function Health() {
 
   const spriteMaterial = React.useRef();
 
-  const [{ context }] = useService(serviceApi.getState().service);
-  const { coronas } = context;
+  const [,,service] = useService(serviceApi.getState().service);
 
   useEffect(() => {
     canvas.current = document.createElement("canvas");
@@ -95,11 +94,19 @@ export default function Health() {
     );
   }, []);
 
-  useEffect(() => {
-    remainingController.current.remaining = coronas.length;
-    remainingController.current.update();
-    spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-  }, [coronas]);
+  useEffect(
+    () => {
+      const subscription = service.subscribe(({ context }) => {
+        const { coronas } = context
+        remainingController.current.remaining = coronas.length;
+        remainingController.current.update();
+        spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
+      })
+
+      return subscription.unsubscribe
+    },
+    [service]
+  );
 
   return (
     <>

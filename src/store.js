@@ -1,9 +1,9 @@
 import create from "zustand";
 import produce from "immer";
 import * as THREE from "three";
-import { createRef } from "react";
 import Quadtree from "@timohausmann/quadtree-js";
-import { MAP, PLAYER } from "./config";
+
+import { MAP } from "./config";
 
 export const [useGameService, serviceApi] = create((set) => ({
   service: null,

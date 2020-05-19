@@ -30,7 +30,7 @@ window.requestInterval = function (fn, delay) {
     return window.setInterval(fn, delay);
 
   var start = new Date().getTime(),
-    handle = new Object();
+    handle = {};
 
   function loop() {
     var current = new Date().getTime(),

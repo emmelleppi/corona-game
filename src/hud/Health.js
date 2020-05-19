@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import * as THREE from "three";
+import { useService } from "@xstate/react";
+
 import { serviceApi } from "../store";
 import Heart from "../Heart";
 import { PLAYER } from "../config";
-import { useService } from "@xstate/react";
 
 const colors = ["#161616", "#780F5F", "#F35B5B"].map(
   (col) => `#${new THREE.Color(col).convertSRGBToLinear().getHexString()}`
@@ -62,7 +63,7 @@ class HealthBarController {
   }
 }
 
-export default function Health() {
+function Health() {
   const canvas = React.useRef();
   const ctx = React.useRef();
   const healthController = React.useRef();
@@ -70,7 +71,6 @@ export default function Health() {
   const spriteMaterial = React.useRef();
 
   const [,, service] = useService(serviceApi.getState().service);
-
 
   useEffect(() => {
     canvas.current = document.createElement("canvas");
@@ -90,7 +90,7 @@ export default function Health() {
     );
     healthController.current.update();
     spriteMaterial.current.map = new THREE.CanvasTexture(canvas.current);
-  }, [healthController, ctx, canvas]);
+  }, []);
 
   useEffect(
     () => {
@@ -102,7 +102,7 @@ export default function Health() {
 
       return subscription.unsubscribe
     },
-    [healthController]
+    [service]
   );
 
   return (
@@ -116,3 +116,5 @@ export default function Health() {
     </group>
   );
 }
+
+export default Health
