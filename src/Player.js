@@ -12,7 +12,6 @@ import useSound from "use-sound";
 import { useService } from "@xstate/react";
 
 import {
-  useInteraction,
   interactionApi,
   serviceApi,
 } from "./store";
@@ -32,135 +31,132 @@ const {
   Y_AXIS,
 } = PLAYER;
 
-function PhyPlayer(props) {
-  const { position } = props;
-
-  const [current, send] = useService(serviceApi.getState().service);
-  const { context } = current
-  const { playerBody, showPlayer } = context
-
-  const isOnTiles = useRef(false);
-  const onCollide = useRef();
-
-  const { camera } = useThree();
-
-  const { left, right, forward, backward, jump, boost } = useInteraction(
-    (s) => s
-  );
-
-  const [mybody, api] = useSphere(() => ({
-    mass: 1,
-    args: BODY_RADIUS,
-    type: "Dynamic",
-    position,
-    linearDamping: BODY_LINEAR_DAMPING,
-    angularDamping: BODY_ANGULAR_DAMPING,
-    collisionFilterGroup: COLLISION_GROUP.BODY,
-    collisionFilterMask: COLLISION_GROUP.TILES,
-    onCollide: (e) => {
-      const { body } = e;
-      if (!body) return;
-      const { type } = body?.userData;
-      if (type === COLLISION_GROUP.TILES && !isOnTiles.current) {
-        isOnTiles.current = true;
-      }
-    },
-  }));
-
-  const [chest, chestApi] = useCylinder(
-    () => ({
-      type: "Dynamic",
-      args: [0.2, 0.1, 0.5, 32],
-      onCollide: (e) => onCollide.current(e),
-    }),
-    playerBody
-  );
-
-  const handleCollide = useCallback(
-    function handleCollide(e) {
-      const { body } = e;
-
-      if (!body) return;
-
-      const { type, attacking } = body?.userData;
-
-      if (type === COLLISION_GROUP.CORONA && attacking) {
-        send("ATTACKED")
-      }
-    },
-    [context, send]
-  );
-
-  useEffect(() => void (onCollide.current = handleCollide), [
-    onCollide,
-    handleCollide,
-  ]);
-
-  useEffect(() => void send({ type: 'PLAYER_READY', payload: { api } }), [send, api]);
+const PhyPlayer = React.memo(
+  function PhyPlayer(props) {
+    const { position, playerBody, showPlayer, send } = props;
   
-  useEffect(
-    () =>
-      api.position.subscribe(
-        ([x, y, z]) => void chestApi.position.set(x, y + Y_AXIS, z)
-      ),
-    [api, chestApi]
-  );
+    console.log("PhyPlayer")
+  
+    const isOnTiles = useRef(false);
+    const onCollide = useRef();
+    const movementKeys = useRef()
+  
+    const { camera } = useThree();
+  
+    const [mybody, api] = useSphere(() => ({
+      mass: 1,
+      args: BODY_RADIUS,
+      type: "Dynamic",
+      position,
+      linearDamping: BODY_LINEAR_DAMPING,
+      angularDamping: BODY_ANGULAR_DAMPING,
+      collisionFilterGroup: COLLISION_GROUP.BODY,
+      collisionFilterMask: COLLISION_GROUP.TILES,
+      onCollide: (e) => {
+        const { body } = e;
+        if (!body) return;
+        const { type } = body?.userData;
+        if (type === COLLISION_GROUP.TILES && !isOnTiles.current) {
+          isOnTiles.current = true;
+        }
+      },
+    }));
+  
+    const [chest, chestApi] = useCylinder(
+      () => ({
+        type: "Dynamic",
+        args: [0.2, 0.1, 0.5, 32],
+        onCollide: (e) => onCollide.current(e),
+      }),
+      playerBody
+    );
+  
+    const handleCollide = useCallback(
+      function handleCollide(e) {
+        const { body } = e;
+  
+        if (!body) return;
+  
+        const { type, attacking } = body?.userData;
+  
+        if (type === COLLISION_GROUP.CORONA && attacking) {
+          send("ATTACKED")
+        }
+      },
+      [send]
+    );
+    useEffect(() => void (onCollide.current = handleCollide), [handleCollide]);
+  
+    useEffect(() => void send({ type: 'PLAYER_READY', payload: { api } }), [send, api]);
+    
+    useEffect(
+      () =>
+        api.position.subscribe(
+          ([x, y, z]) => void chestApi.position.set(x, y + Y_AXIS, z)
+        ),
+      [api, chestApi]
+    );
+  
+    useEffect(() => interactionApi.subscribe(({ left, right, forward, backward, jump, boost }) => 
+      (movementKeys.current = { left, right, forward, backward, jump, boost })
+    ), [])
+  
+    useFrame(function () {
+      if (!showPlayer) return
+  
+      const { left, right, forward, backward, jump, boost } = movementKeys.current
+      
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+  
+      let x = 0;
+      let y = 0;
+  
+      if (backward) {
+        x += direction.z;
+        y += -direction.x;
+      } else if (forward) {
+        x += -direction.z;
+        y += direction.x;
+      }
+      if (left) {
+        x += -direction.x;
+        y += -direction.z;
+      } else if (right) {
+        x += direction.x;
+        y += direction.z;
+      }
+  
+      x = Math.min(1, Math.max(x, -1));
+      y = Math.min(1, Math.max(y, -1));
+  
+      if (x !== 0 || y !== 0) {
+        const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1);
+        api.angularVelocity.set(velocity * x, 0, velocity * y);
+      } else {
+        api.angularVelocity.set(0, 0, 0);
+      }
+  
+      if (jump && isOnTiles.current) {
+        api.applyImpulse(
+          [JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x],
+          [0, 0, 0]
+        );
+        isOnTiles.current = false;
+      }
+    });
+  
+    return (
+      <>
+        <mesh ref={mybody} />
+        <mesh ref={chest} userData={{ type: COLLISION_GROUP.CHEST }} />
+        <Player />
+      </>
+    );
+  }
+)
 
-  useFrame(function () {
-    if (!showPlayer) return
-
-    const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
-
-    let x = 0;
-    let y = 0;
-
-    if (backward) {
-      x += direction.z;
-      y += -direction.x;
-    } else if (forward) {
-      x += -direction.z;
-      y += direction.x;
-    }
-    if (left) {
-      x += -direction.x;
-      y += -direction.z;
-    } else if (right) {
-      x += direction.x;
-      y += direction.z;
-    }
-
-    x = Math.min(1, Math.max(x, -1));
-    y = Math.min(1, Math.max(y, -1));
-
-    if (x !== 0 || y !== 0) {
-      const velocity = VELOCITY * (boost ? BOOST_FACTOR : 1);
-      api.angularVelocity.set(velocity * x, 0, velocity * y);
-    } else {
-      api.angularVelocity.set(0, 0, 0);
-    }
-
-    if (jump && isOnTiles.current) {
-      api.applyImpulse(
-        [JUMP_IMPULSE * -y, JUMP_IMPULSE, JUMP_IMPULSE * x],
-        [0, 0, 0]
-      );
-      isOnTiles.current = false;
-    }
-  });
-
-  return (
-    <>
-      <mesh ref={mybody} />
-      <mesh ref={chest} userData={{ type: COLLISION_GROUP.CHEST }} />
-      <Player showPlayer={showPlayer} />
-    </>
-  );
-}
-
-function Player(props) {
-  const { showPlayer } = props
-
+function Player() {
   const [hasJump, setHasJump] = useState(false);
   const [hasBoost, setHasBoost] = useState(false);
 
@@ -190,18 +186,20 @@ function Player(props) {
   useEffect(() => interactionApi.subscribe(onSubscribe), [onSubscribe]);
 
   return (
-    <Suspense fallback={null}>
-      <BaseballBat position={[0.1, -0.3, -0.5]} visible={showPlayer} />
-    </Suspense>
+    <GestureHandler>
+      <Suspense fallback={null}>
+        <BaseballBat />
+      </Suspense>
+    </GestureHandler>
   );
 }
 
 function PlayerEntryPoint(props) {
-  return (
-    <GestureHandler>
-      <PhyPlayer {...props} />
-    </GestureHandler>
-  )
+  const [current, send] = useService(serviceApi.getState().service);
+  const { context } = current
+  const { playerBody, showPlayer } = context
+
+  return <PhyPlayer {...props} playerBody={playerBody} showPlayer={showPlayer} send={send} />
 }
 
 export default PlayerEntryPoint;

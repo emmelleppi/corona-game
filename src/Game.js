@@ -1,14 +1,12 @@
-import React, { useCallback, Suspense } from "react";
+import React, { Suspense } from "react";
 import { Canvas, useThree, createPortal } from "react-three-fiber";
-import { Stats } from "drei";
 
 import PhysicWorld from "./PhysicWorld";
 import Effects from "./Effects";
 import Lights from "./Lights";
 import Hud from "./Hud";
 import Sky from "./Sky";
-
-import { useInteraction } from "./store";
+import { interactionApi } from "./store";
 
 function Main() {
   const { scene } = useThree();
@@ -25,16 +23,12 @@ function Main() {
   );
 }
 
+function handleClick(e) {
+  const { callbacks } = interactionApi.getState()
+  callbacks.map((f) => f(e));
+}
+
 function Game() {
-  const callbacks = useInteraction((s) => s.callbacks);
-
-  const handleClick = useCallback(
-    function handleClick(e) {
-      callbacks.map((f) => f(e));
-    },
-    [callbacks]
-  );
-
   return (
     <Suspense fallback={"LOADING"}>
       <Canvas colorManagement onClick={handleClick}>

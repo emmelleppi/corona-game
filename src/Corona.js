@@ -34,15 +34,6 @@ const {
 } = CORONA;
 
 const PhyCorona = React.memo(function PhyCorona(props) {
-  const { interpreter } = props;
-
-  const attackPosition = useRef();
-  const renderingGroup = useRef();
-  const additiveOrientation = useRef({ coords: [0, 0, 0], time: 0.5 });
-
-  // XSTATE
-  const [state, send] = useService(interpreter);
-  const { context } = state;
   const {
     id,
     isUnderAttack,
@@ -50,27 +41,19 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     phyRef,
     orientation,
     initPosition,
-    playerBody
-  } = context;
-
-  const {
+    playerBody,
+    send,
     isIdle,
     isSeeking,
     isPreattacking,
     isAttacking,
     isSpawning,
     isDead,
-  } = useMemo(
-    () => ({
-      isIdle: state?.matches("live.idle"),
-      isSeeking: state?.matches("live.seeking"),
-      isPreattacking: state?.matches("live.preattacking"),
-      isAttacking: state?.matches("live.attacking"),
-      isSpawning: state?.matches("live.spawning"),
-      isDead: state?.matches("dead"),
-    }),
-    [state]
-  );
+  } = props;
+
+  const attackPosition = useRef();
+  const renderingGroup = useRef();
+  const additiveOrientation = useRef({ coords: [0, 0, 0], time: 0.5 });
 
   // CANNON INIT
   const [coronaBody, coronaBodyApi] = useSphere(() => ({
@@ -129,7 +112,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
         lockApi.position.set(x - 1.3 * dir.x, initPosition[1], z - 1.3 * dir.z);
       }
     },
-    [send, additiveOrientation, lockApi, getDirectionFromPlayer]
+    [initPosition, lock, send, additiveOrientation, lockApi, getDirectionFromPlayer]
   );
   useEffect(() => void (onCollide.current = handleCollide), [
     onCollide,
@@ -144,7 +127,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
       const dir = getDirectionFromPlayer()
       coronaBodyApi.applyLocalImpulse([-4 * dir.x, 2, -4 * dir.z], [0, 0, 0]);
     },
-    [disable, coronaBody, coronaBodyApi, getDirectionFromPlayer]
+    [disable, coronaBodyApi, getDirectionFromPlayer]
   );
 
   // HANDLE CORONA ATTACK STATE
@@ -169,7 +152,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
         send("PRE_ATTACK");
       }
     }, ATTACK_DURATION);
-  }, [send, lock, coronaBody, lockApi, attackPosition, getDirectionFromPlayer]);
+  }, [send, initPosition, lock, coronaBody, lockApi, attackPosition, getDirectionFromPlayer]);
 
   useEffect(() => {
     if (isAttacking) {
@@ -407,4 +390,45 @@ const CoronaShadow = React.memo(function CoronaShadow(props) {
   );
 });
 
-export default PhyCorona;
+function CoronaEntryPoint(props) {
+  const { interpreter } = props;
+
+  // XSTATE
+  const [state, send] = useService(interpreter);
+  const { context } = state;
+  const {
+    id,
+    isUnderAttack,
+    seekAlert,
+    phyRef,
+    orientation,
+    initPosition,
+    playerBody
+  } = context;
+
+  const states = useMemo(
+    () => ({
+      isIdle: state?.matches("live.idle"),
+      isSeeking: state?.matches("live.seeking"),
+      isPreattacking: state?.matches("live.preattacking"),
+      isAttacking: state?.matches("live.attacking"),
+      isSpawning: state?.matches("live.spawning"),
+      isDead: state?.matches("dead"),
+    }),
+    [state]
+  );
+
+  return <PhyCorona
+    {...states}
+    send={send}
+    id={id}
+    isUnderAttack={isUnderAttack}
+    seekAlert={seekAlert}
+    phyRef={phyRef}
+    orientation={orientation}
+    initPosition={initPosition}
+    playerBody={playerBody}
+  />
+}
+
+export default CoronaEntryPoint;
