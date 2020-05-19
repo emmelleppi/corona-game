@@ -154,14 +154,7 @@ const PhyCorona = React.memo(function PhyCorona(props) {
     }, ATTACK_DURATION);
   }, [send, initPosition, lock, coronaBody, lockApi, attackPosition, getDirectionFromPlayer]);
 
-  useEffect(() => {
-    if (isAttacking) {
-      handleAttack();
-    }
-    if (isDead) {
-      handleDeath();
-    }
-  }, [isAttacking, isDead, handleAttack, handleDeath]);
+  useEffect(() => void (isAttacking && handleAttack(), isDead && handleDeath()), [isAttacking, isDead, handleAttack, handleDeath]);
 
   useFrame(function () {
     if (isIdle || isSeeking) {
