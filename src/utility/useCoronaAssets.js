@@ -33,8 +33,8 @@ function useCoronaAssets() {
   // EXCLAMATION CANVAS TEXTURE
   const setExclamationTexture = useAssets((s) => s.setExclamationTexture);
   useEffect(() => {
-    const WIDTH = 200;
-    const HEIGHT = 200;
+    const WIDTH = 128;
+    const HEIGHT = 128;
     const canvas = document.createElement("canvas");
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
@@ -50,7 +50,7 @@ function useCoronaAssets() {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 10;
 
-    ctx.font = "200px Bangers";
+    ctx.font = "150px Bangers";
     ctx.fillText("!", WIDTH / 2, HEIGHT / 2);
     ctx.strokeText("!", WIDTH / 2, WIDTH / 2);
 
