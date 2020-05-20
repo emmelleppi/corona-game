@@ -17,7 +17,7 @@ const App = React.memo(
     const update = useCallback(
       function update() {
         const { tree } = quadtreeApi.getState();
-        const isGameStarted = game.current.value === "start"
+        const isGameStarted = game.current.value === "gameplay"
   
         if (!(tree && isGameStarted)) return;
   
@@ -62,9 +62,9 @@ const App = React.memo(
           const { id, phyRef } = context;
   
           if (
-            value?.live === "idle" ||
-            value?.live === "seeking" ||
-            value?.live === "preattacking"
+            value?.active === "idle" ||
+            value?.active === "seek" ||
+            value?.active === "preattack"
           ) {
             const isCandidate =
               candidates.findIndex((candidate) => id === candidate.id) !== -1;
@@ -74,19 +74,19 @@ const App = React.memo(
                 phyRef.current.position
               );
   
-              if (value?.live === "idle") {
+              if (value?.active === "idle") {
   
                 send("SEEK");
   
               } else if (
-                value?.live === "seeking" &&
+                value?.active === "seek" &&
                 distance <= CORONA.ATTACK_DISTANCE
               ) {
   
                 send("ATTACK");
   
               } else if (
-                value?.live === "preattacking" &&
+                value?.active === "preattack" &&
                 distance > CORONA.ATTACK_DISTANCE
               ) {
   
@@ -95,7 +95,7 @@ const App = React.memo(
               }
   
             } else {
-              if (value?.live === "seeking" || value?.live === "preattacking") {
+              if (value?.active === "seek" || value?.active === "preattack") {
                 send("IDLE");
               }
             }
@@ -148,7 +148,7 @@ function AppEntryPoint() {
   return (
     <>
       <App game={game} send={send} />
-      <StartScreen hidden={!current.matches("waitUser")} />
+      <StartScreen hidden={!current.matches("waitPlayer")} />
       <GameOverScreen hidden={!current.matches("gameover")} />
       <WinScreen hidden={!current.matches("win")} />
     </>

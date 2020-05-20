@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import useCoronaAssets from "./utility/useCoronaAssets";
 import { useService } from "@xstate/react";
 
-import Corona from "./Corona";
+import Corona from "./corona/Corona";
 import { serviceApi } from "./store";
 
 const CoronaManager = React.memo(

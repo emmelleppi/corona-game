@@ -60,7 +60,7 @@ const Hud = React.memo(
 function HudEntryPoint() {
   const [current] = useService(serviceApi.getState().service);
 
-  return <Hud isGameStarted={current.matches("start")} />
+  return <Hud isGameStarted={current.matches("gameplay")} />
 }
 
 export default HudEntryPoint;

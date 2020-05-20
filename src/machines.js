@@ -38,11 +38,11 @@ function getRandDamage() {
   return 1;
 }
 
-const createCorona = (isActive = false, initPosition = [0, 0, 0], playerBody) => {
+const createCorona = (isAwake = false, initPosition = [0, 0, 0], playerBody) => {
   return {
     id: uuid(),
     life: LIFE,
-    isActive,
+    isAwake,
     isUnderAttack: false,
     seekAlert: false,
     phyRef: createRef(),
@@ -76,10 +76,10 @@ export const GAME_ORCHESTRATOR = Machine(
           "init",
         ],
         on: {
-          "": { target: "waitUser", cond: "isPlayerReady" }
+          "": { target: "waitPlayer", cond: "isPlayerReady" }
         }
       },
-      waitUser: {
+      waitPlayer: {
         entry: ["setPlayerInitPosition"],
         on: {
           ANIMATION: "initAnimation",
@@ -87,10 +87,10 @@ export const GAME_ORCHESTRATOR = Machine(
       },
       initAnimation: {
         after: {
-          INIT_ANIMATION_DURATION: "start",
+          INIT_ANIMATION_DURATION: "gameplay",
         },
       },
-      start: {
+      gameplay: {
         entry: ["activateCoronas", "showPlayer"],
         on: {
           "": [
@@ -133,17 +133,17 @@ export const GAME_ORCHESTRATOR = Machine(
       "ORCHESTRATOR.addCorona": [
         {
           actions: "addCorona",
-          cond: "notMaxCoronaNumber",
+          cond: "allowedCoronaNumber",
         },
         {
           actions: "skipSpawning",
-          cond: "isMaxCoronaNumber",
+          cond: "maxCoronaNumber",
         },
       ],
       "ORCHESTRATOR.checkSpawning": [
         {
           actions: "skipSpawning",
-          cond: "isMaxCoronaNumber",
+          cond: "maxCoronaNumber",
         },
       ],
       "ORCHESTRATOR.removeCorona": [{ actions: "removeCorona" }],
@@ -155,9 +155,9 @@ export const GAME_ORCHESTRATOR = Machine(
       isGameEnded: ({ coronas }) => coronas.length === 0,
       isPlayerDead: ({ playerLife }) => playerLife <= 0,
       isPlayerReady: ({ playerApi }) => playerApi !== null,
-      isMaxCoronaNumber: ({ coronas }) =>
+      maxCoronaNumber: ({ coronas }) =>
         coronas.length >= NUMBER_OF_MAX_SPAWNS,
-      notMaxCoronaNumber: ({ coronas }) =>
+      allowedCoronaNumber: ({ coronas }) =>
         coronas.length < NUMBER_OF_MAX_SPAWNS,
     },
     actions: {
@@ -255,11 +255,11 @@ export const GAME_ORCHESTRATOR = Machine(
 const CORONA_MACHINE = Machine(
   {
     id: `CORONA_MACHINE`,
-    initial: "live",
+    initial: "active",
     context: {
       id: uuid(),
       life: LIFE,
-      isActive: false,
+      isAwake: false,
       isUnderAttack: false,
       seekAlert: false,
       phyRef: createRef(),
@@ -271,12 +271,12 @@ const CORONA_MACHINE = Machine(
       DEAD: { cond: "isDead", target: "dead" },
     },
     states: {
-      live: {
+      active: {
         initial: "idle",
         entry: ["initOrientation"],
         on: {
-          GAME_ON: [{ actions: ["setIsActive", send("IDLE")] }],
-          GAME_OFF: [{ actions: ["resetIsActive", send("IDLE")] }],
+          GAME_ON: [{ actions: ["setIsAwake", send("IDLE")] }],
+          GAME_OFF: [{ actions: ["resetIsAwake", send("IDLE")] }],
           RESET_IS_UNDER_ATTACK: { actions: "resetIsUnderAttack" },
           ATTACKED: {
             actions: [
@@ -284,25 +284,24 @@ const CORONA_MACHINE = Machine(
               "setIsUnderAttack",
               send("RESET_IS_UNDER_ATTACK", {
                 delay: UNDER_ATTACK_DURATION,
-                id: "resetIsUnderAttackTimerFromPreattacking",
               }),
               send("DEAD"),
             ],
-            cond: "isActive",
+            cond: "isAwake",
           },
         },
         states: {
           idle: {
             on: {
-              SEEK: { target: "seeking", cond: "isActive" },
+              SEEK: { target: "seek", cond: "isAwake" },
               IDLE: "idle",
             },
             activities: ["update"],
             after: {
-              SPAWN_INTERVAL: { target: "spawning", cond: "isActive" },
+              SPAWN_INTERVAL: { target: "spawn", cond: "isAwake" },
             },
           },
-          seeking: {
+          seek: {
             entry: [
               "setSeekAlert",
               send("RESET_SEEK_ALERT", {
@@ -313,33 +312,33 @@ const CORONA_MACHINE = Machine(
             on: {
               IDLE: { target: "idle", actions: "resetSeekAlert" },
               ATTACK: {
-                target: "attacking",
+                target: "attack",
                 actions: "resetSeekAlert",
               },
               RESET_SEEK_ALERT: { actions: "resetSeekAlert" },
             },
-            activities: ["seekingUpdate"],
+            activities: ["seekUpdate"],
             after: {
-              SPAWN_INTERVAL: "spawning",
+              SPAWN_INTERVAL: "spawn",
             },
           },
-          preattacking: {
+          preattack: {
             on: {
               IDLE: { target: "idle", actions: "resetIsUnderAttack" },
-              SEEK: { target: "seeking", actions: "resetIsUnderAttack" },
-              ATTACK: { target: "attacking", actions: "resetIsUnderAttack" },
+              SEEK: { target: "seek", actions: "resetIsUnderAttack" },
+              ATTACK: { target: "attack", actions: "resetIsUnderAttack" },
             },
             activities: ["update"],
-            after: { PREATTACK_DURATION: "attacking" },
+            after: { PREATTACK_DURATION: "attack" },
           },
-          attacking: {
+          attack: {
             on: {
-              PRE_ATTACK: "preattacking",
-              ATTACKED: "preattacking",
+              PRE_ATTACK: "preattack",
+              ATTACKED: "preattack",
               IDLE: { target: "idle", actions: "resetIsUnderAttack" },
             },
           },
-          spawning: {
+          spawn: {
             entry: [
               sendParent((ctx) => ({
                 type: "ORCHESTRATOR.checkSpawning",
@@ -383,15 +382,14 @@ const CORONA_MACHINE = Machine(
   {
     guards: {
       isDead: ({ life }) => life <= 0,
-      isActive: ({ isActive }) => isActive,
-      isNotActive: ({ isActive }) => !isActive,
+      isAwake: ({ isAwake }) => isAwake,
     },
     actions: {
       decreaseLife: assign({
         life: (context) => context.life - getRandDamage(),
       }),
-      setIsActive: assign({ isActive: true }),
-      resetIsActive: assign({ isActive: false }),
+      setIsAwake: assign({ isAwake: true }),
+      resetIsAwake: assign({ isAwake: false }),
       setAttack: assign({ attack: true }),
       resetAttack: assign({ attack: false }),
       setSeekAlert: assign({ seekAlert: true }),
@@ -428,7 +426,7 @@ const CORONA_MACHINE = Machine(
         }, 100);
         return () => window.clearRequestInterval(intervalId);
       },
-      seekingUpdate: ({ phyRef, orientation, playerBody }) => {
+      seekUpdate: ({ phyRef, orientation, playerBody }) => {
         const { isIntersect } = raycasterApi.getState().actions;
 
         const intervalId = window.requestInterval(() => {

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import * as THREE from "three";
 import { useService } from "@xstate/react";
 
-import { CoronaRenderer } from "../Corona";
+import Corona from "../corona/Renderer";
 import { serviceApi } from "../store";
 
 const colors = ["#161616", "#333333", "#1E9983"].map(
@@ -117,7 +117,7 @@ const Remaining = React.memo(
             <spriteMaterial attach="material" fog={false} ref={spriteMaterial} />
           </sprite>
           <group position={[30, 10, -50]} scale={[40, 40, 40]}>
-            <CoronaRenderer />
+            <Corona />
           </group>
         </group>
       </>

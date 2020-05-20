@@ -64,7 +64,7 @@ function GestureHandler(props) {
 
   const { isGameStarted, isStartAnimation } = useMemo(
     () => ({
-      isGameStarted: current.matches("start") || current.matches("win"),
+      isGameStarted: current.matches("gameplay") || current.matches("win"),
       isStartAnimation: current.matches("initAnimation"),
     }),
     [current]
