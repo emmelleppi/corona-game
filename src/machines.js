@@ -423,7 +423,7 @@ const CORONA_MACHINE = Machine(
             const angle = Math.PI / 2 + Math.random() * Math.PI;
             orientation.current.applyAxisAngle(axis, angle);
           }
-        }, 100);
+        }, 250);
         return () => window.clearRequestInterval(intervalId);
       },
       seekUpdate: ({ phyRef, orientation, playerBody }) => {
@@ -463,7 +463,7 @@ const CORONA_MACHINE = Machine(
             const angle = Math.PI / 2 + Math.random() * Math.PI;
             orientation.current.applyAxisAngle(axis, angle);
           }
-        }, 100);
+        }, 250);
         
         return () => window.clearRequestInterval(intervalId);
       },

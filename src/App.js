@@ -109,7 +109,7 @@ const App = React.memo(
     );
       
     useEffect(() => {
-      const intervalId = window.requestInterval(update, 250);
+      const intervalId = window.requestInterval(update, 500);
       return () => window.clearRequestInterval(intervalId);
     }, [update]);
   
