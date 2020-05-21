@@ -121,6 +121,20 @@ function StartScreen(props) {
           <div css={`margin-top: 2rem;`} >
             <BlinkingCta>LEFT CLICK to start the game</BlinkingCta>
           </div>
+          <div css={`
+            margin-top: 2rem;
+            text-align: right;
+            pointer-events: initial;
+            
+            > * + * {
+              margin: 0 3px;
+            }
+          `} >
+            <span>Made by</span>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/mlperego" target="_blank" >mlperego</a>
+            <span>and</span>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/ggsimm" target="_blank" >ggsimm</a>
+          </div>
         </div>
       </div>
     </Wrapper>
