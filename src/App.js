@@ -9,6 +9,7 @@ import Game from "./Game";
 import { GAME_ORCHESTRATOR } from "./machines";
 import { mapApi, quadtreeApi, serviceApi } from "./store";
 import { MAP, CORONA } from "./config";
+import UnsupportedBrowser from "./dom/UnsupportedBrowsers";
 
 const App = React.memo(
   function App(props) {
@@ -146,12 +147,12 @@ function AppEntryPoint() {
   }, [current, send])
 
   return (
-    <>
+    <UnsupportedBrowser>
       <App game={game} send={send} />
       <StartScreen hidden={!current.matches("waitPlayer")} />
       <GameOverScreen hidden={!current.matches("gameover")} />
       <WinScreen hidden={!current.matches("win")} />
-    </>
+    </UnsupportedBrowser>
   )
 }
 
