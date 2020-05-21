@@ -14,6 +14,7 @@ import { useService } from "@xstate/react";
 import {
   interactionApi,
   serviceApi,
+  useMute,
 } from "./store";
 import BaseballBat from "./BaseballBat";
 import jumpSfx from "./sounds/Jump.wav";
@@ -158,8 +159,9 @@ function Player() {
   const [hasJump, setHasJump] = useState(false);
   const [hasBoost, setHasBoost] = useState(false);
 
-  const [playJumpSfx] = useSound(jumpSfx);
-  const [playBoostSfx] = useSound(boostSfx);
+  const mute = useMute(s => s.mute)
+  const [playJumpSfx] = useSound(jumpSfx, { volume: mute ? 0 : 1 });
+  const [playBoostSfx] = useSound(boostSfx, { volume: mute ? 0 : 1 });
 
   const onSubscribe = useCallback(
     function onSubscribe({ jump, boost }) {

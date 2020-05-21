@@ -1,17 +1,17 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { useMachine } from "@xstate/react";
 import * as THREE from "three";
+import useSound from "use-sound";
 
 import StartScreen from "./dom/StartScreen";
 import GameOverScreen from "./dom/GameOverScreen";
 import WinScreen from "./dom/WinScreen";
 import Game from "./Game";
 import { GAME_ORCHESTRATOR } from "./machines";
-import { mapApi, quadtreeApi, serviceApi } from "./store";
+import { mapApi, quadtreeApi, serviceApi, useMute } from "./store";
 import { MAP, CORONA } from "./config";
 import UnsupportedBrowser from "./dom/UnsupportedBrowsers";
 import ThemeSong from "./sounds/Theme.mp3";
-import useSound from "use-sound";
 
 const App = React.memo(
   function App(props) {
@@ -130,7 +130,8 @@ const App = React.memo(
 function AppEntryPoint() {
   const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
 
-  const [playTheme, { isPlaying }] = useSound(ThemeSong, { volume: 0.3 });
+  const mute = useMute(s => s.mute)
+  const [playTheme, { isPlaying }] = useSound(ThemeSong, { volume: mute ? 0 : 0.3 });
 
   const game = useRef()
 

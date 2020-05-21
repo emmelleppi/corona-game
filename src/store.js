@@ -10,6 +10,14 @@ export const [useGameService, serviceApi] = create((set) => ({
   setService: (service) => set({ service }),
 }));
 
+export const [useMute, muteApi] = create((set, get) => ({
+  mute: false,
+  toggleMute: () => {
+    const { mute } = get()
+    set({ mute: !mute })
+  },
+}));
+
 export const [useInteraction, interactionApi] = create((set, get) => ({
   forward: false,
   backward: false,
@@ -51,6 +59,10 @@ export const [useInteraction, interactionApi] = create((set, get) => ({
       const keyCode = event.which;
       const { actions } = get();
       actions.onDocumentKey(keyCode, true);
+
+      if (keyCode === 77) {
+        muteApi.getState().toggleMute()
+      }
     },
     onDocumentKeyUp(event) {
       const keyCode = event.which;

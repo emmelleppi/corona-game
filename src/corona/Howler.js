@@ -6,14 +6,17 @@ import useSound from "use-sound";
 import HitSfx from "../sounds/Player_Hit.wav";
 import HitSfx2 from "../sounds/Player_Hit_2.wav";
 import alertSfx from "../sounds/Alert.wav";
+import { useMute } from "../store";
 
 function CoronaHowler({
   isUnderAttack,
   seekAlert,
 }) {
-  const [playHitSfx] = useSound(HitSfx);
-  const [playHitSfx2] = useSound(HitSfx2);
-  const [playAlertSfx] = useSound(alertSfx);
+  const mute = useMute(s => s.mute)
+
+  const [playHitSfx] = useSound(HitSfx, { volume: mute ? 0 : 1 });
+  const [playHitSfx2] = useSound(HitSfx2, { volume: mute ? 0 : 1 });
+  const [playAlertSfx] = useSound(alertSfx, { volume: mute ? 0 : 1 });
 
   useEffect(() => void (seekAlert && playAlertSfx()), [
     seekAlert,

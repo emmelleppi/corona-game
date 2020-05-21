@@ -24,6 +24,11 @@ const actions = [
     action: "BOOST",
     keycaps: "SHIFT",
   },
+  {
+    id: 4,
+    action: "TOGGLE SOUND",
+    keycaps: "M",
+  },
 ];
 
 function Action(props) {
@@ -134,6 +139,18 @@ function StartScreen(props) {
             <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/mlperego" target="_blank" >mlperego</a>
             <span>and</span>
             <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/ggsimm" target="_blank" >ggsimm</a>
+          </div>
+          <div css={`
+            margin-top: 2rem;
+            text-align: right;
+            pointer-events: initial;
+            
+            > * + * {
+              margin: 0 3px;
+            }
+          `} >
+            <span>Music by</span>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://arottenbit2029.bandcamp.com/releases" target="_blank" >arottenbit</a>
           </div>
         </div>
       </div>
