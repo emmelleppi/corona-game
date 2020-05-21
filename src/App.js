@@ -10,6 +10,8 @@ import { GAME_ORCHESTRATOR } from "./machines";
 import { mapApi, quadtreeApi, serviceApi } from "./store";
 import { MAP, CORONA } from "./config";
 import UnsupportedBrowser from "./dom/UnsupportedBrowsers";
+import ThemeSong from "./sounds/Theme.mp3";
+import useSound from "use-sound";
 
 const App = React.memo(
   function App(props) {
@@ -128,6 +130,8 @@ const App = React.memo(
 function AppEntryPoint() {
   const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
 
+  const [playTheme, { isPlaying }] = useSound(ThemeSong, { volume: 0.3 });
+
   const game = useRef()
 
   useEffect(() => {
@@ -136,6 +140,8 @@ function AppEntryPoint() {
   }, [service]);
 
   useEffect(() => void serviceApi.getState().setService(service), [service]);
+
+  useEffect(() => void (!isPlaying && playTheme()), [isPlaying, playTheme])
 
   useEffect(() => {
     if (current.matches("win") || current.matches("gameover")) {
