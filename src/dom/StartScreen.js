@@ -136,9 +136,9 @@ function StartScreen(props) {
             }
           `} >
             <span>Made by</span>
-            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/mlperego" target="_blank" >mlperego</a>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/mlperego" rel="noopener noreferrer" target="_blank" >mlperego</a>
             <span>and</span>
-            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/ggsimm" target="_blank" >ggsimm</a>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://twitter.com/ggsimm" rel="noopener noreferrer" target="_blank" >ggsimm</a>
           </div>
           <div css={`
             margin-top: 2rem;
@@ -150,7 +150,7 @@ function StartScreen(props) {
             }
           `} >
             <span>Music by</span>
-            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://arottenbit2029.bandcamp.com/releases" target="_blank" >arottenbit</a>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://arottenbit2029.bandcamp.com/releases" rel="noopener noreferrer" target="_blank" >arottenbit</a>
           </div>
         </div>
       </div>
