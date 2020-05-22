@@ -126,7 +126,7 @@ export const [useQuadtree, quadtreeApi] = create((set, get) => ({
         width: max.x - min.x,
         height: max.z - min.z,
       },
-      6
+      8
     );
 
     set({ tree });
