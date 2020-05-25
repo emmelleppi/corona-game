@@ -31,7 +31,7 @@ function handleClick(e) {
 function Game() {
   return (
     <Suspense fallback={"LOADING"}>
-      <Canvas colorManagement onClick={handleClick}>
+      <Canvas colorManagement concurrent onClick={handleClick}>
         <color attach="background" args={[0x3b163a]} />
         <Main />
         <Hud />
