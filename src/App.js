@@ -131,7 +131,7 @@ function AppEntryPoint() {
   const [current, send, service] = useMachine(GAME_ORCHESTRATOR);
 
   const mute = useMute(s => s.mute)
-  const [playTheme, { isPlaying }] = useSound(ThemeSong, { volume: mute ? 0 : 0.3 });
+  const [playTheme, { isPlaying }] = useSound(ThemeSong, { volume: mute ? 0 : 0.2 });
 
   const game = useRef()
 

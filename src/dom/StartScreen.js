@@ -150,7 +150,7 @@ function StartScreen(props) {
             }
           `} >
             <span>Music by</span>
-            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://arottenbit2029.bandcamp.com/releases" rel="noopener noreferrer" target="_blank" >arottenbit</a>
+            <a css={`font-size: 1.3rem; color: white; text-decoration: none;`} href="https://www.youtube.com/channel/UCBqKOx9iJL1ornaMoem9SPg" rel="noopener noreferrer" target="_blank" >L'era del bantha</a>
           </div>
         </div>
       </div>
