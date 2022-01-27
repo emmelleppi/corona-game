@@ -17,7 +17,7 @@
     "react-spring": "^9.0.0-rc.3",
     "react-three-fiber": "4.2.3",
     "styled-components": "^5.1.0",
-    "three": "0.115.0",
+    "three": "0.137.0",
     "three-plain-animator": "^1.0.2",
     "use-cannon": "0.4.4",
     "use-sound": "^1.0.1",
