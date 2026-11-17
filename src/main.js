@@ -177,7 +177,8 @@ async function main() {
     }
 
     renderer.info.reset();
-    game.update(dt);
+    // dev only: window.__freeze stops the simulation (used for screenshots)
+    if (!(import.meta.env.DEV && window.__freeze)) game.update(dt);
     hud.update(dt, elapsed);
     pipeline.shadowFocus.copy(camera.position);
 
