@@ -75,9 +75,25 @@ src/
    sharpening, ACES / AgX tone mapping, grading, speed lines, damage
    vignette, vignette, film grain + scanlines, HUD, sRGB encoding.
 
-The settings panel (press **G**) exposes quality, toon, outline, lighting,
-post-processing, gameplay and audio settings, plus G-Buffer debug views.
-Settings are saved in `localStorage`.
+## Settings panel
+
+Press **G** (or pause with Esc) to open the panel. Every parameter of the game
+is there and applies live:
+
+- **Presets & tools**: quality presets, copy / download / import the
+  configuration as JSON, copy a share link (`#config=…`), restart the round,
+  reset everything.
+- **Rendering**: resolution and anti-aliasing (TAA / FXAA settings), shadows,
+  toon shading, outlines, lights, fog, post-processing, sprites and particle
+  bursts.
+- **World**: island materials, start platform, sky and slogans.
+- **Gameplay**: rules, player physics, baseball bat, corona behaviour, look
+  and death, hit feedback and effects.
+- **Camera & controls**, **HUD**, **Audio**, **Debug** (G-Buffer views, fps).
+
+Render settings and gameplay constants (`src/config.js`) are stored in
+`localStorage` separately, and only the values that differ from the
+defaults are saved.
 
 ## Credits
 
