@@ -1,34 +1,297 @@
+:root {
+  --purple: #3b163a;
+  --pink: #d95b9a;
+  --ink: #14061a;
+  --green: #1e9983;
+}
+
 * {
   box-sizing: border-box;
 }
 
 html,
-body,
-#root {
+body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #272727;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+  overflow: hidden;
+  background: var(--purple);
   user-select: none;
-  overflow: hidden;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+  font-family: "Bangers", system-ui, sans-serif;
+  color: white;
+  letter-spacing: 0.2em;
 }
 
-#root {
-  overflow: auto;
-}
-
-body {
+#game {
   position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+.hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ------------------------------------------------------------------ screens */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  text-shadow: 4px 4px 0 var(--ink);
+}
+
+.screen h1,
+.screen h3 {
+  margin: 0;
+  font-weight: normal;
+}
+
+.panel {
+  width: min(80vw, 1280px);
+}
+
+.center {
+  text-align: center;
+  width: min(80vw, 1280px);
+}
+
+.title {
+  margin: 0 0 2rem;
+  line-height: 0.9;
+}
+.title-top {
+  font-size: clamp(64px, 11vw, 140px);
+  letter-spacing: 5.25px;
+}
+.title-bottom {
+  font-size: clamp(56px, 9.5vw, 120px);
+  color: var(--pink);
+  margin-bottom: 1rem;
+  -webkit-text-stroke: 2px var(--ink);
+}
+.title-medium {
+  font-size: clamp(64px, 11vw, 140px);
+  letter-spacing: 5.25px;
+}
+.title-small {
+  font-size: 3rem;
+}
+.subtitle {
+  font-size: clamp(24px, 3.6vw, 46px);
+  letter-spacing: 1.73px;
+}
+
+.actions {
+  list-style: none;
+  padding: 0;
+  margin: 3rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+  width: min(30rem, 100%);
+}
+.actions li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.actions i {
+  flex: 1;
+  height: 3px;
+  margin: 0 1rem 6px;
+  background-image: linear-gradient(
+    to right,
+    white 33%,
+    rgba(255, 255, 255, 0) 0%
+  );
+  background-position: bottom;
+  background-size: 12px 3px;
+  background-repeat: repeat-x;
+}
+.actions kbd {
+  font-family: inherit;
+  font-size: 1.5rem;
+}
+
+.cta {
+  margin-top: 2rem;
+  font-size: clamp(22px, 3vw, 40px);
+  letter-spacing: 1.73px;
+}
+
+.congrats {
+  font-size: clamp(24px, 3.6vw, 46px);
+  letter-spacing: 1.73px;
+  color: var(--pink);
+  animation: fade-in 1.5s ease;
+}
+
+.blink {
+  animation: blink 2.2s ease-in-out infinite;
+}
+
+.hint {
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.credits {
+  margin-top: 1.5rem;
+  text-align: right;
+  pointer-events: auto;
+}
+.credits > * + * {
+  margin-left: 6px;
+}
+.credits a {
+  font-size: 1.3rem;
+  color: white;
+  text-decoration: none;
+}
+.credits a:hover {
+  color: var(--pink);
+}
+
+.progress {
+  margin: 2rem auto 0;
+  width: min(400px, 70vw);
+  height: 14px;
+  border: 3px solid white;
+  border-radius: 10px;
   overflow: hidden;
-  overscroll-behavior-y: none;
-  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir,
-    helvetica neue, helvetica, ubuntu, roboto, noto, segoe ui, arial, sans-serif;
-  color: black;
-  -webkit-font-smoothing: antialiased;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+#progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--pink);
+  transition: width 0.2s ease;
+}
+
+.unsupported {
+  font-size: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------------- hud */
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(20, 6, 26, 0.6),
+    inset 0 0 0 1px rgba(20, 6, 26, 0.6);
+}
+
+.hud-counter {
+  position: absolute;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 156px;
+  text-shadow: 5px 5px 0 var(--ink);
+}
+.hud-left {
+  left: 0;
+}
+.hud-right {
+  right: 0;
+}
+.hud-number {
+  font-size: 64px;
+  line-height: 1;
+  display: inline-block;
+  transform-origin: 50% 60%;
+  margin-bottom: 30px;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+.hud-label {
+  font-size: 16px;
+  letter-spacing: 0.1em;
+}
+
+#mute-badge {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 20;
+  font-size: 20px;
+  text-shadow: 3px 3px 0 var(--ink);
+  transition: opacity 0.3s ease;
+}
+
+#stats {
+  position: fixed;
+  left: 16px;
+  top: 48px;
+  z-index: 20;
+  font:
+    12px/1.4 ui-monospace,
+    monospace;
+  letter-spacing: 0;
+  background: rgba(20, 6, 26, 0.7);
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: pre;
+}
+
+/* ----------------------------------------------------------------- lil-gui */
+.lil-gui.root.game-gui {
+  z-index: 30;
+  --background-color: rgba(28, 12, 34, 0.94);
+  --title-background-color: #5c2a58;
+  --widget-color: #4a2346;
+  --hover-color: #6a3365;
+  --focus-color: #7b3a75;
+  --number-color: #ffb0da;
+  --string-color: #9dffe6;
+  font-family: system-ui, sans-serif;
+  letter-spacing: 0;
 }

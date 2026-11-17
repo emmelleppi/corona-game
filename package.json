@@ -1,61 +1,36 @@
 {
-  "name": "template",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "main": "src/index.js",
+  "name": "kill-da-corona",
+  "version": "2.0.0",
+  "description": "Kill da Corona - a toon first person arcade game built with three.js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write \"src/**/*.{js,css}\" index.html",
+    "prepare": "husky"
+  },
   "dependencies": {
-    "@timohausmann/quadtree-js": "^1.2.1",
-    "@xstate/react": "^0.8.1",
-    "drei": "^0.0.32",
-    "gsap": "^3.2.6",
-    "immer": "^6.0.3",
-    "lerp": "^1.0.3",
-    "react": "16.12.0",
-    "react-dom": "16.12.0",
-    "react-scripts": "3.0.1",
-    "react-spring": "^9.0.0-rc.3",
-    "react-three-fiber": "4.2.3",
-    "styled-components": "^5.1.0",
-    "three": "0.115.0",
-    "three-plain-animator": "^1.0.2",
-    "use-cannon": "0.4.4",
-    "use-sound": "^1.0.1",
-    "uuid": "^7.0.3",
-    "xstate": "^4.9.1",
-    "zustand": "^2.2.3"
-  },
-  "devDependencies": {
-    "husky": "4.2.5",
-    "lint-staged": "10.2.2",
-    "prettier": "2.0.5",
-    "typescript": "3.3.3"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
+    "lil-gui": "^0.21.0",
+    "three": "^0.187.0"
   },
   "lint-staged": {
-    "*.{js,jsx}": [
-      "prettier --write",
-      "git add"
-    ]
+    "*.{js,css,html}": "prettier --write"
   },
   "prettier": {
     "printWidth": 80,
     "trailingComma": "es5"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
-  },
   "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
+    "defaults and supports webgl2",
     "not op_mini all"
-  ]
+  ],
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
+    "prettier": "^3.10.1",
+    "vite": "^8.3.8"
+  }
 }

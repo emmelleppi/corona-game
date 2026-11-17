@@ -1,0 +1,445 @@
+import * as THREE from "three";
+import { Emitter } from "../core/Emitter.js";
+import { Player } from "./Player.js";
+import { Bat, distanceToSweptBat, distanceToSegment } from "./Bat.js";
+import { Corona, separateCoronas } from "./Corona.js";
+import { CameraRig } from "./CameraRig.js";
+import { Particles } from "./fx.js";
+import { CORONA, GAME, PLAYER, BAT } from "../config.js";
+import {
+  damp60,
+  easeInOutCubic,
+  getRandDamage,
+  getPlayerDamage,
+  clamp,
+} from "../core/math.js";
+
+export const GAME_STATE = {
+  LOADING: "loading",
+  WAIT_PLAYER: "waitPlayer",
+  INIT_ANIMATION: "initAnimation",
+  GAMEPLAY: "gameplay",
+  WIN: "win",
+  GAMEOVER: "gameover",
+};
+
+const _v = new THREE.Vector3();
+const _target = new THREE.Vector3();
+const _a = new THREE.Vector3();
+const _b = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const MAP_CENTER = new THREE.Vector3(0, -1, -0.5);
+
+// Game orchestrator: a small explicit state machine replacing the xstate
+// GAME_ORCHESTRATOR. Every timer runs on the game clock, so pausing the game
+// pauses everything.
+export class Game extends Emitter {
+  constructor({ scene, camera, level, assets, input, audio, settings }) {
+    super();
+    this.scene = scene;
+    this.camera = camera;
+    this.level = level;
+    this.world = level.world;
+    this.assets = assets;
+    this.input = input;
+    this.audio = audio;
+    this.settings = settings;
+
+    this.state = GAME_STATE.LOADING;
+    this.stateTime = 0;
+    this.time = 0;
+    this.paused = false;
+    this.coronas = [];
+    this.followIndex = 0;
+    this.followTimer = 0;
+    this.playerEye = new THREE.Vector3();
+    this.glitch = 0;
+    this.damageFx = 0;
+
+    this.player = new Player(this.world, settings);
+    this.rig = new CameraRig(camera, settings);
+    this.bat = new Bat(assets.batNodes);
+    this.bat.visible = false;
+    camera.add(this.bat);
+
+    this.particles = new Particles();
+    scene.add(this.particles);
+
+    this.coronaGroup = new THREE.Group();
+    scene.add(this.coronaGroup);
+
+    this.initFrom = {
+      position: new THREE.Vector3(),
+      quaternion: new THREE.Quaternion(),
+    };
+
+    input.on("click", () => this.onClick());
+    input.on("unlock", () => this.onUnlock());
+    input.on("lock", () => this.onLock());
+    input.on("keydown", (code) => {
+      if (code === "KeyM") this.emit("toggleMute");
+      if ((code === "ShiftLeft" || code === "ShiftRight") && this.playerActive)
+        audio.play("sprint");
+    });
+  }
+
+  get playerActive() {
+    return this.state === GAME_STATE.GAMEPLAY || this.state === GAME_STATE.WIN;
+  }
+
+  get remaining() {
+    return this.coronas.length;
+  }
+
+  setState(state) {
+    this.state = state;
+    this.stateTime = 0;
+    this.emit("state", state);
+  }
+
+  // ---------------------------------------------------------------- flow ---
+  start() {
+    this.resetRound();
+    this.setState(GAME_STATE.WAIT_PLAYER);
+  }
+
+  resetRound() {
+    for (const c of this.coronas) this.removeCoronaVisual(c);
+    this.coronas = [];
+    for (let i = 0; i < GAME.NUMBER_OF_INIT_SPAWNS; i++) {
+      // do not spawn right below the start platform
+      let p;
+      do {
+        p = this.world.randomGroundPoint();
+      } while (
+        Math.hypot(
+          p.x - PLAYER.INIT_POSITION[0],
+          p.z - PLAYER.INIT_POSITION[2]
+        ) < 8
+      );
+      this.addCorona(p, false);
+    }
+    this.player.reset();
+    this.player.getEyePosition(this.playerEye);
+    this.bat.reset();
+    this.particles.clear();
+    this.emit("life", this.player.life);
+    this.emit("remaining", this.remaining);
+  }
+
+  startInitAnimation() {
+    this.initFrom.position.copy(this.camera.position);
+    this.initFrom.quaternion.copy(this.camera.quaternion);
+    this.player.reset();
+    this.player.getEyePosition(this.playerEye);
+    this.rig.lookAt(this.playerEye, MAP_CENTER);
+    this.setState(GAME_STATE.INIT_ANIMATION);
+    this.emit("life", this.player.life);
+  }
+
+  startGameplay() {
+    for (const c of this.coronas) c.wake(true);
+    this.bat.visible = true;
+    this.setState(GAME_STATE.GAMEPLAY);
+  }
+
+  gameOver() {
+    for (const c of this.coronas) c.wake(false);
+    this.bat.visible = false;
+    this.followTimer = 0;
+    this.emit("cut");
+    this.setState(GAME_STATE.GAMEOVER);
+  }
+
+  win() {
+    this.setState(GAME_STATE.WIN);
+  }
+
+  restart() {
+    this.resetRound();
+    this.startInitAnimation();
+  }
+
+  // ---------------------------------------------------------------- input --
+  onClick() {
+    if (this.state === GAME_STATE.LOADING) return;
+    if (!this.input.locked) this.input.lock();
+
+    if (this.paused) {
+      this.setPaused(false);
+      return;
+    }
+    switch (this.state) {
+      case GAME_STATE.WAIT_PLAYER:
+        this.startInitAnimation();
+        break;
+      case GAME_STATE.WIN:
+      case GAME_STATE.GAMEOVER:
+        if (this.stateTime > 0.5) this.restart();
+        break;
+      case GAME_STATE.GAMEPLAY:
+        if (this.input.locked && this.bat.swing()) this.emit("swing");
+        break;
+    }
+  }
+
+  onUnlock() {
+    if (
+      this.state === GAME_STATE.GAMEPLAY ||
+      this.state === GAME_STATE.INIT_ANIMATION
+    )
+      this.setPaused(true);
+  }
+
+  onLock() {
+    if (this.paused) this.setPaused(false);
+  }
+
+  setPaused(paused) {
+    if (this.paused === paused) return;
+    this.paused = paused;
+    this.emit("pause", paused);
+  }
+
+  // ------------------------------------------------------------- coronas ---
+  addCorona(position, awake) {
+    const corona = new Corona(this, position, awake);
+    this.coronas.push(corona);
+    this.coronaGroup.add(corona.group);
+    this.emit("remaining", this.remaining);
+    return corona;
+  }
+
+  removeCoronaVisual(corona) {
+    this.coronaGroup.remove(corona.group);
+    corona.dispose();
+  }
+
+  canSpawnCorona() {
+    return this.coronas.length < GAME.NUMBER_OF_MAX_SPAWNS;
+  }
+
+  reproduce(parent) {
+    if (!this.canSpawnCorona()) return;
+    const child = this.addCorona(parent.position, parent.awake);
+    child.orientation.copy(parent.orientation).negate();
+    this.particles.burst(_v.copy(parent.position), {
+      count: 18,
+      colors: [0x1e9983, 0x7affd8, 0xffffff],
+      speed: 6,
+      size: 0.25,
+      life: 0.6,
+    });
+    this.emit("coronaSpawn", child);
+  }
+
+  // A lunging corona touching the player "chest".
+  checkCoronaHitsPlayer(corona) {
+    if (this.state !== GAME_STATE.GAMEPLAY) return false;
+    _a.copy(this.player.position).setY(
+      this.player.position.y + PLAYER.EYE_HEIGHT - 0.25
+    );
+    _b.copy(this.player.position).setY(
+      this.player.position.y + PLAYER.EYE_HEIGHT + 0.25
+    );
+    if (distanceToSegment(corona.position, _a, _b) > CORONA.RADIUS + 0.2)
+      return false;
+    const damage = getPlayerDamage();
+    this.player.damage(damage);
+    this.glitch = 0.3;
+    this.damageFx = 1;
+    this.rig.addShake(0.6);
+    this.audio.play(Math.random() > 0.5 ? "playerHit" : "playerHit2", {
+      volume: 0.8,
+    });
+    this.emit("life", this.player.life);
+    this.emit("playerHit", damage);
+    return true;
+  }
+
+  checkBatHits() {
+    if (!this.bat.isAttacking) return;
+    for (const c of this.coronas) {
+      if (!c.canBeHit || c.lastSwing === this.bat.swingId) continue;
+      if (distanceToSweptBat(c.position, this.bat) > CORONA.RADIUS + BAT.RADIUS)
+        continue;
+      c.lastSwing = this.bat.swingId;
+      if (!c.hit(getRandDamage(), this.playerEye)) continue;
+      this.audio.play(Math.random() > 0.5 ? "coronaHit" : "coronaHit2");
+      this.rig.addShake(0.25);
+      const dead = !c.alive;
+      this.particles.burst(c.position, {
+        count: dead ? 40 : 16,
+        colors: dead
+          ? [0xff2a2a, 0xffd23f, 0xffffff]
+          : [0x1e9983, 0x9dffe6, 0xffffff],
+        speed: dead ? 10 : 6,
+        up: 3,
+        size: dead ? 0.22 : 0.15,
+        life: dead ? 0.9 : 0.5,
+        shape: 0,
+      });
+      this.particles.burst(c.position, {
+        count: 6,
+        color: 0xfff3a0,
+        speed: 4,
+        size: 0.5,
+        life: 0.35,
+        gravity: 0,
+        shape: 1,
+      });
+      this.emit("coronaHit", c);
+    }
+  }
+
+  // --------------------------------------------------------------- update --
+  update(dt) {
+    if (this.state === GAME_STATE.LOADING) return;
+    // mouse look works even while paused frames are rendered
+    const [dx, dy] = this.input.consumeMouse();
+    if (!this.paused && this.input.locked && this.playerActive)
+      this.rig.look(dx, dy);
+    if (this.paused) {
+      this.updateCamera(0);
+      return;
+    }
+
+    this.time += dt;
+    this.stateTime += dt;
+    this.level.update(dt);
+    this.glitch = Math.max(0, this.glitch - dt);
+    this.damageFx = Math.max(0, this.damageFx - dt * 1.8);
+
+    // player
+    if (this.playerActive) {
+      const events = this.player.update(dt, this.input, this.rig.yaw);
+      if (events.jumped) this.audio.play("jump");
+      if (events.landed > 12) {
+        this.rig.addShake(Math.min(0.5, events.landed / 80));
+        this.particles.burst(
+          _v.copy(this.player.position).setY(this.player.position.y - 0.4),
+          {
+            count: Math.min(24, Math.floor(events.landed / 2)),
+            color: 0xe8d8f0,
+            speed: 5,
+            up: 0.5,
+            size: 0.3,
+            life: 0.5,
+            gravity: 2,
+          }
+        );
+      }
+    }
+    this.player.getEyePosition(this.playerEye);
+
+    // coronas
+    for (const c of this.coronas) c.update(dt, this.time);
+    separateCoronas(this.coronas);
+    let removed = false;
+    for (let i = this.coronas.length - 1; i >= 0; i--) {
+      if (this.coronas[i].removed) {
+        this.removeCoronaVisual(this.coronas[i]);
+        this.coronas.splice(i, 1);
+        removed = true;
+      }
+    }
+    if (removed) this.emit("remaining", this.remaining);
+
+    // camera + bat
+    this.updateCamera(dt);
+    if (this.playerActive) {
+      this.bat.update(dt, this.player.hitTimer);
+      this.bat.updateSegment();
+      this.checkBatHits();
+    }
+    this.particles.update(dt);
+
+    // state transitions
+    switch (this.state) {
+      case GAME_STATE.INIT_ANIMATION:
+        if (this.stateTime >= GAME.INIT_ANIMATION_DURATION)
+          this.startGameplay();
+        break;
+      case GAME_STATE.GAMEPLAY:
+        if (this.coronas.length === 0) this.win();
+        else if (
+          this.player.life <= 0 ||
+          this.player.position.y < PLAYER.KILL_Y
+        )
+          this.gameOver();
+        break;
+    }
+  }
+
+  updateCamera(dt) {
+    const cam = this.camera;
+    const boost = this.playerActive && this.input.boost;
+    this.rig.update(dt, boost);
+
+    switch (this.state) {
+      case GAME_STATE.WAIT_PLAYER:
+      case GAME_STATE.GAMEOVER:
+        this.followCorona(dt);
+        break;
+      case GAME_STATE.INIT_ANIMATION: {
+        const t = easeInOutCubic(
+          clamp(this.stateTime / GAME.INIT_ANIMATION_DURATION, 0, 1)
+        );
+        cam.position.lerpVectors(this.initFrom.position, this.playerEye, t);
+        this.rig.applyRotation();
+        _q.copy(cam.quaternion);
+        cam.quaternion.slerpQuaternions(this.initFrom.quaternion, _q, t);
+        break;
+      }
+      default:
+        cam.position.copy(this.playerEye).add(this.rig.shakeOffset);
+        this.rig.applyRotation();
+    }
+  }
+
+  // Pre-game camera: follows a random corona, switching every 3 seconds.
+  followCorona(dt) {
+    const alive = this.coronas.filter((c) => c.alive);
+    if (!alive.length) return;
+    this.followTimer -= dt;
+    if (this.followTimer <= 0 || !alive[this.followIndex]) {
+      this.followTimer = GAME.PREGAME_CAMERA_SWITCH;
+      this.followIndex = Math.floor(Math.random() * alive.length);
+      const c = alive[this.followIndex];
+      this.camera.position.set(
+        c.position.x - 2 * c.orientation.x,
+        c.position.y + 1,
+        c.position.z - 2 * c.orientation.z
+      );
+      this.emit("cut");
+    }
+    const c = alive[this.followIndex];
+    _target.set(
+      c.position.x - 2 * c.orientation.x,
+      c.position.y + 1,
+      c.position.z - 2 * c.orientation.z
+    );
+    this.camera.position.lerp(_target, damp60(0.2, dt));
+    this.camera.lookAt(c.position);
+    _v.copy(this.camera.position);
+    this.rig.lookAt(_v, c.position);
+  }
+
+  // Values driving the post-processing effects.
+  getEffects() {
+    const fx = { glitch: 0, water: 0, damage: this.damageFx, speedLines: 0 };
+    if (this.glitch > 0) fx.glitch = 0.5;
+    if (this.state === GAME_STATE.GAMEPLAY || this.state === GAME_STATE.WIN) {
+      const y = this.player.position.y;
+      if (y <= 0) {
+        fx.water = -y / 10;
+        fx.vignetteOffset = 0.95 + y / 10;
+        fx.vignetteDarkness = 1.6 - y / 10;
+      }
+      const v = this.player.speed;
+      const th = PLAYER.SPEED_LINES_THRESHOLD;
+      if (v > th) fx.speedLines = Math.min(1, (v - th) / th);
+    }
+    return fx;
+  }
+}

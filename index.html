@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KILL DA CORONA</title>
+    <meta name="description" content="Kill da Corona - stay the fuck home" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bangers&display=block"
+      rel="stylesheet"
+    />
+
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="114x114"
+      href="/apple-icon-114x114.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="/apple-icon-120x120.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="144x144"
+      href="/apple-icon-144x144.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/apple-icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-icon-180x180.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/android-icon-192x192.png"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="msapplication-TileColor" content="#3b163a" />
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
+    <meta name="theme-color" content="#3b163a" />
+    <meta property="og:image" content="/og-image.png" />
+  </head>
+
+  <body>
+    <canvas id="game"></canvas>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div class="crosshair"></div>
+      <div class="hud-counter hud-left">
+        <span id="hud-life" class="hud-number">100</span>
+        <span class="hud-label">h e a l t h</span>
+      </div>
+      <div class="hud-counter hud-right">
+        <span id="hud-remaining" class="hud-number">20</span>
+        <span class="hud-label">l e f t</span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <section id="loading-screen" class="screen">
+      <div class="center">
+        <h1 class="title-small">Loading</h1>
+        <div class="progress"><div id="progress-bar"></div></div>
+      </div>
+    </section>
+
+    <!-- Start -->
+    <section id="start-screen" class="screen hidden">
+      <div class="panel">
+        <h1 class="title">
+          <div class="title-top">Kill da</div>
+          <div class="title-bottom">Corona</div>
+        </h1>
+        <h3 class="subtitle">Stay the fuck home</h3>
+        <ul class="actions">
+          <li><span>MOVE</span><i></i><kbd>WASD</kbd></li>
+          <li><span>JUMP</span><i></i><kbd>SPACEBAR</kbd></li>
+          <li><span>ATTACK</span><i></i><kbd>LEFT CLICK</kbd></li>
+          <li><span>BOOST</span><i></i><kbd>SHIFT</kbd></li>
+          <li><span>TOGGLE SOUND</span><i></i><kbd>M</kbd></li>
+          <li><span>SETTINGS</span><i></i><kbd>G</kbd></li>
+        </ul>
+        <div class="cta blink">LEFT CLICK to start the game</div>
+        <div class="credits">
+          <span>Made by</span>
+          <a
+            href="https://twitter.com/mlperego"
+            rel="noopener noreferrer"
+            target="_blank"
+            >mlperego</a
+          >
+          <span>and</span>
+          <a
+            href="https://twitter.com/ggsimm"
+            rel="noopener noreferrer"
+            target="_blank"
+            >ggsimm</a
+          >
+        </div>
+        <div class="credits">
+          <span>Music by</span>
+          <a
+            href="https://www.youtube.com/channel/UCBqKOx9iJL1ornaMoem9SPg"
+            rel="noopener noreferrer"
+            target="_blank"
+            >L'era del bantha</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section id="pause-screen" class="screen hidden">
+      <div class="center">
+        <h1 class="title-medium">paused</h1>
+        <div class="cta blink">left click to resume</div>
+        <p class="hint">press G to open the settings</p>
+      </div>
+    </section>
+
+    <!-- Game over -->
+    <section id="gameover-screen" class="screen hidden">
+      <div class="center">
+        <h1 class="title-medium">game over</h1>
+        <h3 class="cta blink">left click to restart</h3>
+      </div>
+    </section>
+
+    <!-- Win -->
+    <section id="win-screen" class="screen hidden">
+      <div class="center">
+        <h1 class="title-medium">you win!</h1>
+        <h3 id="congrats" class="congrats">remarkable</h3>
+        <div class="cta">left click to restart</div>
+      </div>
+    </section>
+
+    <!-- Unsupported -->
+    <section id="unsupported-screen" class="screen hidden">
+      <div class="center unsupported">
+        <div class="title-small">Kill da corona!</div>
+        <div>Sorry!</div>
+        <div id="unsupported-reason">
+          This game needs a desktop browser with WebGL 2, a keyboard and a
+          mouse.
+        </div>
+        <div>☹️</div>
+      </div>
+    </section>
+
+    <div id="mute-badge" class="hidden">🔇 muted</div>
+    <div id="stats" class="hidden"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
