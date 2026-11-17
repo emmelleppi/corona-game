@@ -7,6 +7,7 @@ import {
   bloomUpFragment,
   compositeFragment,
   fxaaFragment,
+  copyFragment,
 } from "./shaders/post.js";
 import {
   globalUniforms,
@@ -90,7 +91,7 @@ export class Pipeline {
     this.bloomMips = Array.from({ length: BLOOM_LEVELS }, () =>
       makeTarget(1, 1)
     );
-    this.hudTarget = new THREE.WebGLRenderTarget(1, 1, {
+    this.hudTarget = new THREE.WebGLRenderTarget(2, 1, {
       type: THREE.UnsignedByteType,
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
@@ -248,6 +249,8 @@ export class Pipeline {
       uSpeedLines: { value: 0 },
       uDamage: { value: 0 },
       uHud: { value: true },
+      uHudRects: { value: [new THREE.Vector4(), new THREE.Vector4()] },
+      uHudTiles: { value: 2 },
       uRaw: { value: false },
       uEncode: { value: true },
       uSpeedLinesFps: { value: 24 },
@@ -268,6 +271,10 @@ export class Pipeline {
       uVignetteColor: { value: color(0xffffff) },
       uScanlineFrequency: { value: 1.2 },
       uDither: { value: 1 },
+    });
+
+    this.copy = new FullscreenPass(copyFragment, {
+      tSource: { value: null },
     });
 
     this.fxaa = new FullscreenPass(fxaaFragment, {
@@ -302,12 +309,6 @@ export class Pipeline {
       bh = Math.max(1, bh >> 1);
       mip.setSize(bw, bh);
     }
-    const ss = Math.min(2, 4096 / Math.max(width, height));
-    this.hudScale = Math.max(1, ss);
-    this.hudTarget.setSize(
-      Math.round(width * this.hudScale),
-      Math.round(height * this.hudScale)
-    );
     this.ldr.setSize(width, height);
 
     forwardUniforms.uResolution.value.set(iw, ih);
@@ -468,7 +469,59 @@ export class Pipeline {
     u.uDebug.value = DEBUG_VIEWS[s.debugView] ?? 0;
   }
 
-  render({ scene, camera, hudScene, hudCamera, time, effects }) {
+  // The HUD icons are rendered 2x super-sampled in a small atlas (one tile
+  // per icon) instead of a full screen target; the composite samples it
+  // only inside the icon rectangles.
+  renderHud(hud) {
+    const renderer = this.renderer;
+    const dpr = this.width / Math.max(1, hud.width);
+    const tile = Math.min(1024, Math.max(16, Math.ceil(hud.box * dpr * 2)));
+    const icons = hud.icons;
+    if (
+      this.hudTarget.width !== tile * icons.length ||
+      this.hudTarget.height !== tile
+    )
+      this.hudTarget.setSize(tile * icons.length, tile);
+
+    renderer.setRenderTarget(this.hudTarget);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, true, false);
+
+    const cam = hud.camera;
+    const half = hud.box / 2;
+    const rects = this.composite.uniforms.uHudRects.value;
+    icons.forEach((icon, i) => {
+      icons.forEach((other) => (other.object.visible = other === icon));
+      cam.left = icon.x - half;
+      cam.right = icon.x + half;
+      cam.bottom = icon.y - half;
+      cam.top = icon.y + half;
+      cam.updateProjectionMatrix();
+      this.hudTarget.viewport.set(i * tile, 0, tile, tile);
+      this.hudTarget.scissor.set(i * tile, 0, tile, tile);
+      this.hudTarget.scissorTest = true;
+      renderer.setRenderTarget(this.hudTarget);
+      renderer.render(hud.scene, cam);
+      // screen space uv rectangle of the tile
+      rects[i].set(
+        (icon.x - half) / hud.width,
+        (icon.y - half) / hud.height,
+        (icon.x + half) / hud.width,
+        (icon.y + half) / hud.height
+      );
+    });
+    icons.forEach((icon) => (icon.object.visible = true));
+    this.hudTarget.viewport.set(
+      0,
+      0,
+      this.hudTarget.width,
+      this.hudTarget.height
+    );
+    this.hudTarget.scissorTest = false;
+    this.composite.uniforms.uHudTiles.value = icons.length;
+  }
+
+  render({ scene, camera, hud, time, effects }) {
     const renderer = this.renderer;
     const s = this.settings;
     const [iw, ih] = this.internalSize;
@@ -517,7 +570,33 @@ export class Pipeline {
     this.lighting.uniforms.uBackground.value.set(s.background);
     this.lighting.render(renderer, this.lit);
 
-    // --- forward (sprites, particles) -----------------------------------------
+    // --- anti aliasing (temporal) ----------------------------------------------
+    if (this.taaEnabled && s.debugView !== "Velocity") {
+      const write = this.history[this.frame % 2];
+      const read = this.history[(this.frame + 1) % 2];
+      const u = this.taa.uniforms;
+      u.tHistory.value = read.texture;
+      u.uReset.value = !this.historyValid;
+      u.uFeedback.value = s.taaFeedback;
+      u.uVarianceGamma.value = s.taaVarianceGamma;
+      u.uMotionFeedback.value = s.taaMotionFeedback;
+      u.uMotionPixels.value = s.taaMotionPixels;
+      this.taa.render(renderer, write);
+      this.historyValid = true;
+      // the resolved image goes back into `lit`, so the forward layer below
+      // never leaks into the TAA history
+      this.copy.uniforms.tSource.value = write.texture;
+      this.copy.render(renderer, this.lit);
+    } else {
+      this.historyValid = false;
+    }
+    const current = this.lit;
+
+    // --- forward (sprites, particles), after the TAA ----------------------------
+    // They write no motion vectors: drawn before the TAA they were smeared
+    // into trails or flickered. Here they are drawn unjittered on the
+    // resolved image (their soft, alpha tested edges need no AA).
+    this.removeJitter(camera);
     forwardUniforms.tDepth.value = this.gbuffer.depthTexture;
     forwardUniforms.uNear.value = camera.near;
     forwardUniforms.uFar.value = camera.far;
@@ -532,36 +611,12 @@ export class Pipeline {
     renderer.render(scene, camera);
     camera.layers.set(LAYERS.GBUFFER);
 
-    // --- anti aliasing (temporal) ----------------------------------------------
-    let current = this.lit;
-    if (this.taaEnabled && s.debugView !== "Velocity") {
-      const write = this.history[this.frame % 2];
-      const read = this.history[(this.frame + 1) % 2];
-      const u = this.taa.uniforms;
-      u.tHistory.value = read.texture;
-      u.uReset.value = !this.historyValid;
-      u.uFeedback.value = s.taaFeedback;
-      u.uVarianceGamma.value = s.taaVarianceGamma;
-      u.uMotionFeedback.value = s.taaMotionFeedback;
-      u.uMotionPixels.value = s.taaMotionPixels;
-      this.taa.render(renderer, write);
-      this.historyValid = true;
-      current = write;
-    } else {
-      this.historyValid = false;
-    }
-
     // --- bloom ----------------------------------------------------------------
     const debug = s.debugView !== "Final";
     if (s.bloom && !debug) this.renderBloom(current);
 
     // --- HUD ------------------------------------------------------------------
-    if (hudScene) {
-      renderer.setRenderTarget(this.hudTarget);
-      renderer.setClearColor(0x000000, 0);
-      renderer.clear(true, true, false);
-      renderer.render(hudScene, hudCamera);
-    }
+    if (hud) this.renderHud(hud);
 
     // --- composite ------------------------------------------------------------
     const c = this.composite.uniforms;
@@ -589,7 +644,7 @@ export class Pipeline {
     );
     c.uSpeedLines.value = s.speedLines ? (effects.speedLines ?? 0) : 0;
     c.uDamage.value = effects.damage ?? 0;
-    c.uHud.value = !!hudScene && !debug;
+    c.uHud.value = !!hud && !debug;
     c.uRaw.value = debug;
     c.uEncode.value = true;
     c.uSpeedLinesFps.value = s.speedLinesFps;

@@ -169,3 +169,93 @@ export function createExclamationTexture() {
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
+
+// Text texture drawn with the game font (damage numbers, callouts).
+function createTextTexture(text, color, size = 256) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size * 2;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `${Math.round(size * 0.8)}px Bangers`;
+  ctx.lineJoin = "round";
+  ctx.lineWidth = size * 0.09;
+  ctx.strokeStyle = "#14061a";
+  ctx.strokeText(text, size, size / 2 + size * 0.04);
+  ctx.fillStyle = color;
+  ctx.fillText(text, size, size / 2 + size * 0.04);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+const POPUP_STYLES = {
+  1: ["1", "#ffffff"],
+  2: ["2", "#ffd23f"],
+  3: ["3!", "#ff4f6d"],
+  kill: ["K.O.", "#ff4f6d"],
+  denied: ["NO BABY!", "#7affd8"],
+};
+
+// Floating damage numbers / callouts, pooled billboards.
+export class Popups extends THREE.Group {
+  constructor() {
+    super();
+    this.textures = Object.fromEntries(
+      Object.entries(POPUP_STYLES).map(([k, [text, color]]) => [
+        k,
+        createTextTexture(text, color),
+      ])
+    );
+    this.items = [];
+  }
+
+  spawn(kind, position, { size = 0.5, duration = 0.8, rise = 1.2 } = {}) {
+    let item = this.items.find((i) => !i.alive);
+    if (!item) {
+      item = { sprite: new Billboard(this.textures[kind]), alive: false };
+      this.add(item.sprite);
+      this.items.push(item);
+    }
+    item.sprite.material.uniforms.tMap.value = this.textures[kind];
+    item.alive = true;
+    item.age = 0;
+    item.duration = duration;
+    item.rise = rise;
+    item.size = size;
+    item.origin = position.clone();
+    item.drift = (Math.random() - 0.5) * 0.6;
+    item.sprite.visible = true;
+  }
+
+  update(dt) {
+    for (const item of this.items) {
+      if (!item.alive) continue;
+      item.age += dt;
+      const t = item.age / item.duration;
+      if (t >= 1) {
+        item.alive = false;
+        item.sprite.visible = false;
+        continue;
+      }
+      // pop in, rise, fade out
+      const pop =
+        t < 0.15
+          ? 0.6 + (t / 0.15) * 0.6
+          : 1.2 - Math.min(0.2, (t - 0.15) * 0.5);
+      item.sprite.position
+        .copy(item.origin)
+        .add(new THREE.Vector3(item.drift * t, item.rise * Math.sqrt(t), 0));
+      item.sprite.setScale(item.size * 2 * pop, item.size * pop);
+      item.sprite.opacity = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
+    }
+  }
+
+  clear() {
+    for (const item of this.items) {
+      item.alive = false;
+      item.sprite.visible = false;
+    }
+  }
+}

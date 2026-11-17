@@ -319,3 +319,16 @@ body {
   letter-spacing: 0;
   transition: opacity 0.3s ease;
 }
+
+.hud-number.warn {
+  animation: hud-warn 0.7s ease-out;
+}
+
+@keyframes hud-warn {
+  0% {
+    color: #ff3355;
+  }
+  100% {
+    color: white;
+  }
+}

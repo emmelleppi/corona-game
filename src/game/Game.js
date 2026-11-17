@@ -4,7 +4,7 @@ import { Player } from "./Player.js";
 import { Bat, distanceToSweptBat, distanceToSegment } from "./Bat.js";
 import { Corona, separateCoronas } from "./Corona.js";
 import { CameraRig } from "./CameraRig.js";
-import { Particles } from "./fx.js";
+import { Particles, Popups } from "./fx.js";
 import { CORONA, GAME, PLAYER, BAT, FX } from "../config.js";
 import {
   damp60,
@@ -64,6 +64,31 @@ export class Game extends Emitter {
 
     this.particles = new Particles();
     scene.add(this.particles);
+    this.popups = new Popups();
+    scene.add(this.popups);
+    this.hitStop = 0;
+
+    this.on("coronaWindup", () =>
+      audio.play("alert", {
+        volume: GAME.ALERT_VOLUME * 0.6,
+        rate: CORONA.WINDUP_ALERT_PITCH,
+      })
+    );
+    this.on("spawnDenied", (c) => {
+      this.particles.burst(c.position, {
+        ...FX.spawn,
+        count: FX.spawn.count * 2,
+      });
+      this.popups.spawn(
+        "denied",
+        _v.copy(c.position).setY(c.position.y + 0.8),
+        {
+          size: GAME.DAMAGE_POPUP_SIZE * 1.3,
+          duration: GAME.DAMAGE_POPUP_DURATION * 1.5,
+          rise: GAME.DAMAGE_POPUP_RISE,
+        }
+      );
+    });
 
     this.coronaGroup = new THREE.Group();
     scene.add(this.coronaGroup);
@@ -125,6 +150,8 @@ export class Game extends Emitter {
     this.player.getEyePosition(this.playerEye);
     this.bat.reset();
     this.particles.clear();
+    this.popups.clear();
+    this.hitStop = 0;
     this.emit("life", this.player.life);
     this.emit("remaining", this.remaining);
   }
@@ -180,7 +207,10 @@ export class Game extends Emitter {
         if (this.stateTime > GAME.RESTART_DELAY) this.restart();
         break;
       case GAME_STATE.GAMEPLAY:
-        if (this.input.locked && this.bat.swing()) this.emit("swing");
+        if (this.input.locked && this.bat.swing()) {
+          this.audio.playWhoosh({ volume: GAME.SWING_VOLUME });
+          this.emit("swing");
+        }
         break;
     }
   }
@@ -262,12 +292,33 @@ export class Game extends Emitter {
       c.lastSwing = this.bat.swingId;
       const damage = getRandDamage(BAT.CRIT_CHANCE, BAT.STRONG_CHANCE);
       if (!c.hit(damage, this.playerEye)) continue;
+      const killed = !c.alive;
+      // impact scales with the damage: pitch, shake, hit-stop, POW, popup
       this.audio.play(Math.random() > 0.5 ? "coronaHit" : "coronaHit2", {
         volume: GAME.CORONA_HIT_VOLUME,
+        rate: GAME.HIT_PITCH_BASE + GAME.HIT_PITCH_STEP * damage,
       });
-      this.rig.addShake(GAME.SHAKE_BAT_HIT);
-      this.particles.burst(c.position, c.alive ? FX.hit : FX.kill);
+      this.rig.addShake(
+        killed
+          ? GAME.SHAKE_KILL
+          : GAME.SHAKE_BAT_HIT + GAME.SHAKE_BAT_DAMAGE * (damage - 1)
+      );
+      this.hitStop = Math.max(
+        this.hitStop,
+        killed ? GAME.HIT_STOP_KILL : GAME.HIT_STOP
+      );
+      this.particles.burst(c.position, killed ? FX.kill : FX.hit);
       this.particles.burst(c.position, { ...FX.spark, shape: 1 });
+      const popupAt = _v.copy(c.position).setY(c.position.y + 0.6);
+      this.popups.spawn(
+        killed ? "kill" : String(Math.min(3, damage)),
+        popupAt,
+        {
+          size: GAME.DAMAGE_POPUP_SIZE * (killed ? 1.4 : 0.8 + 0.2 * damage),
+          duration: GAME.DAMAGE_POPUP_DURATION,
+          rise: GAME.DAMAGE_POPUP_RISE,
+        }
+      );
       this.emit("coronaHit", c);
     }
   }
@@ -292,7 +343,12 @@ export class Game extends Emitter {
       return;
     }
 
-    this.time += dt;
+    // hit-stop: the world slows down for a few frames on a bat impact, while
+    // the camera, the effects and the popups keep the real time
+    const worldDt = this.hitStop > 0 ? dt * GAME.HIT_STOP_SCALE : dt;
+    this.hitStop = Math.max(0, this.hitStop - dt);
+
+    this.time += worldDt;
     this.stateTime += dt;
     this.level.update(dt, this.settings);
     this.glitch = Math.max(0, this.glitch - dt);
@@ -300,7 +356,7 @@ export class Game extends Emitter {
 
     // player
     if (this.playerActive) {
-      const events = this.player.update(dt, this.input, this.rig.yaw);
+      const events = this.player.update(worldDt, this.input, this.rig.yaw);
       if (events.jumped) this.audio.play("jump", { volume: GAME.JUMP_VOLUME });
       if (events.landed > PLAYER.LANDING_IMPACT_SPEED) {
         this.rig.addShake(Math.min(GAME.SHAKE_LANDING_MAX, events.landed / 80));
@@ -318,7 +374,7 @@ export class Game extends Emitter {
     this.player.getEyePosition(this.playerEye);
 
     // coronas
-    for (const c of this.coronas) c.update(dt);
+    for (const c of this.coronas) c.update(worldDt);
     separateCoronas(this.coronas);
     let removed = false;
     for (let i = this.coronas.length - 1; i >= 0; i--) {
@@ -333,12 +389,13 @@ export class Game extends Emitter {
     // camera + bat
     this.updateCamera(dt);
     if (this.playerActive) {
-      this.bat.update(dt, this.player.hitTimer);
+      this.bat.update(worldDt, this.player.hitTimer);
       this.bat.updateSegment();
       this.checkBatHits();
     }
     this.particles.sizeScale = this.settings.particleScale;
-    this.particles.update(dt);
+    this.particles.update(worldDt);
+    this.popups.update(dt);
 
     // state transitions
     switch (this.state) {

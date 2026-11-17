@@ -150,6 +150,9 @@ export class Corona {
         this.spinTime = 0;
         if (prev === CORONA_STATE.ATTACK)
           this.returning = CORONA.LUNGE_RETURN_TIME;
+        // a fresh chase gets a short, readable wind-up before the lunge
+        this.firstWindup = prev === CORONA_STATE.SEEK;
+        if (this.firstWindup) this.game.emit("coronaWindup", this);
         break;
       case CORONA_STATE.SPAWN:
         this.spinTime = 0;
@@ -186,7 +189,9 @@ export class Corona {
     this.life -= damage;
     this.underAttack = CORONA.UNDER_ATTACK_DURATION;
     this.flash = 1;
-    this.powSize = randRange(CORONA.POW_SIZE_MIN, CORONA.POW_SIZE_MAX);
+    const t = Math.min(1, Math.max(0, (damage - 1) / 2));
+    this.powSize =
+      CORONA.POW_SIZE_MIN + (CORONA.POW_SIZE_MAX - CORONA.POW_SIZE_MIN) * t;
     this.pow.setScale(this.powSize);
     const k = Math.random() * (Math.random() > 0.5 ? 1 : -1);
     this.pow.position.set(k, 1.5 + k, 0);
@@ -200,6 +205,13 @@ export class Corona {
       this.knockbackTime = CORONA.KNOCKBACK_TIME;
       if (this.state === CORONA_STATE.ATTACK)
         this.setState(CORONA_STATE.PREATTACK);
+      // a hit during the wind-up staggers it: the wind-up starts over
+      else if (this.state === CORONA_STATE.PREATTACK) this.stateTime = 0;
+      // a hit while reproducing stops the reproduction
+      else if (this.state === CORONA_STATE.SPAWN) {
+        this.setState(CORONA_STATE.IDLE);
+        this.game.emit("spawnDenied", this);
+      }
     }
     return true;
   }
@@ -212,7 +224,7 @@ export class Corona {
       if (distance < CORONA.SEEK_DISTANCE) this.setState(CORONA_STATE.SEEK);
     } else if (s === CORONA_STATE.SEEK) {
       if (distance <= CORONA.ATTACK_DISTANCE)
-        this.setState(CORONA_STATE.ATTACK);
+        this.setState(CORONA_STATE.PREATTACK);
       else if (distance > CORONA.SEEK_DISTANCE * CORONA.LOSE_DISTANCE_FACTOR)
         this.setState(CORONA_STATE.IDLE);
     } else if (s === CORONA_STATE.PREATTACK) {
@@ -330,7 +342,7 @@ export class Corona {
             easeOutCubic(k)
           );
         }
-        if (this.stateTime >= CORONA.PREATTACK_DURATION)
+        if (this.stateTime >= this.windupDuration)
           this.setState(CORONA_STATE.ATTACK);
         break;
       case CORONA_STATE.SPAWN:
@@ -381,6 +393,21 @@ export class Corona {
     if (t >= 1 || this.position.y < -60) this.removed = true;
   }
 
+  get windupDuration() {
+    return this.firstWindup ? CORONA.FIRST_WINDUP : CORONA.PREATTACK_DURATION;
+  }
+
+  // 0 -> 1 during the telegraphed last part of a wind-up.
+  get windupTelegraph() {
+    if (this.state !== CORONA_STATE.PREATTACK) return 0;
+    const d = Math.max(1e-3, this.windupDuration);
+    const start = d * (1 - Math.min(1, CORONA.WINDUP_TELEGRAPH));
+    return Math.min(
+      1,
+      Math.max(0, (this.stateTime - start) / (d - start || 1e-3))
+    );
+  }
+
   // Live tunables, also applied while the game is paused (settings panel).
   applyLook() {
     const u = this.material.uniforms;
@@ -415,12 +442,25 @@ export class Corona {
       this.rotationGroup.rotation.y = easeInQuad(this.spinTime);
       h = v = 1 + CORONA.SPAWN_GROWTH * easeInElastic(this.spinTime / 8);
     }
+    // wind-up telegraph: anticipation squash + pulsing warning flash
+    const telegraph = this.windupTelegraph;
+    if (telegraph > 0) {
+      const sq = CORONA.WINDUP_SQUASH * telegraph;
+      h *= 1 + sq;
+      v *= 1 - sq;
+    }
     this.mesh.scale.set(h, v, h);
 
     this.applyLook();
     this.group.position.copy(this.position);
     const u = this.material.uniforms;
     u.uFlash.value = this.flash;
+    if (telegraph > 0 && this.flash < 0.05) {
+      const pulse =
+        0.5 + 0.5 * Math.sin(this.stateTime * (20 + 30 * telegraph));
+      u.uFlashColor.value.set(COLORS.CORONA_WARNING);
+      u.uFlash.value = CORONA.WINDUP_FLASH * telegraph * pulse;
+    }
     this.material.uniforms.uEmissive.value =
       this.state === CORONA_STATE.SPAWN ? (0.3 * this.spinTime) / 8 : 0;
 

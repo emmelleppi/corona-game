@@ -194,8 +194,7 @@ async function main() {
     pipeline.render({
       scene,
       camera,
-      hudScene: hud.visible ? hud.scene : null,
-      hudCamera: hud.camera,
+      hud: hud.visible ? hud : null,
       time: elapsed,
       effects: game.getEffects(),
     });

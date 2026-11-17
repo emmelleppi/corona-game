@@ -84,6 +84,35 @@ export class AudioManager {
     src.start();
   }
 
+  // Procedural "whoosh" (band-passed noise sweep) for the bat swing.
+  playWhoosh({ volume = 1, duration = 0.18 } = {}) {
+    if (this.ctx.state !== "running") return;
+    const ctx = this.ctx;
+    if (!this.noise) {
+      const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      this.noise = buffer;
+    }
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.playbackRate.value = 0.9 + Math.random() * 0.2;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.Q.value = 1.2;
+    filter.frequency.setValueAtTime(500, t);
+    filter.frequency.exponentialRampToValueAtTime(2600, t + duration * 0.6);
+    filter.frequency.exponentialRampToValueAtTime(900, t + duration);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(volume, t + duration * 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    src.connect(filter).connect(gain).connect(this.sfxGain);
+    src.start(t);
+    src.stop(t + duration + 0.02);
+  }
+
   playMusic(name) {
     if (this.music) return;
     const buffer = this.buffers.get(name);

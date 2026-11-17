@@ -69,6 +69,14 @@ export const CORONA = {
   ORIENTATION_THRESHOLD: 0.5,
   SEEK_ALERT_DURATION: 2,
   PREATTACK_DURATION: 1,
+  // Telegraphed wind-up before the first lunge of a chase (it used to lunge
+  // with no warning as soon as it was in range).
+  FIRST_WINDUP: 0.45,
+  // last fraction of a wind-up with the anticipation squash and warning flash
+  WINDUP_TELEGRAPH: 0.6,
+  WINDUP_SQUASH: 0.25,
+  WINDUP_FLASH: 0.6,
+  WINDUP_ALERT_PITCH: 1.6,
   ATTACK_DURATION: 0.2,
   UNDER_ATTACK_DURATION: 0.3,
   SPAWN_ANIMATION_DURATION: 3,
@@ -110,6 +118,7 @@ export const CORONA = {
   SPECULAR: 1,
   EXCLAMATION_HEIGHT: 2.5,
   EXCLAMATION_SIZE: 2,
+  // POW size grows with the damage (1 -> min, 3 -> max)
   POW_SIZE_MIN: 1,
   POW_SIZE_MAX: 2,
 };
@@ -134,6 +143,17 @@ export const GAME = {
   // camera shake amounts (0..1)
   SHAKE_PLAYER_HIT: 0.6,
   SHAKE_BAT_HIT: 0.25,
+  // extra shake per damage point above 1, and on a kill
+  SHAKE_BAT_DAMAGE: 0.1,
+  SHAKE_KILL: 0.6,
+  // hit-stop: the world runs at HIT_STOP_SCALE speed for a moment on impact
+  HIT_STOP: 0.05,
+  HIT_STOP_KILL: 0.09,
+  HIT_STOP_SCALE: 0.05,
+  // floating damage numbers
+  DAMAGE_POPUP_DURATION: 0.8,
+  DAMAGE_POPUP_RISE: 1.2,
+  DAMAGE_POPUP_SIZE: 0.5,
   SHAKE_LANDING_MAX: 0.5,
   SHAKE_DECAY: 2.5,
   SHAKE_AMPLITUDE: 0.08,
@@ -145,6 +165,10 @@ export const GAME = {
   ALERT_VOLUME: 0.7,
   PLAYER_HIT_VOLUME: 0.8,
   CORONA_HIT_VOLUME: 1,
+  // bat hit sound pitch: base + step * damage
+  HIT_PITCH_BASE: 0.8,
+  HIT_PITCH_STEP: 0.15,
+  SWING_VOLUME: 0.5,
   JUMP_VOLUME: 1,
   SPRINT_VOLUME: 1,
 };
@@ -164,6 +188,7 @@ export const COLORS = {
   CORONA: 0x1e9983,
   CORONA_DEAD: 0xff0000,
   CORONA_FLASH: 0xffffff,
+  CORONA_WARNING: 0xff3355,
   BAT_METAL: 0xb8b5c3,
   BAT_METAL_HIT: 0x76747e,
   BAT_HANDLE: 0x454194,

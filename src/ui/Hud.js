@@ -26,6 +26,8 @@ export class Hud {
     this.bump = { life: 0, remaining: 0 };
     this.width = 1;
     this.height = 1;
+    this.box = 230;
+    this.icons = [];
   }
 
   createIcon(geometry, color) {
@@ -68,6 +70,12 @@ export class Hud {
   setRemaining(n) {
     if (n === this.remaining) return;
     if (this.remaining !== null) this.bump.remaining = 1;
+    // a corona reproduced: the counter flashes red
+    if (this.remaining !== null && n > this.remaining) {
+      this.remainingEl.classList.remove("warn");
+      void this.remainingEl.offsetWidth;
+      this.remainingEl.classList.add("warn");
+    }
     this.remaining = n;
     this.remainingEl.textContent = n;
   }
@@ -98,6 +106,20 @@ export class Hud {
 
     this.heart.position.set(78 * k, 100 * k, 0);
     this.corona.position.set(this.width - 78 * k, 100 * k, 0);
+    // square around each icon, rendered in its own atlas tile
+    this.box = 230 * k;
+    this.icons = [
+      {
+        object: this.heart,
+        x: this.heart.position.x,
+        y: this.heart.position.y,
+      },
+      {
+        object: this.corona,
+        x: this.corona.position.x,
+        y: this.corona.position.y,
+      },
+    ];
 
     // same squash & stretch of the old HUD heart / corona
     const p = Math.sin(s.hudPulseSpeed * time);

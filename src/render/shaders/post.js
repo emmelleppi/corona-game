@@ -226,6 +226,8 @@ uniform vec4 uGlitchSeed;
 uniform float uSpeedLines;
 uniform float uDamage;
 uniform bool uHud;
+uniform vec4 uHudRects[2];
+uniform float uHudTiles;
 uniform bool uRaw;
 uniform bool uEncode;
 uniform float uSpeedLinesFps;
@@ -365,9 +367,14 @@ void main() {
   color = color + uGrain * (grain - color);
 
   if (uHud) {
-    vec4 hud = texture(tHud, vUv);
-    vec3 hudColor = hud.rgb * hud.rgb; // stored with gamma 2 for precision
-    color = color * (1.0 - hud.a) + hudColor;
+    for (int i = 0; i < 2; i++) {
+      vec4 r = uHudRects[i];
+      if (vUv.x < r.x || vUv.y < r.y || vUv.x > r.z || vUv.y > r.w) continue;
+      vec2 local = (vUv - r.xy) / (r.zw - r.xy);
+      vec4 hud = texture(tHud, vec2((float(i) + local.x) / uHudTiles, local.y));
+      vec3 hudColor = hud.rgb * hud.rgb; // stored with gamma 2 for precision
+      color = color * (1.0 - hud.a) + hudColor;
+    }
   }
 
   color = saturate(color);
@@ -498,5 +505,15 @@ void main() {
   if (isHorizontal) finalUv.y += finalOffset * stepLength;
   else finalUv.x += finalOffset * stepLength;
   fragColor = vec4(texture(tSource, finalUv).rgb, 1.0);
+}
+`;
+
+// Plain copy.
+export const copyFragment = /* glsl */ `${header}
+in vec2 vUv;
+out vec4 fragColor;
+uniform sampler2D tSource;
+void main() {
+  fragColor = texture(tSource, vUv);
 }
 `;

@@ -483,7 +483,12 @@ export function createGui(settings, { onResize, game }) {
   num(ai, CORONA, "LOSE_DISTANCE_FACTOR", 1, 4, 0.05, "give up factor");
   num(ai, CORONA, "ATTACK_DISTANCE", 0.5, 10, 0.1, "attack distance");
   num(ai, CORONA, "SEEK_ALERT_DURATION", 0, 6, 0.1, "alert duration");
+  num(ai, CORONA, "FIRST_WINDUP", 0, 3, 0.05, "first wind-up");
   num(ai, CORONA, "PREATTACK_DURATION", 0, 5, 0.05, "wind-up");
+  num(ai, CORONA, "WINDUP_TELEGRAPH", 0, 1, 0.05, "telegraph part");
+  num(ai, CORONA, "WINDUP_SQUASH", 0, 1, 0.01, "telegraph squash");
+  num(ai, CORONA, "WINDUP_FLASH", 0, 1, 0.05, "telegraph flash");
+  num(ai, CORONA, "WINDUP_ALERT_PITCH", 0.25, 4, 0.05, "telegraph sound pitch");
   num(ai, CORONA, "ATTACK_DURATION", 0.02, 2, 0.01, "attack duration");
   num(ai, CORONA, "LUNGE_FACTOR", 0, 2, 0.05, "lunge length");
   num(ai, CORONA, "LUNGE_TIME", 0.005, 1, 0.005, "lunge time");
@@ -504,6 +509,7 @@ export function createGui(settings, { onResize, game }) {
   col(look, COLORS, "CORONA", "color");
   col(look, COLORS, "CORONA_DEAD", "dead color");
   col(look, COLORS, "CORONA_FLASH", "hit flash color");
+  col(look, COLORS, "CORONA_WARNING", "wind-up warning color");
   num(look, CORONA, "SPECULAR", 0, 4, 0.05, "specular");
   num(look, CORONA, "RENDER_SCALE", 0.05, 2, 0.01, "size");
   num(look, CORONA, "Y_AXIS", 0, 5, 0.05, "float height");
@@ -529,6 +535,20 @@ export function createGui(settings, { onResize, game }) {
   num(death, CORONA, "DEATH_BOUNCE", 0, 1, 0.01, "bounce");
 
   const feedback = folder(play, "Feedback & effects");
+  num(feedback, GAME, "HIT_STOP", 0, 0.5, 0.005, "hit-stop");
+  num(feedback, GAME, "HIT_STOP_KILL", 0, 0.5, 0.005, "hit-stop (kill)");
+  num(feedback, GAME, "HIT_STOP_SCALE", 0, 1, 0.01, "hit-stop speed");
+  num(feedback, GAME, "DAMAGE_POPUP_SIZE", 0, 3, 0.05, "damage number size");
+  num(
+    feedback,
+    GAME,
+    "DAMAGE_POPUP_DURATION",
+    0.1,
+    3,
+    0.05,
+    "damage number time"
+  );
+  num(feedback, GAME, "DAMAGE_POPUP_RISE", 0, 5, 0.1, "damage number rise");
   num(feedback, GAME, "GLITCH_DURATION", 0, 2, 0.05, "glitch duration");
   num(feedback, GAME, "GLITCH_STRENGTH", 0, 2, 0.05, "glitch strength");
   num(feedback, settings, "glitchShift", 0, 0.5, 0.005, "glitch shift");
@@ -602,6 +622,8 @@ export function createGui(settings, { onResize, game }) {
   num(cam, settings, "shakeScale", 0, 3, 0.05, "screen shake");
   num(cam, GAME, "SHAKE_PLAYER_HIT", 0, 1, 0.05, "shake: hit taken");
   num(cam, GAME, "SHAKE_BAT_HIT", 0, 1, 0.05, "shake: bat hit");
+  num(cam, GAME, "SHAKE_BAT_DAMAGE", 0, 1, 0.05, "shake: per damage");
+  num(cam, GAME, "SHAKE_KILL", 0, 1, 0.05, "shake: kill");
   num(cam, GAME, "SHAKE_LANDING_MAX", 0, 1, 0.05, "shake: landing");
   num(cam, GAME, "SHAKE_DECAY", 0.1, 10, 0.1, "shake decay");
   num(cam, GAME, "SHAKE_AMPLITUDE", 0, 0.5, 0.005, "shake amplitude");
@@ -636,6 +658,9 @@ export function createGui(settings, { onResize, game }) {
   bool(sound, settings, "muted", "mute (M)").listen();
   num(sound, GAME, "ALERT_VOLUME", 0, 2, 0.05, "alert");
   num(sound, GAME, "CORONA_HIT_VOLUME", 0, 2, 0.05, "bat hit");
+  num(sound, GAME, "HIT_PITCH_BASE", 0.25, 2, 0.05, "bat hit pitch");
+  num(sound, GAME, "HIT_PITCH_STEP", 0, 1, 0.05, "pitch per damage");
+  num(sound, GAME, "SWING_VOLUME", 0, 2, 0.05, "swing whoosh");
   num(sound, GAME, "PLAYER_HIT_VOLUME", 0, 2, 0.05, "damage");
   num(sound, GAME, "JUMP_VOLUME", 0, 2, 0.05, "jump");
   num(sound, GAME, "SPRINT_VOLUME", 0, 2, 0.05, "boost");
