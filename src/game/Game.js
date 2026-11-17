@@ -345,8 +345,10 @@ export class Game extends Emitter {
 
     // hit-stop: the world slows down for a few frames on a bat impact, while
     // the camera, the effects and the popups keep the real time
-    const worldDt = this.hitStop > 0 ? dt * GAME.HIT_STOP_SCALE : dt;
-    this.hitStop = Math.max(0, this.hitStop - dt);
+    // (only the part of the frame inside the hit-stop is slowed down)
+    const slow = Math.min(dt, this.hitStop);
+    const worldDt = slow * GAME.HIT_STOP_SCALE + (dt - slow);
+    this.hitStop -= slow;
 
     this.time += worldDt;
     this.stateTime += dt;
@@ -391,7 +393,9 @@ export class Game extends Emitter {
     if (this.playerActive) {
       this.bat.update(worldDt, this.player.hitTimer);
       this.bat.updateSegment();
-      this.checkBatHits();
+      // no new hits while frozen: flicking the mouse during a hit-stop must
+      // not sweep the frozen bat through other coronas
+      if (this.hitStop <= 0) this.checkBatHits();
     }
     this.particles.sizeScale = this.settings.particleScale;
     this.particles.update(worldDt);

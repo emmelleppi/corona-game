@@ -86,7 +86,7 @@ export class AudioManager {
 
   // Procedural "whoosh" (band-passed noise sweep) for the bat swing.
   playWhoosh({ volume = 1, duration = 0.18 } = {}) {
-    if (this.ctx.state !== "running") return;
+    if (this.ctx.state !== "running" || !(volume > 0)) return;
     const ctx = this.ctx;
     if (!this.noise) {
       const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);

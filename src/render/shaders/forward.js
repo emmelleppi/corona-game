@@ -12,8 +12,9 @@ uniform float uBillboardSoftness;
 uniform float uParticleSoftness;
 uniform float uParticleEdge;
 uniform float uParticleCore;
+uniform vec2 uJitterPx;
 float sceneLinearDepth() {
-  float d = texture(tDepth, gl_FragCoord.xy / uResolution).r;
+  float d = texture(tDepth, (gl_FragCoord.xy + uJitterPx) / uResolution).r;
   float z = d * 2.0 - 1.0;
   return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear));
 }

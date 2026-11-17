@@ -36,6 +36,8 @@ export const forwardUniforms = {
   uParticleSoftness: { value: 0.2 },
   uParticleEdge: { value: 0.2 },
   uParticleCore: { value: 0.8 },
+  // G-Buffer jitter in pixels (the forward pass is drawn unjittered)
+  uJitterPx: { value: new THREE.Vector2() },
 };
 
 // Uniforms shared by the HUD icon materials.

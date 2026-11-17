@@ -148,11 +148,19 @@ export class Corona {
       }
       case CORONA_STATE.PREATTACK:
         this.spinTime = 0;
-        if (prev === CORONA_STATE.ATTACK)
-          this.returning = CORONA.LUNGE_RETURN_TIME;
+        // only right after a lunge it slides back to where it started
+        this.returning =
+          prev === CORONA_STATE.ATTACK ? CORONA.LUNGE_RETURN_TIME : 0;
         // a fresh chase gets a short, readable wind-up before the lunge
         this.firstWindup = prev === CORONA_STATE.SEEK;
-        if (this.firstWindup) this.game.emit("coronaWindup", this);
+        if (
+          this.firstWindup &&
+          this.game.time - (this.lastWindupAlert ?? -Infinity) >
+            CORONA.WINDUP_ALERT_COOLDOWN
+        ) {
+          this.lastWindupAlert = this.game.time;
+          this.game.emit("coronaWindup", this);
+        }
         break;
       case CORONA_STATE.SPAWN:
         this.spinTime = 0;
@@ -228,7 +236,8 @@ export class Corona {
       else if (distance > CORONA.SEEK_DISTANCE * CORONA.LOSE_DISTANCE_FACTOR)
         this.setState(CORONA_STATE.IDLE);
     } else if (s === CORONA_STATE.PREATTACK) {
-      if (distance > CORONA.ATTACK_DISTANCE) this.setState(CORONA_STATE.SEEK);
+      if (distance > CORONA.ATTACK_DISTANCE * CORONA.WINDUP_LEAVE_FACTOR)
+        this.setState(CORONA_STATE.SEEK);
     }
   }
 
@@ -413,7 +422,11 @@ export class Corona {
     const u = this.material.uniforms;
     this.group.scale.setScalar(CORONA.RENDER_SCALE);
     this.exclamation.position.set(0, CORONA.EXCLAMATION_HEIGHT, 0);
-    u.uFlashColor.value.set(COLORS.CORONA_FLASH);
+    u.uFlashColor.value.set(
+      this.windupTelegraph > 0 && this.flash < 0.05
+        ? COLORS.CORONA_WARNING
+        : COLORS.CORONA_FLASH
+    );
     u.uSpecular.value = CORONA.SPECULAR;
     if (this.alive) {
       this.position.y = CORONA.Y_AXIS;
@@ -458,7 +471,6 @@ export class Corona {
     if (telegraph > 0 && this.flash < 0.05) {
       const pulse =
         0.55 + 0.45 * Math.sin(this.stateTime * (20 + 30 * telegraph));
-      u.uFlashColor.value.set(COLORS.CORONA_WARNING);
       u.uFlash.value = CORONA.WINDUP_FLASH * telegraph * pulse;
     }
     this.material.uniforms.uEmissive.value =

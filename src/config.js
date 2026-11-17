@@ -77,6 +77,10 @@ export const CORONA = {
   WINDUP_SQUASH: 0.25,
   WINDUP_FLASH: 0.8,
   WINDUP_ALERT_PITCH: 1.6,
+  // a wind-up is abandoned only past ATTACK_DISTANCE * this (hysteresis)
+  WINDUP_LEAVE_FACTOR: 1.5,
+  // minimum time between two wind-up alert sounds of the same corona
+  WINDUP_ALERT_COOLDOWN: 1.5,
   ATTACK_DURATION: 0.2,
   UNDER_ATTACK_DURATION: 0.3,
   SPAWN_ANIMATION_DURATION: 3,

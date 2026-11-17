@@ -336,6 +336,7 @@ export class Pipeline {
   applyJitter(camera) {
     camera.updateProjectionMatrix();
     this.projNoJitter.copy(camera.projectionMatrix);
+    forwardUniforms.uJitterPx.value.set(0, 0);
     if (!this.taaEnabled) return;
     const [iw, ih] = this.internalSize;
     const s = this.settings;
@@ -344,6 +345,8 @@ export class Pipeline {
     const jy = (halton(i, 3) - 0.5) * 2 * s.taaJitterScale;
     camera.projectionMatrix.elements[8] += jx / iw;
     camera.projectionMatrix.elements[9] += jy / ih;
+    // where an unjittered pixel lands in the jittered G-Buffer
+    forwardUniforms.uJitterPx.value.set(-jx / 2, -jy / 2);
     camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
   }
 
@@ -475,7 +478,12 @@ export class Pipeline {
   renderHud(hud) {
     const renderer = this.renderer;
     const dpr = this.width / Math.max(1, hud.width);
-    const tile = Math.min(1024, Math.max(16, Math.ceil(hud.box * dpr * 2)));
+    const maxTile = Math.floor(
+      renderer.capabilities.maxTextureSize / Math.max(1, hud.icons.length)
+    );
+    const native = Math.ceil(hud.box * dpr);
+    // 2x super-sampled, never below 1x
+    const tile = Math.max(16, native, Math.min(maxTile, native * 2));
     const icons = hud.icons;
     if (
       this.hudTarget.width !== tile * icons.length ||
