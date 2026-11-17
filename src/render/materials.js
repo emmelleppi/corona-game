@@ -32,7 +32,111 @@ export const forwardUniforms = {
   uNear: { value: 0.1 },
   uFar: { value: 300 },
   uPixelScale: { value: 1 },
+  uBillboardSoftness: { value: 0.25 },
+  uParticleSoftness: { value: 0.2 },
+  uParticleEdge: { value: 0.2 },
+  uParticleCore: { value: 0.8 },
 };
+
+// Uniforms shared by the HUD icon materials.
+export const hudUniforms = {
+  uBands: { value: 4 },
+  uHudSpecular: { value: 0.6 },
+  uHudRim: { value: 0.15 },
+  uHudAmbient: { value: 0.35 },
+};
+
+// Look parameters shared by every G-Buffer material, refreshed once per frame
+// from the settings (see updateStyleUniforms).
+const c = (hex) => ({ value: new THREE.Color(hex) });
+const f = (v) => ({ value: v });
+export const styleUniforms = {
+  // islands
+  uTileSize: f(2.5),
+  uTileVariation: f(0.06),
+  uCheckerDarken: f(0.07),
+  uGroutWidth: f(0.05),
+  uGroutColor: c(0xc7bddb),
+  uBorderBrightness: f(1.3),
+  uBorderNoise: f(0.1),
+  uBorderDots: f(0.35),
+  uBorderDotsBrightness: f(1.25),
+  uCliffBrightness: f(1.7),
+  uCliffBottomColor: c(0x290f29),
+  uCliffDarkening: f(0.7),
+  uCliffDepth: f(4.23),
+  uSedimentFrequency: f(0.9),
+  uSedimentContrast: f(0.12),
+  uUndersideColor: c(0x170817),
+  // characters
+  uFlashEmissive: f(1.5),
+  // start pad
+  uPadPulseSpeed: f(4),
+  uPadGlow: f(1.5),
+  uPadBaseGlow: f(0.15),
+  // sky
+  uSkyTop: c(0x261340),
+  uSkyHorizon: c(0x6a2c6e),
+  uSkyText: c(0xd95b9a),
+  uSkyTextOutline: c(0x673366),
+  uSkyGradientLow: f(-0.2),
+  uSkyGradientHigh: f(0.7),
+  uSloganRepeats: f(4),
+  uSloganScroll: f(0.01),
+  uSloganHeight: f(1 / 1.3),
+  uSloganShimmer: f(0.15),
+  uSparkleScale: f(30),
+  uSparkleDensity: f(0.14),
+  uSparkleSize: f(0.08),
+  uSparkleIntensity: f(1.5),
+  uSparkleColor: c(0xffccf2),
+};
+
+// settings key -> uniform name
+const STYLE_BINDINGS = {
+  tileSize: "uTileSize",
+  tileVariation: "uTileVariation",
+  checkerDarken: "uCheckerDarken",
+  groutWidth: "uGroutWidth",
+  groutColor: "uGroutColor",
+  borderBrightness: "uBorderBrightness",
+  borderNoise: "uBorderNoise",
+  borderDots: "uBorderDots",
+  borderDotsBrightness: "uBorderDotsBrightness",
+  cliffBrightness: "uCliffBrightness",
+  cliffBottomColor: "uCliffBottomColor",
+  cliffDarkening: "uCliffDarkening",
+  sedimentFrequency: "uSedimentFrequency",
+  sedimentContrast: "uSedimentContrast",
+  undersideColor: "uUndersideColor",
+  hitFlashEmissive: "uFlashEmissive",
+  padPulseSpeed: "uPadPulseSpeed",
+  padGlow: "uPadGlow",
+  padBaseGlow: "uPadBaseGlow",
+  skyTop: "uSkyTop",
+  skyHorizon: "uSkyHorizon",
+  skyText: "uSkyText",
+  skyTextOutline: "uSkyTextOutline",
+  skyGradientLow: "uSkyGradientLow",
+  skyGradientHigh: "uSkyGradientHigh",
+  sloganRepeats: "uSloganRepeats",
+  sloganScroll: "uSloganScroll",
+  sloganHeight: "uSloganHeight",
+  sloganShimmer: "uSloganShimmer",
+  sparkleScale: "uSparkleScale",
+  sparkleDensity: "uSparkleDensity",
+  sparkleSize: "uSparkleSize",
+  sparkleIntensity: "uSparkleIntensity",
+  sparkleColor: "uSparkleColor",
+};
+
+export function updateStyleUniforms(settings) {
+  for (const [key, name] of Object.entries(STYLE_BINDINGS)) {
+    const u = styleUniforms[name];
+    if (u.value?.isColor) u.value.set(settings[key]);
+    else u.value = settings[key];
+  }
+}
 
 export const LAYERS = {
   GBUFFER: 0,
@@ -62,6 +166,7 @@ function gbufferMaterial(
     side,
     uniforms: {
       ...globalUniforms,
+      ...styleUniforms,
       uPrevModelMatrix: { value: new THREE.Matrix4() },
       uObjectId: { value: 0 },
       uOpacity: { value: 1 },
@@ -104,10 +209,6 @@ export const createSkyMaterial = (wordsTexture, wordCount) =>
       uWordB: { value: 0 },
       uWordMix: { value: 0 },
       uWordCount: { value: wordCount },
-      uTopColor: { value: new THREE.Color(0x261340) },
-      uHorizonColor: { value: new THREE.Color(0x6a2c6e) },
-      uTextColor: { value: new THREE.Color(0xd95b9a) },
-      uTextOutline: { value: new THREE.Color(0x673366) },
     },
     { side: THREE.BackSide }
   );
@@ -167,7 +268,7 @@ export const createHudMaterial = (
       uColor: { value: new THREE.Color(color) },
       uOutline: { value: outline },
       uIsOutline: { value: isOutline },
-      uBands: { value: 4 },
+      ...hudUniforms,
     },
   });
 

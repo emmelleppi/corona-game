@@ -10,8 +10,10 @@ import { Game, GAME_STATE } from "./game/Game.js";
 import { createExclamationTexture } from "./game/fx.js";
 import { Hud } from "./ui/Hud.js";
 import { Screens } from "./ui/Screens.js";
-import { createGui } from "./ui/Gui.js";
+import { createGui, importConfig, decodeConfig } from "./ui/Gui.js";
 import { loadSettings, saveSettings } from "./ui/settings.js";
+import { loadTuning } from "./ui/tuning.js";
+import { GAME } from "./config.js";
 
 const screens = new Screens();
 
@@ -58,10 +60,21 @@ async function main() {
   renderer.info.autoReset = false;
 
   const settings = loadSettings();
+  loadTuning();
+  // shared configuration: #config=<base64 json>
+  if (location.hash.startsWith("#config=")) {
+    try {
+      importConfig(settings, decodeConfig(location.hash.slice(8)));
+    } catch (e) {
+      console.warn("Invalid shared configuration", e);
+    }
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  window.addEventListener("hashchange", () => {
+    if (location.hash.startsWith("#config=")) location.reload();
+  });
   const audio = new AudioManager();
-  audio.setVolume(settings.volume);
-  audio.setMusicVolume(settings.musicVolume);
-  audio.setMuted(settings.muted);
+  audio.sync(settings);
   screens.setMuted(settings.muted);
 
   const input = new Input(canvas);
@@ -71,14 +84,19 @@ async function main() {
   assets.exclamationTexture = createExclamationTexture();
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.1, 300);
+  const camera = new THREE.PerspectiveCamera(
+    settings.fov,
+    1,
+    settings.cameraNear,
+    settings.cameraFar
+  );
   scene.add(camera);
 
   const level = new Level(assets.mapNodes);
   scene.add(level);
 
   const pipeline = new Pipeline(renderer, settings);
-  const hud = new Hud(assets);
+  const hud = new Hud(assets, settings);
   const game = new Game({
     scene,
     camera,
@@ -99,10 +117,11 @@ async function main() {
   game.on("life", (life) => hud.setLife(life));
   game.on("remaining", (n) => hud.setRemaining(n));
   game.on("cut", () => pipeline.cut());
-  game.on("coronaAlert", () => audio.play("alert", { volume: 0.7 }));
+  game.on("coronaAlert", () =>
+    audio.play("alert", { volume: GAME.ALERT_VOLUME })
+  );
   game.on("toggleMute", () => {
-    settings.muted = audio.toggleMute();
-    screens.setMuted(settings.muted);
+    settings.muted = !settings.muted;
     saveSettings(settings);
   });
 
@@ -122,13 +141,7 @@ async function main() {
   window.addEventListener("resize", resize);
   resize();
 
-  createGui(settings, {
-    audio,
-    onResize: () => {
-      resize();
-      screens.setMuted(settings.muted);
-    },
-  });
+  const gui = createGui(settings, { onResize: resize, game });
 
   // --------------------------------------------------------------- loop ----
   const stats = document.getElementById("stats");
@@ -141,12 +154,27 @@ async function main() {
   audio.playMusic("theme");
 
   if (import.meta.env.DEV)
-    window.__game = { game, settings, pipeline, camera, scene, renderer };
+    window.__game = { gui, game, settings, pipeline, camera, scene, renderer };
 
   renderer.setAnimationLoop((now) => {
-    const dt = Math.min(1 / 20, Math.max(0, (now - last) / 1000));
+    const dt = Math.min(
+      settings.maxFrameTime,
+      Math.max(0, (now - last) / 1000)
+    );
     last = now;
     elapsed += dt;
+
+    // settings that are not read every frame by their owners
+    audio.sync(settings);
+    screens.setMuted(settings.muted);
+    if (
+      camera.near !== settings.cameraNear ||
+      camera.far !== settings.cameraFar
+    ) {
+      camera.near = settings.cameraNear;
+      camera.far = settings.cameraFar;
+      pipeline.cut();
+    }
 
     renderer.info.reset();
     game.update(dt);

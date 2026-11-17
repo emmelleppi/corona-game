@@ -5,12 +5,12 @@ import { Bat, distanceToSweptBat, distanceToSegment } from "./Bat.js";
 import { Corona, separateCoronas } from "./Corona.js";
 import { CameraRig } from "./CameraRig.js";
 import { Particles } from "./fx.js";
-import { CORONA, GAME, PLAYER, BAT } from "../config.js";
+import { CORONA, GAME, PLAYER, BAT, FX } from "../config.js";
 import {
   damp60,
   easeInOutCubic,
   getRandDamage,
-  getPlayerDamage,
+  randInt,
   clamp,
 } from "../core/math.js";
 
@@ -79,7 +79,7 @@ export class Game extends Emitter {
     input.on("keydown", (code) => {
       if (code === "KeyM") this.emit("toggleMute");
       if ((code === "ShiftLeft" || code === "ShiftRight") && this.playerActive)
-        audio.play("sprint");
+        audio.play("sprint", { volume: GAME.SPRINT_VOLUME });
     });
   }
 
@@ -115,7 +115,7 @@ export class Game extends Emitter {
         Math.hypot(
           p.x - PLAYER.INIT_POSITION[0],
           p.z - PLAYER.INIT_POSITION[2]
-        ) < 8
+        ) < GAME.SPAWN_EXCLUSION_RADIUS
       );
       this.addCorona(p, false);
     }
@@ -175,7 +175,7 @@ export class Game extends Emitter {
         break;
       case GAME_STATE.WIN:
       case GAME_STATE.GAMEOVER:
-        if (this.stateTime > 0.5) this.restart();
+        if (this.stateTime > GAME.RESTART_DELAY) this.restart();
         break;
       case GAME_STATE.GAMEPLAY:
         if (this.input.locked && this.bat.swing()) this.emit("swing");
@@ -223,34 +223,28 @@ export class Game extends Emitter {
     if (!this.canSpawnCorona()) return;
     const child = this.addCorona(parent.position, parent.awake);
     child.orientation.copy(parent.orientation).negate();
-    this.particles.burst(_v.copy(parent.position), {
-      count: 18,
-      colors: [0x1e9983, 0x7affd8, 0xffffff],
-      speed: 6,
-      size: 0.25,
-      life: 0.6,
-    });
+    this.particles.burst(_v.copy(parent.position), FX.spawn);
     this.emit("coronaSpawn", child);
   }
 
   // A lunging corona touching the player "chest".
   checkCoronaHitsPlayer(corona) {
     if (this.state !== GAME_STATE.GAMEPLAY) return false;
-    _a.copy(this.player.position).setY(
-      this.player.position.y + PLAYER.EYE_HEIGHT - 0.25
-    );
-    _b.copy(this.player.position).setY(
-      this.player.position.y + PLAYER.EYE_HEIGHT + 0.25
-    );
-    if (distanceToSegment(corona.position, _a, _b) > CORONA.RADIUS + 0.2)
+    const eyeY = this.player.position.y + PLAYER.EYE_HEIGHT;
+    _a.copy(this.player.position).setY(eyeY - PLAYER.CHEST_HALF_HEIGHT);
+    _b.copy(this.player.position).setY(eyeY + PLAYER.CHEST_HALF_HEIGHT);
+    if (
+      distanceToSegment(corona.position, _a, _b) >
+      CORONA.RADIUS + PLAYER.CHEST_RADIUS
+    )
       return false;
-    const damage = getPlayerDamage();
+    const damage = randInt(PLAYER.DAMAGE_MIN, PLAYER.DAMAGE_MAX);
     this.player.damage(damage);
-    this.glitch = 0.3;
+    this.glitch = GAME.GLITCH_DURATION;
     this.damageFx = 1;
-    this.rig.addShake(0.6);
+    this.rig.addShake(GAME.SHAKE_PLAYER_HIT);
     this.audio.play(Math.random() > 0.5 ? "playerHit" : "playerHit2", {
-      volume: 0.8,
+      volume: GAME.PLAYER_HIT_VOLUME,
     });
     this.emit("life", this.player.life);
     this.emit("playerHit", damage);
@@ -264,30 +258,14 @@ export class Game extends Emitter {
       if (distanceToSweptBat(c.position, this.bat) > CORONA.RADIUS + BAT.RADIUS)
         continue;
       c.lastSwing = this.bat.swingId;
-      if (!c.hit(getRandDamage(), this.playerEye)) continue;
-      this.audio.play(Math.random() > 0.5 ? "coronaHit" : "coronaHit2");
-      this.rig.addShake(0.25);
-      const dead = !c.alive;
-      this.particles.burst(c.position, {
-        count: dead ? 40 : 16,
-        colors: dead
-          ? [0xff2a2a, 0xffd23f, 0xffffff]
-          : [0x1e9983, 0x9dffe6, 0xffffff],
-        speed: dead ? 10 : 6,
-        up: 3,
-        size: dead ? 0.22 : 0.15,
-        life: dead ? 0.9 : 0.5,
-        shape: 0,
+      const damage = getRandDamage(BAT.CRIT_CHANCE, BAT.STRONG_CHANCE);
+      if (!c.hit(damage, this.playerEye)) continue;
+      this.audio.play(Math.random() > 0.5 ? "coronaHit" : "coronaHit2", {
+        volume: GAME.CORONA_HIT_VOLUME,
       });
-      this.particles.burst(c.position, {
-        count: 6,
-        color: 0xfff3a0,
-        speed: 4,
-        size: 0.5,
-        life: 0.35,
-        gravity: 0,
-        shape: 1,
-      });
+      this.rig.addShake(GAME.SHAKE_BAT_HIT);
+      this.particles.burst(c.position, c.alive ? FX.hit : FX.kill);
+      this.particles.burst(c.position, { ...FX.spark, shape: 1 });
       this.emit("coronaHit", c);
     }
   }
@@ -306,26 +284,23 @@ export class Game extends Emitter {
 
     this.time += dt;
     this.stateTime += dt;
-    this.level.update(dt);
+    this.level.update(dt, this.settings);
     this.glitch = Math.max(0, this.glitch - dt);
-    this.damageFx = Math.max(0, this.damageFx - dt * 1.8);
+    this.damageFx = Math.max(0, this.damageFx - dt * GAME.DAMAGE_FLASH_DECAY);
 
     // player
     if (this.playerActive) {
       const events = this.player.update(dt, this.input, this.rig.yaw);
-      if (events.jumped) this.audio.play("jump");
-      if (events.landed > 12) {
-        this.rig.addShake(Math.min(0.5, events.landed / 80));
+      if (events.jumped) this.audio.play("jump", { volume: GAME.JUMP_VOLUME });
+      if (events.landed > PLAYER.LANDING_IMPACT_SPEED) {
+        this.rig.addShake(Math.min(GAME.SHAKE_LANDING_MAX, events.landed / 80));
         this.particles.burst(
-          _v.copy(this.player.position).setY(this.player.position.y - 0.4),
+          _v
+            .copy(this.player.position)
+            .setY(this.player.position.y - PLAYER.RADIUS * 0.8),
           {
-            count: Math.min(24, Math.floor(events.landed / 2)),
-            color: 0xe8d8f0,
-            speed: 5,
-            up: 0.5,
-            size: 0.3,
-            life: 0.5,
-            gravity: 2,
+            ...FX.landing,
+            count: Math.min(FX.landing.count, Math.floor(events.landed / 2)),
           }
         );
       }
@@ -352,6 +327,7 @@ export class Game extends Emitter {
       this.bat.updateSegment();
       this.checkBatHits();
     }
+    this.particles.sizeScale = this.settings.particleScale;
     this.particles.update(dt);
 
     // state transitions
@@ -407,19 +383,19 @@ export class Game extends Emitter {
       this.followIndex = Math.floor(Math.random() * alive.length);
       const c = alive[this.followIndex];
       this.camera.position.set(
-        c.position.x - 2 * c.orientation.x,
-        c.position.y + 1,
-        c.position.z - 2 * c.orientation.z
+        c.position.x - GAME.ATTRACT_DISTANCE * c.orientation.x,
+        c.position.y + GAME.ATTRACT_HEIGHT,
+        c.position.z - GAME.ATTRACT_DISTANCE * c.orientation.z
       );
       this.emit("cut");
     }
     const c = alive[this.followIndex];
     _target.set(
-      c.position.x - 2 * c.orientation.x,
-      c.position.y + 1,
-      c.position.z - 2 * c.orientation.z
+      c.position.x - GAME.ATTRACT_DISTANCE * c.orientation.x,
+      c.position.y + GAME.ATTRACT_HEIGHT,
+      c.position.z - GAME.ATTRACT_DISTANCE * c.orientation.z
     );
-    this.camera.position.lerp(_target, damp60(0.2, dt));
+    this.camera.position.lerp(_target, damp60(GAME.ATTRACT_SMOOTHING, dt));
     this.camera.lookAt(c.position);
     _v.copy(this.camera.position);
     this.rig.lookAt(_v, c.position);
@@ -428,13 +404,14 @@ export class Game extends Emitter {
   // Values driving the post-processing effects.
   getEffects() {
     const fx = { glitch: 0, water: 0, damage: this.damageFx, speedLines: 0 };
-    if (this.glitch > 0) fx.glitch = 0.5;
+    if (this.glitch > 0) fx.glitch = GAME.GLITCH_STRENGTH;
     if (this.state === GAME_STATE.GAMEPLAY || this.state === GAME_STATE.WIN) {
       const y = this.player.position.y;
       if (y <= 0) {
-        fx.water = -y / 10;
-        fx.vignetteOffset = 0.95 + y / 10;
-        fx.vignetteDarkness = 1.6 - y / 10;
+        const k = GAME.VOID_EFFECT_SCALE;
+        fx.water = -y * k;
+        fx.vignetteOffset = this.settings.vignetteOffset + y * k;
+        fx.vignetteDarkness = this.settings.vignetteDarkness - y * k;
       }
       const v = this.player.speed;
       const th = PLAYER.SPEED_LINES_THRESHOLD;

@@ -17,6 +17,8 @@ uniform vec2 uTexel;
 uniform float uFeedback;
 uniform float uVarianceGamma;
 uniform bool uReset;
+uniform float uMotionFeedback;
+uniform float uMotionPixels;
 
 vec3 toYCoCg(vec3 c) {
   return vec3(0.25 * c.r + 0.5 * c.g + 0.25 * c.b, 0.5 * c.r - 0.5 * c.b, -0.25 * c.r + 0.5 * c.g - 0.25 * c.b);
@@ -105,7 +107,7 @@ void main() {
 
   // trust the history less when things move fast
   float motion = length(velocity / uTexel);
-  float feedback = mix(uFeedback, uFeedback * 0.85, saturate(motion / 30.0));
+  float feedback = mix(uFeedback, uFeedback * uMotionFeedback, saturate(motion / max(uMotionPixels, 1.0)));
 
   vec3 result = mix(current, history, feedback);
   fragColor = vec4(untonemap(fromYCoCg(result)), 1.0);
@@ -226,6 +228,24 @@ uniform float uDamage;
 uniform bool uHud;
 uniform bool uRaw;
 uniform bool uEncode;
+uniform float uSpeedLinesFps;
+uniform float uSpeedLinesCount;
+uniform float uSpeedLinesDensity;
+uniform float uSpeedLinesInner;
+uniform float uSpeedLinesOpacity;
+uniform vec3 uSpeedLinesColor;
+uniform float uWaterAmplitude;
+uniform float uWaterFrequency;
+uniform float uWaterSpeed;
+uniform float uGlitchShift;
+uniform float uGlitchSplit;
+uniform float uGlitchBands;
+uniform vec3 uDamageColor;
+uniform float uDamageOpacity;
+uniform float uDamageChromatic;
+uniform vec3 uVignetteColor;
+uniform float uScanlineFrequency;
+uniform float uDither;
 
 vec3 acesFitted(vec3 color) {
   const mat3 inputM = mat3(0.59719, 0.07600, 0.02840, 0.35458, 0.90834, 0.13383, 0.04823, 0.01566, 0.83777);
@@ -261,11 +281,11 @@ float speedLines(vec2 uv) {
   vec2 p = (uv - 0.5) * vec2(uAspect, 1.0);
   float r = length(p);
   float a = atan(p.y, p.x);
-  float frame = floor(uTime * 24.0);
-  float slice = floor(a / (2.0 * PI) * 180.0);
+  float frame = floor(uTime * uSpeedLinesFps);
+  float slice = floor(a / (2.0 * PI) * floor(uSpeedLinesCount));
   float rnd = hash12(vec2(slice, frame));
-  float len = 0.25 + hash12(vec2(slice + 31.0, frame)) * 0.35;
-  float line = step(0.72, rnd) * smoothstep(len, len + 0.25, r);
+  float len = uSpeedLinesInner + hash12(vec2(slice + 31.0, frame)) * 0.35;
+  float line = step(1.0 - uSpeedLinesDensity, rnd) * smoothstep(len, len + 0.25, r);
   return line * uSpeedLines;
 }
 
@@ -280,10 +300,10 @@ void main() {
 
   // underwater-like wobble while falling into the void
   if (uWater > 0.0) {
-    float t = uTime * 3.0;
-    float amplitude = 0.015 * uWater;
-    float x = uv.y * 6.0 + t * 0.7;
-    float y = uv.x * 6.0 + t * 0.3;
+    float t = uTime * uWaterSpeed;
+    float amplitude = uWaterAmplitude * uWater;
+    float x = uv.y * uWaterFrequency + t * 0.7;
+    float y = uv.x * uWaterFrequency + t * 0.3;
     uv.x += cos(x + y) * amplitude * cos(y);
     uv.y += sin(x - y) * amplitude * cos(y);
   }
@@ -291,15 +311,15 @@ void main() {
   // digital glitch when the player is hit
   vec2 glitchOffset = vec2(0.0);
   if (uGlitch > 0.0) {
-    float band = floor(uv.y * (8.0 + uGlitchSeed.x * 24.0));
+    float band = floor(uv.y * (8.0 + uGlitchSeed.x * uGlitchBands));
     float r = hash12(vec2(band, uGlitchSeed.y * 100.0));
-    if (r < uGlitch * 0.5) uv.x += (hash12(vec2(band, uGlitchSeed.z * 100.0)) - 0.5) * 0.12 * uGlitch;
+    if (r < uGlitch * 0.5) uv.x += (hash12(vec2(band, uGlitchSeed.z * 100.0)) - 0.5) * uGlitchShift * uGlitch;
     if (abs(uv.y - uGlitchSeed.w) < 0.02 * uGlitch) uv.y = 1.0 - uv.y;
-    glitchOffset = vec2(cos(uGlitchSeed.x * 6.28), sin(uGlitchSeed.x * 6.28)) * 0.012 * uGlitch;
+    glitchOffset = vec2(cos(uGlitchSeed.x * 6.28), sin(uGlitchSeed.x * 6.28)) * uGlitchSplit * uGlitch;
   }
 
   vec2 dir = uv - 0.5;
-  float ca = uChromatic + uDamage * 0.004;
+  float ca = uChromatic + uDamage * uDamageChromatic;
   vec3 color;
   color.r = sampleScene(uv + dir * ca + glitchOffset).r;
   color.g = sampleScene(uv).g;
@@ -325,22 +345,22 @@ void main() {
 
   // speed lines
   float sl = speedLines(vUv);
-  color = mix(color, vec3(1.0), sl * 0.55);
+  color = mix(color, uSpeedLinesColor, sl * uSpeedLinesOpacity);
 
   // damage: red pulse on the borders
   vec2 vd = (vUv - 0.5) * vec2(uAspect, 1.0);
   float edge = smoothstep(0.35, 0.95, length(vd));
-  color = mix(color, vec3(0.75, 0.0, 0.08), edge * uDamage * 0.8);
+  color = mix(color, uDamageColor, edge * uDamage * uDamageOpacity);
 
   // vignette (same formula of the old VignetteShader)
   vec2 vuv = (vUv - 0.5) * uVignetteOffset;
-  color = mix(color, vec3(1.0 - uVignetteDarkness), saturate(dot(vuv, vuv)));
+  color = mix(color, (1.0 - uVignetteDarkness) * uVignetteColor, saturate(dot(vuv, vuv)));
   color = max(color, 0.0);
 
   // film grain + scanlines
   float n = hash12(vUv * uResolution + fract(uTime * 13.37) * 1000.0);
   vec3 grain = color + color * clamp(0.1 + n, 0.0, 1.0);
-  vec2 sc = vec2(sin(vUv.y * uResolution.y * 1.2), cos(vUv.y * uResolution.y * 1.2));
+  vec2 sc = vec2(sin(vUv.y * uResolution.y * uScanlineFrequency), cos(vUv.y * uResolution.y * uScanlineFrequency));
   grain += color * vec3(sc.x, sc.y, sc.x) * uScanlines;
   color = color + uGrain * (grain - color);
 
@@ -353,7 +373,7 @@ void main() {
   color = saturate(color);
   if (uEncode) color = linearToSRGB(color);
   // dithering to hide banding
-  color += (interleavedGradientNoise(gl_FragCoord.xy + fract(uTime) * 100.0) - 0.5) / 255.0;
+  color += (interleavedGradientNoise(gl_FragCoord.xy + fract(uTime) * 100.0) - 0.5) * uDither / 255.0;
   fragColor = vec4(color, 1.0);
 }
 `;
@@ -368,9 +388,12 @@ out vec4 fragColor;
 uniform sampler2D tSource;
 uniform vec2 uTexel;
 
-#define EDGE_THRESHOLD_MIN 0.0312
-#define EDGE_THRESHOLD_MAX 0.125
-#define SUBPIXEL_QUALITY 0.75
+uniform float uEdgeThresholdMin;
+uniform float uEdgeThresholdMax;
+uniform float uSubpixelQuality;
+#define EDGE_THRESHOLD_MIN uEdgeThresholdMin
+#define EDGE_THRESHOLD_MAX uEdgeThresholdMax
+#define SUBPIXEL_QUALITY uSubpixelQuality
 #define ITERATIONS 12
 
 float lum(vec2 uv) { return luma(texture(tSource, uv).rgb); }

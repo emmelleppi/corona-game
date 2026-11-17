@@ -1,20 +1,22 @@
 import * as THREE from "three";
-import { createHudMaterial } from "../render/materials.js";
+import { createHudMaterial, hudUniforms } from "../render/materials.js";
 import { COLORS } from "../config.js";
+
+const HEART_SCALE = 1250;
+const CORONA_SCALE = 38;
 
 // Heads-up display. Numbers are DOM (crisp text with the game font), the
 // icons are small toon shaded 3D models rendered by the pipeline in a
 // super-sampled offscreen target.
 export class Hud {
-  constructor(assets) {
+  constructor(assets, settings) {
+    this.settings = settings;
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1000, 1000);
     this.visible = false;
 
-    this.heart = this.createIcon(assets.heartGeometry, COLORS.HEART, 3);
-    this.corona = this.createIcon(assets.coronaGeometry, COLORS.CORONA, 3);
-    this.heart.scale.setScalar(1250);
-    this.corona.scale.setScalar(38);
+    this.heart = this.createIcon(assets.heartGeometry, COLORS.HEART);
+    this.corona = this.createIcon(assets.coronaGeometry, COLORS.CORONA);
 
     this.root = document.getElementById("hud");
     this.lifeEl = document.getElementById("hud-life");
@@ -22,30 +24,33 @@ export class Hud {
     this.life = null;
     this.remaining = null;
     this.bump = { life: 0, remaining: 0 };
+    this.width = 1;
+    this.height = 1;
   }
 
-  createIcon(geometry, color, outlineWidth) {
+  createIcon(geometry, color) {
     const group = new THREE.Group();
     const mesh = new THREE.Mesh(geometry, createHudMaterial(color));
     const outline = new THREE.Mesh(
       geometry,
-      createHudMaterial(0x14061a, { outline: outlineWidth, isOutline: true })
+      createHudMaterial(0x14061a, { outline: 3, isOutline: true })
     );
     group.add(outline, mesh);
     group.userData.mesh = mesh;
+    group.userData.outline = outline;
     this.scene.add(group);
     return group;
   }
 
   resize(width, height) {
+    this.width = width;
+    this.height = height;
     const c = this.camera;
     c.left = 0;
     c.right = width;
     c.top = height;
     c.bottom = 0;
     c.updateProjectionMatrix();
-    this.heart.position.set(78, 100, 0);
-    this.corona.position.set(width - 78, 100, 0);
   }
 
   setVisible(v) {
@@ -67,24 +72,46 @@ export class Hud {
     this.remainingEl.textContent = n;
   }
 
+  applyStyle(icon, color) {
+    const s = this.settings;
+    icon.userData.mesh.material.uniforms.uColor.value.set(color);
+    const o = icon.userData.outline.material.uniforms;
+    o.uColor.value.set(s.hudOutlineColor);
+    o.uOutline.value = s.hudIconOutline * s.hudScale;
+  }
+
   update(dt, time) {
+    const s = this.settings;
+    const k = s.hudScale;
+    hudUniforms.uBands.value = s.hudBands;
+    hudUniforms.uHudAmbient.value = s.hudAmbient;
+    hudUniforms.uHudSpecular.value = s.hudSpecular;
+    hudUniforms.uHudRim.value = s.hudRim;
+    this.applyStyle(this.heart, COLORS.HEART);
+    this.applyStyle(this.corona, COLORS.CORONA);
+
+    // DOM sizes follow the HUD scale
+    const root = document.documentElement.style;
+    root.setProperty("--hud-scale", k);
+    root.setProperty("--crosshair-size", `${s.crosshairSize}px`);
+    root.setProperty("--crosshair-color", s.crosshairColor);
+
+    this.heart.position.set(78 * k, 100 * k, 0);
+    this.corona.position.set(this.width - 78 * k, 100 * k, 0);
+
     // same squash & stretch of the old HUD heart / corona
-    const s = Math.sin(10 * time);
-    const h = 1 - s / 8;
-    const v = 1 + s / 10;
+    const p = Math.sin(s.hudPulseSpeed * time);
+    const h = 1 - p * s.hudSquash;
+    const v = 1 + p * s.hudStretch;
     this.bump.life = Math.max(0, this.bump.life - dt * 4);
     this.bump.remaining = Math.max(0, this.bump.remaining - dt * 4);
 
-    const heartK = 1 + this.bump.life * 0.35;
-    this.heart.scale.set(
-      1250 * h * heartK,
-      1250 * v * heartK,
-      1250 * h * heartK
-    );
+    const heartK = HEART_SCALE * k * (1 + this.bump.life * 0.35);
+    this.heart.scale.set(heartK * h, heartK * v, heartK * h);
     this.heart.rotation.y = Math.sin(time * 1.3) * 0.35;
 
-    const coronaK = 1 + this.bump.remaining * 0.3;
-    this.corona.scale.set(38 * h * coronaK, 38 * v * coronaK, 38 * h * coronaK);
+    const coronaK = CORONA_SCALE * k * (1 + this.bump.remaining * 0.3);
+    this.corona.scale.set(coronaK * h, coronaK * v, coronaK * h);
     this.corona.rotation.y = time * 0.8;
     this.corona.rotation.x = 0.3;
 

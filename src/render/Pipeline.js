@@ -13,6 +13,7 @@ import {
   forwardUniforms,
   LAYERS,
   createShadowMaterial,
+  updateStyleUniforms,
 } from "./materials.js";
 import { halton } from "../core/math.js";
 
@@ -169,6 +170,18 @@ export class Pipeline {
       uOutlineWidth: { value: 1.5 },
       uDepthThreshold: { value: 0.1 },
       uNormalThreshold: { value: 0.3 },
+      uShadowNormalOffset: { value: 0.06 },
+      uShadowSlopeOffset: { value: 0.12 },
+      uShadowSoftness: { value: 0.15 },
+      uDiscoBands: { value: 2 },
+      uShininess: { value: 48 },
+      uSpecularSize: { value: 0.05 },
+      uRimThreshold: { value: 0.62 },
+      uRimWidth: { value: 0.06 },
+      uOutlineFogFade: { value: 0.85 },
+      uSilhouetteBias: { value: 0.002 },
+      uEdgeSoftness: { value: 1 },
+      uAmbientBias: { value: 0 },
       uDebug: { value: 0 },
     });
 
@@ -181,6 +194,8 @@ export class Pipeline {
       uFeedback: { value: 0.9 },
       uVarianceGamma: { value: 1 },
       uReset: { value: true },
+      uMotionFeedback: { value: 0.85 },
+      uMotionPixels: { value: 30 },
     });
 
     this.bloomDown = new FullscreenPass(bloomDownFragment, {
@@ -235,11 +250,32 @@ export class Pipeline {
       uHud: { value: true },
       uRaw: { value: false },
       uEncode: { value: true },
+      uSpeedLinesFps: { value: 24 },
+      uSpeedLinesCount: { value: 180 },
+      uSpeedLinesDensity: { value: 0.28 },
+      uSpeedLinesInner: { value: 0.25 },
+      uSpeedLinesOpacity: { value: 0.55 },
+      uSpeedLinesColor: { value: color(0xffffff) },
+      uWaterAmplitude: { value: 0.015 },
+      uWaterFrequency: { value: 6 },
+      uWaterSpeed: { value: 3 },
+      uGlitchShift: { value: 0.12 },
+      uGlitchSplit: { value: 0.012 },
+      uGlitchBands: { value: 24 },
+      uDamageColor: { value: color(0xbf0014) },
+      uDamageOpacity: { value: 0.8 },
+      uDamageChromatic: { value: 0.004 },
+      uVignetteColor: { value: color(0xffffff) },
+      uScanlineFrequency: { value: 1.2 },
+      uDither: { value: 1 },
     });
 
     this.fxaa = new FullscreenPass(fxaaFragment, {
       tSource: { value: this.ldr.texture },
       uTexel: { value: new THREE.Vector2() },
+      uEdgeThresholdMin: { value: 0.0312 },
+      uEdgeThresholdMax: { value: 0.125 },
+      uSubpixelQuality: { value: 0.75 },
     });
   }
 
@@ -301,9 +337,10 @@ export class Pipeline {
     this.projNoJitter.copy(camera.projectionMatrix);
     if (!this.taaEnabled) return;
     const [iw, ih] = this.internalSize;
-    const i = (this.frame % 16) + 1;
-    const jx = (halton(i, 2) - 0.5) * 2;
-    const jy = (halton(i, 3) - 0.5) * 2;
+    const s = this.settings;
+    const i = (this.frame % Math.max(1, Math.round(s.taaJitterSamples))) + 1;
+    const jx = (halton(i, 2) - 0.5) * 2 * s.taaJitterScale;
+    const jy = (halton(i, 3) - 0.5) * 2 * s.taaJitterScale;
     camera.projectionMatrix.elements[8] += jx / iw;
     camera.projectionMatrix.elements[9] += jy / ih;
     camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
@@ -323,7 +360,7 @@ export class Pipeline {
     cam.updateProjectionMatrix();
 
     const dir = this.sunDirection;
-    cam.position.copy(dir).multiplyScalar(150);
+    cam.position.copy(dir).multiplyScalar(s.shadowDistance);
     cam.lookAt(0, 0, 0);
     cam.updateMatrixWorld();
 
@@ -339,7 +376,9 @@ export class Pipeline {
       .addScaledVector(right, r)
       .addScaledVector(up, u)
       .addScaledVector(dir, fwd);
-    cam.position.copy(focus).addScaledVector(dir, 150);
+    cam.position.copy(focus).addScaledVector(dir, s.shadowDistance);
+    cam.far = s.shadowDistance * 2.5;
+    cam.updateProjectionMatrix();
     cam.updateMatrixWorld();
     this.shadowMatrix.multiplyMatrices(
       cam.projectionMatrix,
@@ -379,12 +418,13 @@ export class Pipeline {
 
     // the two coloured "disco" lights spinning around the arena
     const a = time * s.discoSpeed;
+    const discoY = Math.tan(THREE.MathUtils.degToRad(s.discoElevation));
     u.uDiscoDirA.value
-      .set(Math.cos(a), 1, Math.sin(a))
+      .set(Math.cos(a), discoY, Math.sin(a))
       .normalize()
       .transformDirection(view);
     u.uDiscoDirB.value
-      .set(-Math.cos(a), 1, -Math.sin(a))
+      .set(-Math.cos(a), discoY, -Math.sin(a))
       .normalize()
       .transformDirection(view);
     u.uDiscoColorA.value.set(s.discoColorA).multiplyScalar(s.discoIntensity);
@@ -413,6 +453,18 @@ export class Pipeline {
     u.uOutlineWidth.value = s.outlineWidth;
     u.uDepthThreshold.value = s.depthThreshold;
     u.uNormalThreshold.value = s.normalThreshold;
+    u.uShadowNormalOffset.value = s.shadowNormalOffset;
+    u.uShadowSlopeOffset.value = s.shadowSlopeOffset;
+    u.uShadowSoftness.value = s.shadowSoftness;
+    u.uDiscoBands.value = s.discoBands;
+    u.uShininess.value = s.shininess;
+    u.uSpecularSize.value = s.specularSize;
+    u.uRimThreshold.value = s.rimThreshold;
+    u.uRimWidth.value = s.rimWidth;
+    u.uOutlineFogFade.value = s.outlineFogFade;
+    u.uSilhouetteBias.value = s.silhouetteBias;
+    u.uEdgeSoftness.value = s.edgeSoftness;
+    u.uAmbientBias.value = s.ambientBias;
     u.uDebug.value = DEBUG_VIEWS[s.debugView] ?? 0;
   }
 
@@ -461,6 +513,7 @@ export class Pipeline {
 
     // --- lighting -------------------------------------------------------------
     this.updateLightingUniforms(camera, time);
+    updateStyleUniforms(s);
     this.lighting.uniforms.uBackground.value.set(s.background);
     this.lighting.render(renderer, this.lit);
 
@@ -468,6 +521,10 @@ export class Pipeline {
     forwardUniforms.tDepth.value = this.gbuffer.depthTexture;
     forwardUniforms.uNear.value = camera.near;
     forwardUniforms.uFar.value = camera.far;
+    forwardUniforms.uBillboardSoftness.value = s.billboardSoftness;
+    forwardUniforms.uParticleSoftness.value = s.particleSoftness;
+    forwardUniforms.uParticleEdge.value = s.particleEdge;
+    forwardUniforms.uParticleCore.value = s.particleCore;
     forwardUniforms.uPixelScale.value =
       ih / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
     camera.layers.set(LAYERS.FORWARD);
@@ -485,6 +542,8 @@ export class Pipeline {
       u.uReset.value = !this.historyValid;
       u.uFeedback.value = s.taaFeedback;
       u.uVarianceGamma.value = s.taaVarianceGamma;
+      u.uMotionFeedback.value = s.taaMotionFeedback;
+      u.uMotionPixels.value = s.taaMotionPixels;
       this.taa.render(renderer, write);
       this.historyValid = true;
       current = write;
@@ -533,6 +592,29 @@ export class Pipeline {
     c.uHud.value = !!hudScene && !debug;
     c.uRaw.value = debug;
     c.uEncode.value = true;
+    c.uSpeedLinesFps.value = s.speedLinesFps;
+    c.uSpeedLinesCount.value = s.speedLinesCount;
+    c.uSpeedLinesDensity.value = s.speedLinesDensity;
+    c.uSpeedLinesInner.value = s.speedLinesInner;
+    c.uSpeedLinesOpacity.value = s.speedLinesOpacity;
+    c.uSpeedLinesColor.value.set(s.speedLinesColor);
+    c.uWaterAmplitude.value = s.waterAmplitude;
+    c.uWaterFrequency.value = s.waterFrequency;
+    c.uWaterSpeed.value = s.waterSpeed;
+    c.uGlitchShift.value = s.glitchShift;
+    c.uGlitchSplit.value = s.glitchSplit;
+    c.uGlitchBands.value = s.glitchBands;
+    c.uDamageColor.value.set(s.damageColor);
+    c.uDamageOpacity.value = s.damageOpacity;
+    c.uDamageChromatic.value = s.damageChromatic;
+    c.uVignetteColor.value.set(s.vignetteColor);
+    c.uScanlineFrequency.value = s.scanlineFrequency;
+    c.uDither.value = s.dither;
+
+    const fx = this.fxaa.uniforms;
+    fx.uEdgeThresholdMin.value = s.fxaaEdgeMin;
+    fx.uEdgeThresholdMax.value = s.fxaaEdgeMax;
+    fx.uSubpixelQuality.value = s.fxaaSubpixel;
 
     if (this.fxaaEnabled && !debug) {
       this.composite.render(renderer, this.ldr);
@@ -560,22 +642,26 @@ export class Pipeline {
     const s = this.settings;
     const down = this.bloomDown.uniforms;
     let input = source;
-    for (let i = 0; i < BLOOM_LEVELS; i++) {
+    const levels = Math.max(
+      1,
+      Math.min(BLOOM_LEVELS, Math.round(s.bloomLevels))
+    );
+    for (let i = 0; i < levels; i++) {
       down.tSource.value = input.texture;
       down.uTexel.value.set(1 / input.width, 1 / input.height);
       down.uPrefilter.value = i === 0;
       down.uThreshold.value = s.bloomThreshold;
-      down.uKnee.value = s.bloomThreshold * 0.5 + 1e-3;
+      down.uKnee.value = s.bloomThreshold * s.bloomKnee + 1e-3;
       this.bloomDown.render(r, this.bloomMips[i]);
       input = this.bloomMips[i];
     }
     const up = this.bloomUp.uniforms;
-    for (let i = BLOOM_LEVELS - 1; i > 0; i--) {
+    for (let i = levels - 1; i > 0; i--) {
       const src = this.bloomMips[i];
       up.tSource.value = src.texture;
       up.uTexel.value.set(1 / src.width, 1 / src.height);
       up.uRadius.value = s.bloomRadius;
-      up.uWeight.value = 1;
+      up.uWeight.value = s.bloomMipWeight;
       this.bloomUp.render(r, this.bloomMips[i - 1]);
     }
   }

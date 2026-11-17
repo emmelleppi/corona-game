@@ -94,43 +94,58 @@ ${common}
 ${gbufferOutputs}
 uniform vec3 uColor;
 uniform float uPattern; // 0: outer ring, 1: inner tiles
+uniform float uTileSize;
+uniform float uTileVariation;
+uniform float uCheckerDarken;
+uniform float uGroutWidth;
+uniform vec3 uGroutColor;
+uniform float uBorderBrightness;
+uniform float uBorderNoise;
+uniform float uBorderDots;
+uniform float uBorderDotsBrightness;
+uniform float uCliffBrightness;
+uniform vec3 uCliffBottomColor;
+uniform float uCliffDarkening;
+uniform float uCliffDepth;
+uniform float uSedimentFrequency;
+uniform float uSedimentContrast;
+uniform vec3 uUndersideColor;
 
 void main() {
   vec3 nw = normalize(vNormalWorld);
   vec3 albedo = uColor;
-  float emissive = 0.0;
 
   if (nw.y > 0.5) {
     if (uPattern > 0.5) {
       // checkerboard of soft tiles with darker grout
-      vec2 p = vWorldPos.xz / 2.5;
+      vec2 p = vWorldPos.xz / max(uTileSize, 0.01);
       vec2 cell = floor(p);
       vec2 f = fract(p);
       float checker = mod(cell.x + cell.y, 2.0);
-      float tileVar = hash12(cell) * 0.06;
-      albedo *= 1.0 - checker * 0.07 - tileVar;
+      float tileVar = hash12(cell) * uTileVariation;
+      albedo *= 1.0 - checker * uCheckerDarken - tileVar;
       vec2 e = min(f, 1.0 - f);
-      float grout = 1.0 - smoothstep(0.02, 0.05, min(e.x, e.y));
-      albedo = mix(albedo, albedo * vec3(0.78, 0.74, 0.86), grout);
+      float grout = 1.0 - smoothstep(uGroutWidth * 0.4, uGroutWidth, min(e.x, e.y));
+      albedo = mix(albedo, albedo * uGroutColor, grout);
     } else {
       // speckled border
-      albedo *= 1.3;
+      albedo *= uBorderBrightness;
       float n = valueNoise(vWorldPos.xz * 1.7);
       float dots = smoothstep(0.78, 0.8, valueNoise(vWorldPos.xz * 5.0 + 13.0));
-      albedo *= 0.95 + 0.1 * n;
-      albedo = mix(albedo, albedo * 1.25, dots * 0.35);
+      albedo *= 1.0 - uBorderNoise * 0.5 + uBorderNoise * n;
+      albedo = mix(albedo, albedo * uBorderDotsBrightness, dots * uBorderDots);
     }
   } else if (nw.y > -0.5) {
     // cliff sides: darker going down, with sediment layers
-    float depth = saturate(-vWorldPos.y / 4.23);
-    float layers = smoothstep(0.45, 0.5, fract(vWorldPos.y * 0.9 + valueNoise(vWorldPos.xz * 0.6) * 0.6));
-    albedo = mix(uColor * 1.7, vec3(0.16, 0.06, 0.16), depth * 0.7);
-    albedo *= 0.9 + layers * 0.12;
+    float depth = saturate(-vWorldPos.y / uCliffDepth);
+    float layers = smoothstep(0.45, 0.5, fract(vWorldPos.y * uSedimentFrequency + valueNoise(vWorldPos.xz * 0.6) * 0.6));
+    albedo = mix(uColor * uCliffBrightness, uCliffBottomColor, depth * uCliffDarkening);
+    albedo *= 1.0 - uSedimentContrast * 0.8 + layers * uSedimentContrast;
   } else {
-    albedo = vec3(0.09, 0.03, 0.09);
+    albedo = uUndersideColor;
   }
 
-  writeGBuffer(albedo, viewNormal(), MAT_WORLD, 0.0, emissive, 0.0);
+  writeGBuffer(albedo, viewNormal(), MAT_WORLD, 0.0, 0.0, 0.0);
 }
 `;
 
@@ -143,11 +158,12 @@ uniform vec3 uFlashColor;
 uniform float uFlash;
 uniform float uEmissive;
 uniform float uSpecular;
+uniform float uFlashEmissive;
 
 void main() {
   ditherClip(uOpacity);
   vec3 albedo = mix(uColor, uFlashColor, uFlash);
-  writeGBuffer(albedo, viewNormal(), MAT_CHARACTER, 1.0, uEmissive + uFlash * 1.5, uSpecular);
+  writeGBuffer(albedo, viewNormal(), MAT_CHARACTER, 1.0, uEmissive + uFlash * uFlashEmissive, uSpecular);
 }
 `;
 
@@ -157,14 +173,17 @@ ${common}
 ${gbufferOutputs}
 uniform vec3 uColor;
 uniform vec3 uGlowColor;
+uniform float uPadPulseSpeed;
+uniform float uPadGlow;
+uniform float uPadBaseGlow;
 
 void main() {
   ditherClip(uOpacity);
   float r = length(vLocalPos.xz);
   float ring = smoothstep(0.78, 0.84, r) * (1.0 - smoothstep(0.92, 0.97, r));
-  float pulse = 0.6 + 0.4 * sin(uTime * 4.0 - r * 10.0);
+  float pulse = 0.6 + 0.4 * sin(uTime * uPadPulseSpeed - r * 10.0);
   vec3 albedo = mix(uColor, uGlowColor, ring);
-  float emissive = ring * (1.5 + pulse) + (1.0 - ring) * 0.15 * pulse;
+  float emissive = ring * (uPadGlow + pulse) + (1.0 - ring) * uPadBaseGlow * pulse;
   writeGBuffer(albedo, viewNormal(), MAT_WORLD, 1.0, emissive, 0.0);
 }
 `;
@@ -178,10 +197,21 @@ uniform float uWordA;
 uniform float uWordB;
 uniform float uWordMix;
 uniform float uWordCount;
-uniform vec3 uTopColor;
-uniform vec3 uHorizonColor;
-uniform vec3 uTextColor;
-uniform vec3 uTextOutline;
+uniform vec3 uSkyTop;
+uniform vec3 uSkyHorizon;
+uniform vec3 uSkyText;
+uniform vec3 uSkyTextOutline;
+uniform float uSkyGradientLow;
+uniform float uSkyGradientHigh;
+uniform float uSloganRepeats;
+uniform float uSloganScroll;
+uniform float uSloganHeight;
+uniform float uSloganShimmer;
+uniform float uSparkleScale;
+uniform float uSparkleDensity;
+uniform float uSparkleSize;
+uniform float uSparkleIntensity;
+uniform vec3 uSparkleColor;
 
 vec4 sampleWord(vec2 uv, float word) {
   vec2 p = vec2(uv.x, (word + uv.y) / uWordCount);
@@ -191,11 +221,11 @@ vec4 sampleWord(vec2 uv, float word) {
 void main() {
   vec3 dir = normalize(vLocalPos);
   float h = dir.y;
-  vec3 col = mix(uHorizonColor, uTopColor, smoothstep(-0.2, 0.7, h));
+  vec3 col = mix(uSkyHorizon, uSkyTop, smoothstep(uSkyGradientLow, uSkyGradientHigh, h));
 
-  // slogans, repeated 4 times around the horizon and slowly scrolling
-  float u = fract(atan(dir.z, dir.x) / (2.0 * PI) * 4.0 + uTime * 0.01);
-  float v = 0.5 + h * 1.3;
+  // slogans, repeated around the horizon and slowly scrolling
+  float u = fract(atan(dir.z, dir.x) / (2.0 * PI) * floor(uSloganRepeats) + uTime * uSloganScroll);
+  float v = 0.5 + h / max(uSloganHeight, 0.01);
   if (v > 0.0 && v < 1.0) {
     vec2 uv = vec2(u, 1.0 - v);
     // the old word fades out, then the new one fades in
@@ -203,18 +233,18 @@ void main() {
     vec4 b = sampleWord(uv, uWordB);
     vec4 w = uWordMix < 0.5 ? a * (1.0 - uWordMix * 2.0) : b * (uWordMix * 2.0 - 1.0);
     // r: fill, g: outline
-    col = mix(col, uTextOutline, w.g);
-    col = mix(col, uTextColor * (1.0 + 0.15 * sin(uTime * 3.0 + u * 20.0)), w.r);
+    col = mix(col, uSkyTextOutline, w.g);
+    col = mix(col, uSkyText * (1.0 + uSloganShimmer * sin(uTime * 3.0 + u * 20.0)), w.r);
   }
 
   // twinkling sparkles
-  vec2 sp = vec2(atan(dir.z, dir.x) * 30.0, h * 30.0);
+  vec2 sp = vec2(atan(dir.z, dir.x) * uSparkleScale, h * uSparkleScale);
   vec2 cell = floor(sp);
   float rnd = hash12(cell);
   vec2 f = fract(sp) - 0.5 - (vec2(hash12(cell + 7.0), hash12(cell + 3.0)) - 0.5) * 0.6;
-  float star = smoothstep(0.08, 0.0, length(f)) * step(0.86, rnd);
+  float star = smoothstep(uSparkleSize, 0.0, length(f)) * step(1.0 - uSparkleDensity, rnd);
   star *= 0.5 + 0.5 * sin(uTime * (2.0 + rnd * 4.0) + rnd * 40.0);
-  col += star * smoothstep(0.05, 0.4, h) * vec3(1.0, 0.8, 0.95) * 1.5;
+  col += star * smoothstep(0.05, 0.4, h) * uSparkleColor * uSparkleIntensity;
 
   writeGBuffer(col, viewNormal(), MAT_SKY, 0.0, 0.0, 0.0);
 }

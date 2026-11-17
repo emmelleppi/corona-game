@@ -41,13 +41,14 @@ export function halton(index, base) {
   return r;
 }
 
-// Damage dealt by the bat: mostly 1, sometimes 2 or 3.
-export function getRandDamage() {
+// Damage dealt by the bat: 3 (crit), 2 (strong) or 1.
+export function getRandDamage(critChance, strongChance) {
   const rand = Math.random();
-  if (rand < 0.1 || rand > 0.9) return 3;
-  if (rand < 0.2 || rand > 0.8) return 2;
+  if (rand < critChance) return 3;
+  if (rand < critChance + strongChance) return 2;
   return 1;
 }
 
-// Damage dealt by a corona to the player.
-export const getPlayerDamage = () => Math.floor(1 + Math.random() * 5);
+// Uniform integer in [min, max].
+export const randInt = (min, max) =>
+  Math.floor(min + Math.random() * (Math.max(min, max) - min + 1));

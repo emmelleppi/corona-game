@@ -13,6 +13,7 @@ export class AudioManager {
     this.muted = false;
     this.volume = 1;
     this.musicVolume = 0.2;
+    this.sfxVolume = 1;
     this.applyVolumes();
 
     const unlock = () => {
@@ -35,6 +36,20 @@ export class AudioManager {
     const t = this.ctx.currentTime;
     this.master.gain.setTargetAtTime(this.muted ? 0 : this.volume, t, 0.02);
     this.musicGain.gain.setTargetAtTime(this.musicVolume, t, 0.02);
+    this.sfxGain.gain.setTargetAtTime(this.sfxVolume, t, 0.02);
+  }
+
+  // Keeps the mixer in sync with the settings (cheap: only acts on change).
+  sync({ volume, musicVolume, sfxVolume, muted }) {
+    if (
+      volume === this.volume &&
+      musicVolume === this.musicVolume &&
+      sfxVolume === this.sfxVolume &&
+      muted === this.muted
+    )
+      return;
+    Object.assign(this, { volume, musicVolume, sfxVolume, muted });
+    this.applyVolumes();
   }
 
   setVolume(v) {

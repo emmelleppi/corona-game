@@ -86,6 +86,8 @@ export class Screens {
   }
 
   setMuted(muted) {
+    if (this.muted === muted) return;
+    this.muted = muted;
     this.muteBadge.classList.toggle("hidden", !muted);
   }
 }

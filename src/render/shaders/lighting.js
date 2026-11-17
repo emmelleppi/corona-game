@@ -57,6 +57,19 @@ uniform float uOutlineWidth;
 uniform float uDepthThreshold;
 uniform float uNormalThreshold;
 
+uniform float uShadowNormalOffset;
+uniform float uShadowSlopeOffset;
+uniform float uShadowSoftness;
+uniform float uDiscoBands;
+uniform float uShininess;
+uniform float uSpecularSize;
+uniform float uRimThreshold;
+uniform float uRimWidth;
+uniform float uOutlineFogFade;
+uniform float uSilhouetteBias;
+uniform float uEdgeSoftness;
+uniform float uAmbientBias;
+
 uniform int uDebug;
 
 float linearDepth(float d) {
@@ -80,7 +93,7 @@ float toon(float x, float bands) {
 
 float shadowFactor(vec3 worldPos, vec3 worldNormal, float ndl) {
   if (!uShadows) return 1.0;
-  vec3 p = worldPos + worldNormal * (0.06 + 0.12 * (1.0 - ndl));
+  vec3 p = worldPos + worldNormal * (uShadowNormalOffset + uShadowSlopeOffset * (1.0 - ndl));
   vec4 sc = uShadowMatrix * vec4(p, 1.0);
   sc.xyz = sc.xyz / sc.w * 0.5 + 0.5;
   if (any(lessThan(sc.xyz, vec3(0.0))) || any(greaterThan(sc.xyz, vec3(1.0)))) return 1.0;
@@ -91,7 +104,7 @@ float shadowFactor(vec3 worldPos, vec3 worldNormal, float ndl) {
       sum += texture(tShadow, vec3(sc.xy + vec2(x, y) * uShadowTexel, z));
   sum /= 9.0;
   // toon-ify the penumbra
-  return smoothstep(0.35, 0.65, sum);
+  return smoothstep(0.5 - uShadowSoftness, 0.5 + uShadowSoftness, sum);
 }
 
 struct Sample {
@@ -129,7 +142,7 @@ float outlineFactor(vec2 uv, Sample c) {
     // silhouettes of characters: different object id, drawn on the closest side
     bool idChange = abs(s[i].id - c.id) > 0.5;
     bool wantsOutline = c.outline > 0.5 || s[i].outline > 0.5;
-    if (idChange && wantsOutline && c.depth <= s[i].depth * 1.002) edge = 1.0;
+    if (idChange && wantsOutline && c.depth <= s[i].depth * (1.0 + uSilhouetteBias)) edge = 1.0;
     if (s[i].mat > 0.5 && c.mat != MAT_SKY && s[i].mat != MAT_SKY)
       normalEdge = max(normalEdge, 1.0 - dot(c.normal, s[i].normal));
   }
@@ -140,8 +153,8 @@ float outlineFactor(vec2 uv, Sample c) {
     float lx = c.depth / s[0].depth + c.depth / s[1].depth - 2.0;
     float ly = c.depth / s[2].depth + c.depth / s[3].depth - 2.0;
     depthLap = max(-lx, -ly);
-    edge = max(edge, smoothstep(uDepthThreshold, uDepthThreshold * 2.0, depthLap));
-    edge = max(edge, smoothstep(uNormalThreshold, uNormalThreshold * 1.5, normalEdge));
+    edge = max(edge, smoothstep(uDepthThreshold, uDepthThreshold * (1.0 + uEdgeSoftness), depthLap));
+    edge = max(edge, smoothstep(uNormalThreshold, uNormalThreshold * (1.0 + uEdgeSoftness * 0.5), normalEdge));
   }
   return edge;
 }
@@ -186,21 +199,21 @@ void main() {
     shadow = shadowFactor(worldPos, worldNormal, saturate(ndl));
     float sun = toon(saturate(ndl) * shadow, bands);
 
-    vec3 ambient = mix(uGroundAmbient, uSkyAmbient, worldNormal.y * 0.5 + 0.5);
+    vec3 ambient = mix(uGroundAmbient, uSkyAmbient, saturate(worldNormal.y * 0.5 + 0.5 + uAmbientBias));
     // shadows keep a coloured tint instead of going grey
     vec3 lit = ambient * mix(uShadowTint, vec3(1.0), sun) + uSunColor * sun;
 
-    lit += uDiscoColorA * toon(dot(n, uDiscoDirA), 2.0);
-    lit += uDiscoColorB * toon(dot(n, uDiscoDirB), 2.0);
+    lit += uDiscoColorA * toon(dot(n, uDiscoDirA), uDiscoBands);
+    lit += uDiscoColorB * toon(dot(n, uDiscoDirB), uDiscoBands);
 
     color = albedo * lit;
 
     if (character) {
       vec3 h = normalize(uSunDir + v);
-      float spec = pow(saturate(dot(n, h)), 48.0) * shadow;
-      color += uSunColor * smoothstep(0.45, 0.5, spec) * uSpecular * (0.4 + extra.w);
+      float spec = pow(saturate(dot(n, h)), uShininess) * shadow;
+      color += uSunColor * smoothstep(0.5 - uSpecularSize, 0.5, spec) * uSpecular * (0.4 + extra.w);
       float fres = 1.0 - saturate(dot(n, v));
-      float rim = smoothstep(0.62, 0.68, fres * (0.6 + 0.4 * saturate(ndl + 0.5)));
+      float rim = smoothstep(uRimThreshold, uRimThreshold + uRimWidth, fres * (0.6 + 0.4 * saturate(ndl + 0.5)));
       color += uRimColor * rim * uRim;
     }
 
@@ -225,7 +238,7 @@ void main() {
   float edge = outlineFactor(vUv, c);
   if (uDebug == 6) { fragColor = vec4(vec3(1.0 - edge), 1.0); return; }
 
-  vec3 outlineColor = mix(uOutlineColor, uFogColor, fog * 0.85);
+  vec3 outlineColor = mix(uOutlineColor, uFogColor, fog * uOutlineFogFade);
   color = mix(color, outlineColor, edge);
 
   fragColor = vec4(color, 1.0);

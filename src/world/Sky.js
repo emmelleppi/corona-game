@@ -48,17 +48,17 @@ export class Sky extends THREE.Mesh {
     this.fade = 1;
   }
 
-  update(dt) {
+  update(dt, settings) {
     const u = this.material.uniforms;
     this.timer += dt;
-    if (this.timer > 3) {
+    if (this.timer > settings.sloganInterval) {
       this.timer = 0;
       u.uWordA.value = this.word;
       this.word = (this.word + 1) % WORDS.length;
       u.uWordB.value = this.word;
       this.fade = 0;
     }
-    this.fade = Math.min(1, this.fade + dt * 2.5);
+    this.fade = Math.min(1, this.fade + dt * settings.sloganFadeSpeed);
     u.uWordMix.value = this.fade;
   }
 }

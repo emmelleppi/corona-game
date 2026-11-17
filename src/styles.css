@@ -1,4 +1,7 @@
 :root {
+  --hud-scale: 1;
+  --crosshair-size: 18px;
+  --crosshair-color: #ffffff;
   --purple: #3b163a;
   --pink: #d95b9a;
   --ink: #14061a;
@@ -219,10 +222,10 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  border: 2px solid white;
+  width: var(--crosshair-size);
+  height: var(--crosshair-size);
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--crosshair-color);
   border-radius: 50%;
   box-shadow:
     0 0 0 1px rgba(20, 6, 26, 0.6),
@@ -231,11 +234,11 @@ body {
 
 .hud-counter {
   position: absolute;
-  bottom: 16px;
+  bottom: calc(16px * var(--hud-scale));
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 156px;
+  width: calc(156px * var(--hud-scale));
   text-shadow: 5px 5px 0 var(--ink);
 }
 .hud-left {
@@ -245,15 +248,15 @@ body {
   right: 0;
 }
 .hud-number {
-  font-size: 64px;
+  font-size: calc(64px * var(--hud-scale));
   line-height: 1;
   display: inline-block;
   transform-origin: 50% 60%;
-  margin-bottom: 30px;
+  margin-bottom: calc(30px * var(--hud-scale));
   -webkit-text-stroke: 1.5px var(--ink);
 }
 .hud-label {
-  font-size: 16px;
+  font-size: calc(16px * var(--hud-scale));
   letter-spacing: 0.1em;
 }
 
@@ -294,4 +297,25 @@ body {
   --string-color: #9dffe6;
   font-family: system-ui, sans-serif;
   letter-spacing: 0;
+}
+
+.lil-gui.root.game-gui {
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.gui-toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(28, 12, 34, 0.94);
+  font:
+    14px system-ui,
+    sans-serif;
+  letter-spacing: 0;
+  transition: opacity 0.3s ease;
 }

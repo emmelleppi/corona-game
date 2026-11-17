@@ -4,14 +4,8 @@
 
 const SUB_STEP = 1 / 500;
 
-export const SPRING_PRESETS = {
-  molasses: { tension: 280, friction: 120, mass: 1 },
-  bat: { tension: 210, friction: 10, mass: 1 },
-  gentle: { tension: 120, friction: 14, mass: 1 },
-};
-
 export class Spring {
-  constructor(value = 0, config = SPRING_PRESETS.gentle) {
+  constructor(value = 0, config = { tension: 120, friction: 14, mass: 1 }) {
     this.value = value;
     this.target = value;
     this.velocity = 0;

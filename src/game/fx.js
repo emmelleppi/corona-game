@@ -55,7 +55,7 @@ export class Particles extends THREE.Points {
     setupForwardObject(this);
 
     this.items = [];
-    this.tmpColor = new THREE.Color();
+    this.sizeScale = 1;
   }
 
   burst(
@@ -89,7 +89,7 @@ export class Particles extends THREE.Points {
           .multiplyScalar(speed * (0.4 + Math.random() * 0.6))
           .add(new THREE.Vector3(0, up * Math.random(), 0)),
         color: c,
-        size: size * (0.6 + Math.random() * 0.8),
+        size: size * this.sizeScale * (0.6 + Math.random() * 0.8),
         life: life * (0.6 + Math.random() * 0.4),
         age: 0,
         gravity,

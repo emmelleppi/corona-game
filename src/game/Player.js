@@ -123,7 +123,7 @@ export class Player {
         this.velocity,
         PLAYER.RADIUS
       );
-      if (ground > 0.6) grounded = true;
+      if (ground > PLAYER.GROUND_NORMAL_Y) grounded = true;
     }
 
     if (grounded) this.coyote = PLAYER.COYOTE_TIME;

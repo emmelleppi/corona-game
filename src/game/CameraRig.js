@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { Spring, SPRING_PRESETS } from "../core/Spring.js";
+import { Spring } from "../core/Spring.js";
+import { GAME } from "../config.js";
 
 const _euler = new THREE.Euler(0, 0, 0, "YXZ");
 const _m = new THREE.Matrix4();
@@ -13,7 +14,8 @@ export class CameraRig {
     this.settings = settings;
     this.yaw = 0;
     this.pitch = 0;
-    this.fov = new Spring(settings.fov, SPRING_PRESETS.molasses);
+    this.fovSpring = { tension: 280, friction: 120, mass: 1 };
+    this.fov = new Spring(settings.fov, this.fovSpring);
     this.shake = 0;
     this.shakeOffset = new THREE.Vector3();
   }
@@ -44,12 +46,14 @@ export class CameraRig {
 
   update(dt, boost) {
     const s = this.settings;
+    this.fovSpring.tension = s.fovSpringTension;
+    this.fovSpring.friction = s.fovSpringFriction;
     this.fov.set(boost ? s.boostFov : s.fov);
     this.fov.update(dt);
     this.camera.fov = this.fov.value;
 
-    this.shake = Math.max(0, this.shake - dt * 2.5);
-    const a = this.shake * this.shake * 0.08;
+    this.shake = Math.max(0, this.shake - dt * GAME.SHAKE_DECAY);
+    const a = this.shake * this.shake * GAME.SHAKE_AMPLITUDE * s.shakeScale;
     this.shakeOffset.set(
       (Math.random() - 0.5) * a,
       (Math.random() - 0.5) * a,

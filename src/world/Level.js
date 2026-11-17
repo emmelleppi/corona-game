@@ -6,7 +6,7 @@ import {
   createUnlitMaterial,
   setupGBufferMesh,
 } from "../render/materials.js";
-import { COLORS, PLAYER, TRAMPOLINE } from "../config.js";
+import { COLORS, PLAYER, TRAMPOLINE, trampolineTop } from "../config.js";
 
 // Floating islands (map.glb), sky dome and start platform.
 export class Level extends THREE.Group {
@@ -34,23 +34,35 @@ export class Level extends THREE.Group {
     this.sky = new Sky();
     this.add(this.sky);
 
-    const [x, , z] = PLAYER.INIT_POSITION;
+    // start platform: unit cylinder scaled from the (tunable) config
     const pad = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        TRAMPOLINE.RADIUS,
-        TRAMPOLINE.RADIUS * 0.85,
-        TRAMPOLINE.THICKNESS,
-        48
-      ),
-      createUnlitMaterial(0x2a2233, 0xff4fb0)
+      new THREE.CylinderGeometry(1, 0.85, 1, 48),
+      createUnlitMaterial(COLORS.PAD, COLORS.PAD_GLOW)
     );
-    pad.position.set(x, TRAMPOLINE.TOP - TRAMPOLINE.THICKNESS / 2, z);
     setupGBufferMesh(pad, { objectId: 1, castShadow: true });
     this.add(pad);
     this.pad = pad;
+    this.inner = inner;
+    this.outer = outer;
+    this.applyConfig();
   }
 
-  update(dt) {
-    this.sky.update(dt);
+  // Applies the live tunable values (colors, start platform placement).
+  applyConfig() {
+    this.inner.uniforms.uColor.value.set(COLORS.MAP_INNER);
+    this.outer.uniforms.uColor.value.set(COLORS.MAP_OUTER);
+    const pu = this.pad.material.uniforms;
+    pu.uColor.value.set(COLORS.PAD);
+    pu.uGlowColor.value.set(COLORS.PAD_GLOW);
+    const [x, , z] = PLAYER.INIT_POSITION;
+    const r = TRAMPOLINE.RADIUS;
+    const h = TRAMPOLINE.THICKNESS;
+    this.pad.scale.set(r, h, r);
+    this.pad.position.set(x, trampolineTop() - h / 2, z);
+  }
+
+  update(dt, settings) {
+    this.applyConfig();
+    this.sky.update(dt, settings);
   }
 }

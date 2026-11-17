@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { TRAMPOLINE, PLAYER } from "../config.js";
+import { TRAMPOLINE, PLAYER, trampolineTop } from "../config.js";
 
 const CELL = 4; // spatial hash cell size for the collision triangles
 const FOOTPRINT_RES = 0.25; // resolution of the walkable footprint grid
@@ -311,7 +311,7 @@ export class World {
   // The start platform: a flat cylinder right below the spawn point.
   collideTrampoline(position, velocity, radius) {
     const [tx, , tz] = PLAYER.INIT_POSITION;
-    const top = TRAMPOLINE.TOP;
+    const top = trampolineTop();
     const bottom = top - TRAMPOLINE.THICKNESS;
     const dx = position.x - tx;
     const dz = position.z - tz;

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SpringArray, SPRING_PRESETS } from "../core/Spring.js";
+import { SpringArray } from "../core/Spring.js";
 import {
   createCharacterMaterial,
   setupGBufferMesh,
@@ -36,12 +36,21 @@ export class Bat extends THREE.Group {
     this.swingGroup.scale.set(0.02, 0.12, 0.02);
     this.add(this.swingGroup);
 
-    this.rotSpring = new SpringArray(MOVES.end.rotation, SPRING_PRESETS.bat);
-    this.posSpring = new SpringArray(MOVES.end.position, SPRING_PRESETS.bat);
+    this.springConfig = {
+      tension: BAT.SPRING_TENSION,
+      friction: BAT.SPRING_FRICTION,
+      mass: 1,
+    };
+    this.rotSpring = new SpringArray(MOVES.end.rotation, this.springConfig);
+    this.posSpring = new SpringArray(MOVES.end.position, this.springConfig);
 
     const id = nextObjectId();
-    this.metal = createCharacterMaterial(COLORS.BAT_METAL, { specular: 1.5 });
-    this.handle = createCharacterMaterial(COLORS.BAT_HANDLE, { specular: 0.3 });
+    this.metal = createCharacterMaterial(COLORS.BAT_METAL, {
+      specular: BAT.METAL_SPECULAR,
+    });
+    this.handle = createCharacterMaterial(COLORS.BAT_HANDLE, {
+      specular: BAT.HANDLE_SPECULAR,
+    });
     // glTF primitives: Cylinder_1 = grip, Cylinder_2 = barrel, Cylinder_3 = ring
     const parts = [
       [batNodes.Cylinder_2, this.metal],
@@ -99,8 +108,11 @@ export class Bat extends THREE.Group {
       this.posSpring.set(MOVES.end.position);
     } else if (t > BAT.SWING_IDLE) {
       // idle wobble
-      this.rotation.x = Math.PI / 2 + Math.cos(t * 6) / 6;
-      this.rotation.y = Math.sin(t * 6) / 6;
+      this.rotation.x =
+        Math.PI / 2 +
+        Math.cos(t * BAT.IDLE_WOBBLE_SPEED) * BAT.IDLE_WOBBLE_AMOUNT;
+      this.rotation.y =
+        Math.sin(t * BAT.IDLE_WOBBLE_SPEED) * BAT.IDLE_WOBBLE_AMOUNT;
     }
 
     this.rotSpring.update(dt);
@@ -115,6 +127,12 @@ export class Bat extends THREE.Group {
       this.posSpring.get(1),
       this.posSpring.get(2)
     );
+
+    this.position.set(BAT.POSITION_X, BAT.POSITION_Y, BAT.POSITION_Z);
+    this.springConfig.tension = BAT.SPRING_TENSION;
+    this.springConfig.friction = BAT.SPRING_FRICTION;
+    this.metal.uniforms.uSpecular.value = BAT.METAL_SPECULAR;
+    this.handle.uniforms.uSpecular.value = BAT.HANDLE_SPECULAR;
 
     // red-ish when the player gets hit
     const k = hitAmount > 0 ? 1 : 0;
