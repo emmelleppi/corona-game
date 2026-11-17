@@ -109,9 +109,11 @@ export class Game extends Emitter {
     for (let i = 0; i < GAME.NUMBER_OF_INIT_SPAWNS; i++) {
       // do not spawn right below the start platform
       let p;
+      let attempts = 0;
       do {
         p = this.world.randomGroundPoint();
       } while (
+        ++attempts < 50 &&
         Math.hypot(
           p.x - PLAYER.INIT_POSITION[0],
           p.z - PLAYER.INIT_POSITION[2]
@@ -270,6 +272,13 @@ export class Game extends Emitter {
     }
   }
 
+  // Visual tunables edited in the settings panel, applied even when paused.
+  applyLiveConfig() {
+    this.level.applyConfig();
+    for (const c of this.coronas) c.applyLook();
+    this.bat.applyLook(this.player.hitTimer);
+  }
+
   // --------------------------------------------------------------- update --
   update(dt) {
     if (this.state === GAME_STATE.LOADING) return;
@@ -278,6 +287,7 @@ export class Game extends Emitter {
     if (!this.paused && this.input.locked && this.playerActive)
       this.rig.look(dx, dy);
     if (this.paused) {
+      this.applyLiveConfig();
       this.updateCamera(0);
       return;
     }
@@ -308,7 +318,7 @@ export class Game extends Emitter {
     this.player.getEyePosition(this.playerEye);
 
     // coronas
-    for (const c of this.coronas) c.update(dt, this.time);
+    for (const c of this.coronas) c.update(dt);
     separateCoronas(this.coronas);
     let removed = false;
     for (let i = this.coronas.length - 1; i >= 0; i--) {
@@ -410,8 +420,8 @@ export class Game extends Emitter {
       if (y <= 0) {
         const k = GAME.VOID_EFFECT_SCALE;
         fx.water = -y * k;
-        fx.vignetteOffset = this.settings.vignetteOffset + y * k;
-        fx.vignetteDarkness = this.settings.vignetteDarkness - y * k;
+        fx.vignetteOffset = GAME.VOID_VIGNETTE_OFFSET + y * k;
+        fx.vignetteDarkness = GAME.VOID_VIGNETTE_DARKNESS - y * k;
       }
       const v = this.player.speed;
       const th = PLAYER.SPEED_LINES_THRESHOLD;

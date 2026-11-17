@@ -139,6 +139,8 @@ export const GAME = {
   SHAKE_AMPLITUDE: 0.08,
   // falling into the void: wobble/vignette growth per unit below the islands
   VOID_EFFECT_SCALE: 0.1,
+  VOID_VIGNETTE_OFFSET: 0.95,
+  VOID_VIGNETTE_DARKNESS: 1.6,
   // sound volumes
   ALERT_VOLUME: 0.7,
   PLAYER_HIT_VOLUME: 0.8,
@@ -196,7 +198,7 @@ export const FX = {
   spark: {
     count: 6,
     speed: 4,
-    up: 0,
+    up: 2,
     size: 0.5,
     life: 0.35,
     gravity: 0,

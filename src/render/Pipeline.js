@@ -262,7 +262,7 @@ export class Pipeline {
       uGlitchShift: { value: 0.12 },
       uGlitchSplit: { value: 0.012 },
       uGlitchBands: { value: 24 },
-      uDamageColor: { value: color(0xbf0014) },
+      uDamageColor: { value: color(0xe10050) },
       uDamageOpacity: { value: 0.8 },
       uDamageChromatic: { value: 0.004 },
       uVignetteColor: { value: color(0xffffff) },
@@ -377,7 +377,7 @@ export class Pipeline {
       .addScaledVector(up, u)
       .addScaledVector(dir, fwd);
     cam.position.copy(focus).addScaledVector(dir, s.shadowDistance);
-    cam.far = s.shadowDistance * 2.5;
+    cam.far = s.shadowDistance + 250;
     cam.updateProjectionMatrix();
     cam.updateMatrixWorld();
     this.shadowMatrix.multiplyMatrices(
@@ -492,6 +492,7 @@ export class Pipeline {
     globalUniforms.uPrevViewProjNoJitter.value.copy(this.prevViewProjNoJitter);
     globalUniforms.uTime.value = time;
     globalUniforms.uFrame.value = this.frame;
+    updateStyleUniforms(s);
 
     // --- shadow map ---------------------------------------------------------
     if (s.shadows) {
@@ -513,7 +514,6 @@ export class Pipeline {
 
     // --- lighting -------------------------------------------------------------
     this.updateLightingUniforms(camera, time);
-    updateStyleUniforms(s);
     this.lighting.uniforms.uBackground.value.set(s.background);
     this.lighting.render(renderer, this.lit);
 

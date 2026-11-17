@@ -67,8 +67,12 @@ export const exportConfig = (settings) => ({
   tuning: tuningDiff(),
 });
 
+// The receiver gets exactly the shared configuration: defaults first, then
+// the values of the export (which only contains the changed ones).
 export function importConfig(settings, config) {
   if (!config || typeof config !== "object") throw new Error("Invalid config");
+  resetSettings(settings);
+  resetTuning();
   applySettings(settings, config.settings);
   applyTuning(config.tuning);
   saveSettings(settings);
@@ -99,20 +103,42 @@ export function createGui(settings, { onResize, game }) {
   const bool = (folder, obj, key, name) =>
     folder.add(obj, key).name(name ?? key);
   const folder = (parent, name) => parent.addFolder(name).close();
-  const refresh = () =>
+  // Keeps every value inside its controller range / options (values can come
+  // from localStorage, an imported file or a share link).
+  const sanitize = () => {
+    for (const c of gui.controllersRecursive()) {
+      const v = c.getValue();
+      if (typeof v === "number" && c._hasMin && c._hasMax) {
+        const clamped = Math.min(c._max, Math.max(c._min, v));
+        if (clamped !== v) c.object[c.property] = clamped;
+      } else if (Array.isArray(c._values) && !c._values.includes(v)) {
+        c.object[c.property] = c._values.includes(c.initialValue)
+          ? c.initialValue
+          : c._values[0];
+      }
+    }
+  };
+  const refresh = () => {
+    sanitize();
     gui.controllersRecursive().forEach((c) => c.updateDisplay());
+  };
 
   // ---- presets & tools -------------------------------------------------------
   const tools = folder(gui, "⚙ Presets & tools");
-  const presetState = { quality: "High" };
-  tools
-    .add(presetState, "quality", Object.keys(QUALITY_PRESETS))
-    .name("quality preset")
-    .onChange((name) => {
-      Object.assign(settings, QUALITY_PRESETS[name]);
-      refresh();
-      onResize();
-    });
+  for (const name of Object.keys(QUALITY_PRESETS))
+    tools
+      .add(
+        {
+          apply: () => {
+            Object.assign(settings, QUALITY_PRESETS[name]);
+            refresh();
+            onResize();
+            flash(`quality: ${name}`);
+          },
+        },
+        "apply"
+      )
+      .name(`quality preset: ${name}`);
   const actions = {
     copyJson: async () => {
       const text = JSON.stringify(exportConfig(settings), null, 2);
@@ -139,6 +165,8 @@ export function createGui(settings, { onResize, game }) {
       try {
         importConfig(settings, JSON.parse(text));
         refresh();
+        saveSettings(settings);
+        saveTuning();
         onResize();
         flash("configuration imported");
       } catch (e) {
@@ -202,7 +230,7 @@ export function createGui(settings, { onResize, game }) {
   num(aa, settings, "taaJitterSamples", 1, 32, 1, "TAA jitter samples");
   num(aa, settings, "taaJitterScale", 0, 2, 0.05, "TAA jitter scale");
   num(aa, settings, "sharpen", 0, 1.5, 0.05, "TAA sharpen");
-  num(aa, settings, "fxaaEdgeMin", 0, 0.2, 0.001, "FXAA edge min");
+  num(aa, settings, "fxaaEdgeMin", 0, 0.2, 0.0001, "FXAA edge min");
   num(aa, settings, "fxaaEdgeMax", 0, 0.5, 0.005, "FXAA edge max");
   num(aa, settings, "fxaaSubpixel", 0, 1, 0.05, "FXAA subpixel");
 
@@ -228,7 +256,7 @@ export function createGui(settings, { onResize, game }) {
   num(toon, settings, "rim", 0, 3, 0.05);
   col(toon, settings, "rimColor", "rim color");
   num(toon, settings, "rimThreshold", 0, 1, 0.01, "rim threshold");
-  num(toon, settings, "rimWidth", 0.001, 0.5, 0.005, "rim width");
+  num(toon, settings, "rimWidth", 0, 0.5, 0.005, "rim width");
   num(toon, settings, "hitFlashEmissive", 0, 5, 0.1, "hit flash glow");
 
   const outline = folder(render, "Outlines");
@@ -256,7 +284,7 @@ export function createGui(settings, { onResize, game }) {
   num(light, settings, "sunIntensity", 0, 4, 0.05, "sun intensity");
   num(light, settings, "sunElevation", 5, 90, 1, "sun elevation");
   num(light, settings, "sunAzimuth", -180, 180, 1, "sun azimuth");
-  num(light, settings, "ambientIntensity", 0, 3, 0.05, "ambient");
+  num(light, settings, "ambientIntensity", 0, 3, 0.01, "ambient");
   col(light, settings, "skyAmbient", "sky ambient");
   col(light, settings, "groundAmbient", "ground ambient");
   num(light, settings, "ambientBias", -1, 1, 0.05, "ambient bias");
@@ -380,7 +408,7 @@ export function createGui(settings, { onResize, game }) {
   col(sky, settings, "skyText", "slogan");
   col(sky, settings, "skyTextOutline", "slogan outline");
   num(sky, settings, "sloganRepeats", 1, 12, 1, "slogan repeats");
-  num(sky, settings, "sloganHeight", 0.1, 2, 0.01, "slogan height");
+  num(sky, settings, "sloganScale", 0.2, 5, 0.05, "slogan size");
   num(sky, settings, "sloganScroll", -0.2, 0.2, 0.005, "slogan scroll");
   num(sky, settings, "sloganShimmer", 0, 1, 0.01, "slogan shimmer");
   num(sky, settings, "sloganInterval", 0.5, 15, 0.1, "slogan interval");
@@ -415,7 +443,7 @@ export function createGui(settings, { onResize, game }) {
   num(player, PLAYER, "JUMP_IMPULSE", 0, 60, 0.5, "jump");
   num(player, PLAYER, "JUMP_FORWARD_IMPULSE", 0, 60, 0.5, "jump forward kick");
   num(player, PLAYER, "COYOTE_TIME", 0, 0.5, 0.01, "coyote time");
-  num(player, PLAYER, "GROUND_NORMAL_Y", 0, 1, 0.01, "max slope (normal y)");
+  num(player, PLAYER, "GROUND_NORMAL_Y", 0, 0.99, 0.01, "max slope (normal y)");
   num(player, PLAYER, "RADIUS", 0.1, 2, 0.05, "body radius");
   num(player, PLAYER, "EYE_HEIGHT", 0, 3, 0.05, "eye height");
   num(player, PLAYER, "CHEST_RADIUS", 0, 2, 0.05, "hit box radius");
@@ -428,8 +456,8 @@ export function createGui(settings, { onResize, game }) {
   num(bat, BAT, "RADIUS", 0, 1, 0.01, "thickness");
   num(bat, BAT, "CRIT_CHANCE", 0, 1, 0.01, "3 damage chance");
   num(bat, BAT, "STRONG_CHANCE", 0, 1, 0.01, "2 damage chance");
-  num(bat, BAT, "SWING_INIT", 0, 0.3, 0.005, "swing start");
-  num(bat, BAT, "SWING_HALF", 0, 0.6, 0.005, "swing middle");
+  num(bat, BAT, "SWING_INIT", 0, 0.3, 1 / 120, "swing start");
+  num(bat, BAT, "SWING_HALF", 0, 0.6, 1 / 120, "swing middle");
   num(bat, BAT, "SWING_END", 0.02, 1.5, 0.01, "swing end / cooldown");
   num(bat, BAT, "SWING_IDLE", 0.1, 5, 0.05, "idle after");
   num(bat, BAT, "SPRING_TENSION", 10, 1000, 5, "spring tension");
@@ -438,7 +466,7 @@ export function createGui(settings, { onResize, game }) {
   num(bat, BAT, "POSITION_Y", -1, 1, 0.01, "view y");
   num(bat, BAT, "POSITION_Z", -2, 0, 0.01, "view z");
   num(bat, BAT, "IDLE_WOBBLE_SPEED", 0, 20, 0.1, "wobble speed");
-  num(bat, BAT, "IDLE_WOBBLE_AMOUNT", 0, 1, 0.01, "wobble amount");
+  num(bat, BAT, "IDLE_WOBBLE_AMOUNT", 0, 1, 1 / 120, "wobble amount");
   num(bat, BAT, "METAL_SPECULAR", 0, 4, 0.05, "metal specular");
   num(bat, BAT, "HANDLE_SPECULAR", 0, 4, 0.05, "handle specular");
   col(bat, COLORS, "BAT_METAL", "metal");
@@ -584,7 +612,7 @@ export function createGui(settings, { onResize, game }) {
   num(cam, GAME, "ATTRACT_SMOOTHING", 0.01, 1, 0.01, "menu cam smoothing");
   num(cam, settings, "cameraNear", 0.01, 1, 0.01, "near plane");
   num(cam, settings, "cameraFar", 50, 1000, 10, "far plane");
-  num(cam, settings, "maxFrameTime", 1 / 240, 0.2, 0.001, "max frame time");
+  num(cam, settings, "maxFrameTime", 0.005, 0.2, 0.005, "max frame time");
 
   const hud = folder(gui, "🩷 HUD");
   num(hud, settings, "hudScale", 0.4, 2.5, 0.05, "scale");
@@ -627,6 +655,11 @@ export function createGui(settings, { onResize, game }) {
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => toast.classList.add("hidden"), 2000);
   }
+
+  // values loaded from storage / share link
+  refresh();
+  saveSettings(settings);
+  saveTuning();
 
   window.addEventListener("keydown", (e) => {
     if (

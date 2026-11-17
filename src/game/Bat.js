@@ -65,7 +65,7 @@ export class Bat extends THREE.Group {
       this.swingGroup.add(mesh);
     }
 
-    this.time = BAT.SWING_IDLE;
+    this.time = this.keyframes().idle;
     this.isAttacking = false;
     this.swingId = 0;
     this.prevSegment = [new THREE.Vector3(), new THREE.Vector3()];
@@ -74,15 +74,26 @@ export class Bat extends THREE.Group {
   }
 
   swing() {
-    if (this.time > BAT.SWING_END) {
-      this.time = 0;
+    if (this.time > this.keyframes().end) {
+      // slightly negative so that a first keyframe at 0 is still crossed
+      this.time = -1e-6;
+      this.swingId++;
       return true;
     }
     return false;
   }
 
+  // Swing keyframes, forced in order whatever the panel says.
+  keyframes() {
+    const init = Math.max(0, BAT.SWING_INIT);
+    const half = Math.max(init, BAT.SWING_HALF);
+    const end = Math.max(half, BAT.SWING_END);
+    const idle = Math.max(end, BAT.SWING_IDLE);
+    return { init, half, end, idle };
+  }
+
   reset() {
-    this.time = BAT.SWING_IDLE;
+    this.time = this.keyframes().idle;
     this.isAttacking = false;
     this.rotation.set(Math.PI / 2, 0, 0);
   }
@@ -91,22 +102,25 @@ export class Bat extends THREE.Group {
     const prev = this.time;
     this.time += dt;
     const t = this.time;
-    const crossed = (k) => prev < k && t >= k;
+    const k = this.keyframes();
+    const crossed = (x) => prev < x && t >= x;
 
-    if (crossed(BAT.SWING_INIT)) {
-      this.isAttacking = true;
-      this.swingId++;
+    // several keyframes can be crossed in the same (long) frame
+    if (crossed(k.init)) {
       this.rotation.set(Math.PI / 2, 0, 0);
       this.rotSpring.set(MOVES.init.rotation);
       this.posSpring.set(MOVES.init.position);
-    } else if (crossed(BAT.SWING_HALF)) {
+    }
+    if (crossed(k.half)) {
       this.rotSpring.set(MOVES.half.rotation);
       this.posSpring.set(MOVES.half.position);
-    } else if (crossed(BAT.SWING_END)) {
-      this.isAttacking = false;
+    }
+    if (crossed(k.end)) {
       this.rotSpring.set(MOVES.end.rotation);
       this.posSpring.set(MOVES.end.position);
-    } else if (t > BAT.SWING_IDLE) {
+    }
+    this.isAttacking = t >= k.init && t < k.end;
+    if (t > k.idle) {
       // idle wobble
       this.rotation.x =
         Math.PI / 2 +
@@ -128,19 +142,23 @@ export class Bat extends THREE.Group {
       this.posSpring.get(2)
     );
 
+    this.applyLook(hitAmount);
+  }
+
+  // Live tunables, also applied while the game is paused (settings panel).
+  applyLook(hitAmount = 0) {
     this.position.set(BAT.POSITION_X, BAT.POSITION_Y, BAT.POSITION_Z);
     this.springConfig.tension = BAT.SPRING_TENSION;
     this.springConfig.friction = BAT.SPRING_FRICTION;
     this.metal.uniforms.uSpecular.value = BAT.METAL_SPECULAR;
     this.handle.uniforms.uSpecular.value = BAT.HANDLE_SPECULAR;
-
-    // red-ish when the player gets hit
-    const k = hitAmount > 0 ? 1 : 0;
+    // darker / red-ish when the player gets hit
+    const hit = hitAmount > 0;
     this.metal.uniforms.uColor.value.set(
-      k ? COLORS.BAT_METAL_HIT : COLORS.BAT_METAL
+      hit ? COLORS.BAT_METAL_HIT : COLORS.BAT_METAL
     );
     this.handle.uniforms.uColor.value.set(
-      k ? COLORS.BAT_HANDLE_HIT : COLORS.BAT_HANDLE
+      hit ? COLORS.BAT_HANDLE_HIT : COLORS.BAT_HANDLE
     );
   }
 

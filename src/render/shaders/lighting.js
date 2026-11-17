@@ -87,7 +87,7 @@ float toon(float x, float bands) {
   float s = saturate(x) * bands;
   float i = floor(s);
   float f = s - i;
-  float w = uBandSoftness;
+  float w = max(uBandSoftness, 1e-3);
   return (i + smoothstep(0.5 - w, 0.5 + w, f)) / bands;
 }
 
@@ -104,7 +104,7 @@ float shadowFactor(vec3 worldPos, vec3 worldNormal, float ndl) {
       sum += texture(tShadow, vec3(sc.xy + vec2(x, y) * uShadowTexel, z));
   sum /= 9.0;
   // toon-ify the penumbra
-  return smoothstep(0.5 - uShadowSoftness, 0.5 + uShadowSoftness, sum);
+  return smoothstep(0.5 - max(uShadowSoftness, 1e-3), 0.5 + max(uShadowSoftness, 1e-3), sum);
 }
 
 struct Sample {
@@ -153,8 +153,8 @@ float outlineFactor(vec2 uv, Sample c) {
     float lx = c.depth / s[0].depth + c.depth / s[1].depth - 2.0;
     float ly = c.depth / s[2].depth + c.depth / s[3].depth - 2.0;
     depthLap = max(-lx, -ly);
-    edge = max(edge, smoothstep(uDepthThreshold, uDepthThreshold * (1.0 + uEdgeSoftness), depthLap));
-    edge = max(edge, smoothstep(uNormalThreshold, uNormalThreshold * (1.0 + uEdgeSoftness * 0.5), normalEdge));
+    edge = max(edge, smoothstep(uDepthThreshold, uDepthThreshold * (1.0 + max(uEdgeSoftness, 1e-3)), depthLap));
+    edge = max(edge, smoothstep(uNormalThreshold, uNormalThreshold * (1.0 + max(uEdgeSoftness, 1e-3) * 0.5), normalEdge));
   }
   return edge;
 }
@@ -211,9 +211,9 @@ void main() {
     if (character) {
       vec3 h = normalize(uSunDir + v);
       float spec = pow(saturate(dot(n, h)), uShininess) * shadow;
-      color += uSunColor * smoothstep(0.5 - uSpecularSize, 0.5, spec) * uSpecular * (0.4 + extra.w);
+      color += uSunColor * smoothstep(0.5 - max(uSpecularSize, 1e-3), 0.5, spec) * uSpecular * (0.4 + extra.w);
       float fres = 1.0 - saturate(dot(n, v));
-      float rim = smoothstep(uRimThreshold, uRimThreshold + uRimWidth, fres * (0.6 + 0.4 * saturate(ndl + 0.5)));
+      float rim = smoothstep(uRimThreshold, uRimThreshold + max(uRimWidth, 1e-3), fres * (0.6 + 0.4 * saturate(ndl + 0.5)));
       color += uRimColor * rim * uRim;
     }
 

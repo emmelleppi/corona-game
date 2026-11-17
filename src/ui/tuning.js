@@ -17,19 +17,30 @@ export const TUNABLES = { PLAYER, BAT, CORONA, GAME, COLORS, TRAMPOLINE, FX };
 
 const DEFAULTS = structuredClone(TUNABLES);
 
-const isObject = (v) => v && typeof v === "object" && !Array.isArray(v);
+const isObject = (v) =>
+  v !== null && typeof v === "object" && !Array.isArray(v);
+const isPrimitive = (v) => v !== null && typeof v !== "object";
+const sameKind = (a, b) =>
+  isPrimitive(a) &&
+  isPrimitive(b) &&
+  typeof a === typeof b &&
+  (typeof a !== "number" || Number.isFinite(b));
 
-// Deep merge of `source` into `target`, only for existing keys of the same type.
+// Deep merge of `source` into `target`: nested objects and arrays are merged
+// in place (the GUI controllers keep their bindings), leaves are only
+// replaced by finite values of the same type. Anything else is ignored.
 function merge(target, source) {
-  for (const [key, value] of Object.entries(source || {})) {
-    if (!(key in target)) continue;
+  if (!isObject(source)) return;
+  for (const [key, value] of Object.entries(source)) {
+    if (!Object.prototype.hasOwnProperty.call(target, key)) continue;
     const current = target[key];
-    if (isObject(current) && isObject(value)) merge(current, value);
-    else if (Array.isArray(current) && Array.isArray(value))
-      value.forEach((v, i) => {
-        if (typeof v === typeof current[i]) current[i] = v;
+    if (isObject(current)) merge(current, value);
+    else if (Array.isArray(current)) {
+      if (!Array.isArray(value)) continue;
+      current.forEach((c, i) => {
+        if (sameKind(c, value[i])) current[i] = value[i];
       });
-    else if (typeof value === typeof current) target[key] = value;
+    } else if (sameKind(current, value)) target[key] = value;
   }
 }
 

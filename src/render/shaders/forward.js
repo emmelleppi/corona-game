@@ -99,7 +99,7 @@ void main() {
     shape = saturate(shape);
   } else {
     float r = length(p);
-    shape = 1.0 - smoothstep(1.0 - uParticleEdge, 1.0, r);
+    shape = 1.0 - smoothstep(1.0 - max(uParticleEdge, 1e-3), 1.0, r);
   }
   // toon core: brighter centre
   float core = 1.0 - smoothstep(0.25, 0.35, length(p));

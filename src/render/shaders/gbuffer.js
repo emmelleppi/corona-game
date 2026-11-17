@@ -125,7 +125,8 @@ void main() {
       float tileVar = hash12(cell) * uTileVariation;
       albedo *= 1.0 - checker * uCheckerDarken - tileVar;
       vec2 e = min(f, 1.0 - f);
-      float grout = 1.0 - smoothstep(uGroutWidth * 0.4, uGroutWidth, min(e.x, e.y));
+      float gw = max(uGroutWidth, 1e-4);
+      float grout = 1.0 - smoothstep(gw * 0.4, gw, min(e.x, e.y));
       albedo = mix(albedo, albedo * uGroutColor, grout);
     } else {
       // speckled border
@@ -137,10 +138,10 @@ void main() {
     }
   } else if (nw.y > -0.5) {
     // cliff sides: darker going down, with sediment layers
-    float depth = saturate(-vWorldPos.y / uCliffDepth);
+    float depth = saturate(-vWorldPos.y / max(uCliffDepth, 0.01));
     float layers = smoothstep(0.45, 0.5, fract(vWorldPos.y * uSedimentFrequency + valueNoise(vWorldPos.xz * 0.6) * 0.6));
     albedo = mix(uColor * uCliffBrightness, uCliffBottomColor, depth * uCliffDarkening);
-    albedo *= 1.0 - uSedimentContrast * 0.8 + layers * uSedimentContrast;
+    albedo *= 1.0 - uSedimentContrast * (0.1 / 0.12) + layers * uSedimentContrast;
   } else {
     albedo = uUndersideColor;
   }
@@ -205,7 +206,7 @@ uniform float uSkyGradientLow;
 uniform float uSkyGradientHigh;
 uniform float uSloganRepeats;
 uniform float uSloganScroll;
-uniform float uSloganHeight;
+uniform float uSloganScale;
 uniform float uSloganShimmer;
 uniform float uSparkleScale;
 uniform float uSparkleDensity;
@@ -221,11 +222,11 @@ vec4 sampleWord(vec2 uv, float word) {
 void main() {
   vec3 dir = normalize(vLocalPos);
   float h = dir.y;
-  vec3 col = mix(uSkyHorizon, uSkyTop, smoothstep(uSkyGradientLow, uSkyGradientHigh, h));
+  vec3 col = mix(uSkyHorizon, uSkyTop, smoothstep(uSkyGradientLow, max(uSkyGradientHigh, uSkyGradientLow + 1e-3), h));
 
   // slogans, repeated around the horizon and slowly scrolling
   float u = fract(atan(dir.z, dir.x) / (2.0 * PI) * floor(uSloganRepeats) + uTime * uSloganScroll);
-  float v = 0.5 + h / max(uSloganHeight, 0.01);
+  float v = 0.5 + h * uSloganScale;
   if (v > 0.0 && v < 1.0) {
     vec2 uv = vec2(u, 1.0 - v);
     // the old word fades out, then the new one fades in
@@ -242,7 +243,7 @@ void main() {
   vec2 cell = floor(sp);
   float rnd = hash12(cell);
   vec2 f = fract(sp) - 0.5 - (vec2(hash12(cell + 7.0), hash12(cell + 3.0)) - 0.5) * 0.6;
-  float star = smoothstep(uSparkleSize, 0.0, length(f)) * step(1.0 - uSparkleDensity, rnd);
+  float star = (1.0 - smoothstep(0.0, max(uSparkleSize, 1e-3), length(f))) * step(1.0 - uSparkleDensity, rnd);
   star *= 0.5 + 0.5 * sin(uTime * (2.0 + rnd * 4.0) + rnd * 40.0);
   col += star * smoothstep(0.05, 0.4, h) * uSparkleColor * uSparkleIntensity;
 

@@ -187,6 +187,7 @@ export class Corona {
     this.underAttack = CORONA.UNDER_ATTACK_DURATION;
     this.flash = 1;
     this.powSize = randRange(CORONA.POW_SIZE_MIN, CORONA.POW_SIZE_MAX);
+    this.pow.setScale(this.powSize);
     const k = Math.random() * (Math.random() > 0.5 ? 1 : -1);
     this.pow.position.set(k, 1.5 + k, 0);
     this.pow.rotationZ = randRange(-0.4, 0.4);
@@ -257,7 +258,7 @@ export class Corona {
     }
   }
 
-  update(dt, time) {
+  update(dt) {
     this.stateTime += dt;
     this.seekAlert = Math.max(0, this.seekAlert - dt);
     this.underAttack = Math.max(0, this.underAttack - dt);
@@ -340,7 +341,7 @@ export class Corona {
         break;
     }
 
-    this.updateVisual(dt, time);
+    this.updateVisual(dt);
   }
 
   startSpawn() {
@@ -374,13 +375,29 @@ export class Corona {
     const t = this.stateTime / CORONA.DEATH_DURATION;
     this.material.uniforms.uOpacity.value = Math.max(0, 1 - t);
     this.material.uniforms.uFlash.value = 0;
-    this.material.uniforms.uColor.value.set(COLORS.CORONA_DEAD);
+    this.applyLook();
     this.group.position.copy(this.position);
     this.pow.visible = this.underAttack > 0;
     if (t >= 1 || this.position.y < -60) this.removed = true;
   }
 
-  updateVisual(dt, time) {
+  // Live tunables, also applied while the game is paused (settings panel).
+  applyLook() {
+    const u = this.material.uniforms;
+    this.group.scale.setScalar(CORONA.RENDER_SCALE);
+    this.exclamation.position.set(0, CORONA.EXCLAMATION_HEIGHT, 0);
+    u.uFlashColor.value.set(COLORS.CORONA_FLASH);
+    u.uSpecular.value = CORONA.SPECULAR;
+    if (this.alive) {
+      this.position.y = CORONA.Y_AXIS;
+      this.group.position.copy(this.position);
+      u.uColor.value.set(COLORS.CORONA);
+    } else {
+      u.uColor.value.set(COLORS.CORONA_DEAD);
+    }
+  }
+
+  updateVisual(dt) {
     const seeking = this.state === CORONA_STATE.SEEK;
     const multiplier = CORONA.BOB_FREQUENCY * (seeking ? 2 : 1);
     // the bob phase is accumulated so that changing the frequency is smooth
@@ -400,16 +417,9 @@ export class Corona {
     }
     this.mesh.scale.set(h, v, h);
 
-    // live tunables
-    this.position.y = CORONA.Y_AXIS;
-    this.group.scale.setScalar(CORONA.RENDER_SCALE);
-    this.exclamation.position.set(0, CORONA.EXCLAMATION_HEIGHT, 0);
-    const u = this.material.uniforms;
-    u.uColor.value.set(COLORS.CORONA);
-    u.uFlashColor.value.set(COLORS.CORONA_FLASH);
-    u.uSpecular.value = CORONA.SPECULAR;
-
+    this.applyLook();
     this.group.position.copy(this.position);
+    const u = this.material.uniforms;
     u.uFlash.value = this.flash;
     this.material.uniforms.uEmissive.value =
       this.state === CORONA_STATE.SPAWN ? (0.3 * this.spinTime) / 8 : 0;
@@ -427,7 +437,6 @@ export class Corona {
     if (this.pow.visible) {
       const k = this.underAttack / CORONA.UNDER_ATTACK_DURATION;
       this.pow.opacity = Math.min(1, k * 3);
-      this.pow.setScale((this.powSize ?? 1.5) * CORONA.RENDER_SCALE);
     }
   }
 }

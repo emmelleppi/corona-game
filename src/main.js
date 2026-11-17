@@ -12,7 +12,7 @@ import { Hud } from "./ui/Hud.js";
 import { Screens } from "./ui/Screens.js";
 import { createGui, importConfig, decodeConfig } from "./ui/Gui.js";
 import { loadSettings, saveSettings } from "./ui/settings.js";
-import { loadTuning } from "./ui/tuning.js";
+import { loadTuning, TUNABLES } from "./ui/tuning.js";
 import { GAME } from "./config.js";
 
 const screens = new Screens();
@@ -154,7 +154,16 @@ async function main() {
   audio.playMusic("theme");
 
   if (import.meta.env.DEV)
-    window.__game = { gui, game, settings, pipeline, camera, scene, renderer };
+    window.__game = {
+      gui,
+      game,
+      settings,
+      pipeline,
+      camera,
+      scene,
+      renderer,
+      tuning: TUNABLES,
+    };
 
   renderer.setAnimationLoop((now) => {
     const dt = Math.min(

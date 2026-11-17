@@ -81,17 +81,18 @@ export const DEFAULT_SETTINGS = {
   tileVariation: 0.06,
   checkerDarken: 0.07,
   groutWidth: 0.05,
-  groutColor: "#c7bddb",
+  groutColor: "#e5dfef",
   borderBrightness: 1.3,
   borderNoise: 0.1,
   borderDots: 0.35,
   borderDotsBrightness: 1.25,
   cliffBrightness: 1.7,
-  cliffBottomColor: "#290f29",
+  cliffBottomColor: "#6f456f",
   cliffDarkening: 0.7,
+  cliffDepth: 4.23,
   sedimentFrequency: 0.9,
   sedimentContrast: 0.12,
-  undersideColor: "#170817",
+  undersideColor: "#553055",
   padPulseSpeed: 4,
   padGlow: 1.5,
   padBaseGlow: 0.15,
@@ -105,7 +106,7 @@ export const DEFAULT_SETTINGS = {
   skyTextOutline: "#673366",
   sloganRepeats: 4,
   sloganScroll: 0.01,
-  sloganHeight: 0.77,
+  sloganScale: 1.3,
   sloganShimmer: 0.15,
   sloganInterval: 3,
   sloganFadeSpeed: 2.5,
@@ -113,7 +114,7 @@ export const DEFAULT_SETTINGS = {
   sparkleDensity: 0.14,
   sparkleSize: 0.08,
   sparkleIntensity: 1.5,
-  sparkleColor: "#ffccf2",
+  sparkleColor: "#ffe7f9",
 
   // post
   bloom: true,
@@ -148,7 +149,7 @@ export const DEFAULT_SETTINGS = {
   glitchShift: 0.12,
   glitchSplit: 0.012,
   glitchBands: 24,
-  damageColor: "#bf0014",
+  damageColor: "#e10050",
   damageOpacity: 0.8,
   damageChromatic: 0.004,
 
@@ -199,13 +200,7 @@ export function loadSettings() {
   const settings = { ...DEFAULT_SETTINGS };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    for (const key of Object.keys(saved))
-      if (
-        key in settings &&
-        !TRANSIENT.has(key) &&
-        typeof saved[key] === typeof settings[key]
-      )
-        settings[key] = saved[key];
+    applySettings(settings, saved);
   } catch {
     // storage not available: defaults
   }
@@ -235,12 +230,14 @@ export function saveSettings(settings) {
 }
 
 export function applySettings(settings, values) {
-  for (const [key, value] of Object.entries(values || {}))
-    if (
-      key in DEFAULT_SETTINGS &&
-      typeof value === typeof DEFAULT_SETTINGS[key]
-    )
-      settings[key] = value;
+  if (!values || typeof values !== "object") return;
+  for (const [key, value] of Object.entries(values)) {
+    if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) continue;
+    if (TRANSIENT.has(key) || typeof value !== typeof DEFAULT_SETTINGS[key])
+      continue;
+    if (typeof value === "number" && !Number.isFinite(value)) continue;
+    settings[key] = value;
+  }
 }
 
 export function resetSettings(settings) {
