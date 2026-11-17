@@ -75,7 +75,7 @@ export const CORONA = {
   // last fraction of a wind-up with the anticipation squash and warning flash
   WINDUP_TELEGRAPH: 0.6,
   WINDUP_SQUASH: 0.25,
-  WINDUP_FLASH: 0.6,
+  WINDUP_FLASH: 0.8,
   WINDUP_ALERT_PITCH: 1.6,
   ATTACK_DURATION: 0.2,
   UNDER_ATTACK_DURATION: 0.3,

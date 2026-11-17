@@ -457,7 +457,7 @@ export class Corona {
     u.uFlash.value = this.flash;
     if (telegraph > 0 && this.flash < 0.05) {
       const pulse =
-        0.5 + 0.5 * Math.sin(this.stateTime * (20 + 30 * telegraph));
+        0.55 + 0.45 * Math.sin(this.stateTime * (20 + 30 * telegraph));
       u.uFlashColor.value.set(COLORS.CORONA_WARNING);
       u.uFlash.value = CORONA.WINDUP_FLASH * telegraph * pulse;
     }
