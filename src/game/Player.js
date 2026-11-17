@@ -46,7 +46,6 @@ export class Player {
 
   // input: {forward, backward, left, right, jump, boost}; yaw: camera yaw.
   update(dt, input, yaw) {
-    const s = this.settings;
     const events = { jumped: false, landed: 0 };
     this.hitTimer = Math.max(0, this.hitTimer - dt);
 
@@ -59,7 +58,7 @@ export class Player {
     _wish.set(fx * forward - fz * strafe, 0, fz * forward + fx * strafe);
     if (_wish.lengthSq() > 0) _wish.normalize();
 
-    const targetSpeed = s.playerSpeed * (input.boost ? PLAYER.BOOST_FACTOR : 1);
+    const targetSpeed = PLAYER.SPEED * (input.boost ? PLAYER.BOOST_FACTOR : 1);
     _horizontal.set(this.velocity.x, 0, this.velocity.z);
 
     if (this.grounded) {
@@ -69,7 +68,7 @@ export class Player {
       const dx = tx - this.velocity.x;
       const dz = tz - this.velocity.z;
       const d = Math.hypot(dx, dz);
-      const maxDelta = s.groundAcceleration * dt;
+      const maxDelta = PLAYER.GROUND_ACCELERATION * dt;
       const k = d > maxDelta ? maxDelta / d : 1;
       this.velocity.x += dx * k;
       this.velocity.z += dz * k;
@@ -90,7 +89,7 @@ export class Player {
     if (input.jump && (this.grounded || this.coyote > 0)) {
       // forward kick, capped so that bunny hopping can not stack it forever
       const before = Math.hypot(this.velocity.x, this.velocity.z);
-      this.velocity.y = s.jumpImpulse;
+      this.velocity.y = PLAYER.JUMP_IMPULSE;
       this.velocity.x += _wish.x * PLAYER.JUMP_FORWARD_IMPULSE;
       this.velocity.z += _wish.z * PLAYER.JUMP_FORWARD_IMPULSE;
       const after = Math.hypot(this.velocity.x, this.velocity.z);

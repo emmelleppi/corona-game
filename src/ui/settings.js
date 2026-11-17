@@ -1,5 +1,3 @@
-import { PLAYER, CORONA } from "../config.js";
-
 const STORAGE_KEY = "kill-da-corona:settings:v1";
 
 export const DEFAULT_SETTINGS = {
@@ -77,10 +75,6 @@ export const DEFAULT_SETTINGS = {
   boostFov: 100,
   mouseSensitivity: 1,
   invertY: false,
-  playerSpeed: PLAYER.SPEED,
-  groundAcceleration: PLAYER.GROUND_ACCELERATION,
-  jumpImpulse: PLAYER.JUMP_IMPULSE,
-  seekDistance: CORONA.SEEK_DISTANCE,
 
   // audio
   volume: 1,

@@ -94,10 +94,6 @@ export function createGui(settings, { onResize, audio }) {
     .add(settings, "mouseSensitivity", 0.1, 4, 0.05)
     .name("mouse sensitivity");
   game.add(settings, "invertY").name("invert Y");
-  game.add(settings, "playerSpeed", 5, 30, 0.5).name("player speed");
-  game.add(settings, "groundAcceleration", 5, 80, 1).name("acceleration");
-  game.add(settings, "jumpImpulse", 5, 30, 0.5).name("jump");
-  game.add(settings, "seekDistance", 4, 40, 1).name("corona sight");
 
   const sound = gui.addFolder("Audio").close();
   sound.add(settings, "volume", 0, 1, 0.01).onChange((v) => audio.setVolume(v));

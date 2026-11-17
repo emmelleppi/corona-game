@@ -14,26 +14,6 @@ import {
   easeOutCubic,
 } from "../core/math.js";
 
-const {
-  LIFE,
-  Y_AXIS,
-  RADIUS,
-  RENDER_SCALE,
-  ORIENTATION_THRESHOLD,
-  SEEK_ALERT_DURATION,
-  PREATTACK_DURATION,
-  ATTACK_DURATION,
-  UNDER_ATTACK_DURATION,
-  SPAWN_ANIMATION_DURATION,
-  SPAWN_INTERVAL,
-  DEATH_DURATION,
-  IDLE_VELOCITY,
-  SEEK_VELOCITY,
-  ATTACK_DISTANCE,
-  STEERING_INTERVAL,
-  LOOK_AHEAD,
-} = CORONA;
-
 export const CORONA_STATE = {
   IDLE: "idle",
   SEEK: "seek",
@@ -48,7 +28,7 @@ const _v = new THREE.Vector3();
 const _dir = new THREE.Vector3();
 
 const randomSpawnInterval = () =>
-  SPAWN_INTERVAL + Math.random() * SPAWN_INTERVAL;
+  CORONA.SPAWN_INTERVAL + Math.random() * CORONA.SPAWN_INTERVAL;
 const randomTurn = (orientation) =>
   orientation.applyAxisAngle(UP, Math.PI / 2 + Math.random() * Math.PI);
 
@@ -63,13 +43,13 @@ export class Corona {
   constructor(game, position, awake) {
     this.game = game;
     this.id = nextObjectId();
-    this.life = LIFE;
+    this.life = CORONA.LIFE;
     this.awake = awake;
     this.state = CORONA_STATE.IDLE;
     this.stateTime = 0;
     this.removed = false;
 
-    this.position = new THREE.Vector3(position.x, Y_AXIS, position.z);
+    this.position = new THREE.Vector3(position.x, CORONA.Y_AXIS, position.z);
     this.orientation = new THREE.Vector3(
       getRandomUnity(),
       0,
@@ -78,7 +58,7 @@ export class Corona {
     this.avoid = new THREE.Vector3();
     this.avoidTime = 0;
     this.spawnTimer = randomSpawnInterval();
-    this.steerTimer = Math.random() * STEERING_INTERVAL;
+    this.steerTimer = Math.random() * CORONA.STEERING_INTERVAL;
     this.thinkTimer = Math.random() * 0.25;
     this.seekAlert = 0;
     this.underAttack = 0;
@@ -103,7 +83,7 @@ export class Corona {
   createVisual() {
     const { assets } = this.game;
     this.group = new THREE.Group();
-    this.group.scale.setScalar(RENDER_SCALE);
+    this.group.scale.setScalar(CORONA.RENDER_SCALE);
     this.rotationGroup = new THREE.Group();
     this.bobGroup = new THREE.Group();
     this.material = createCharacterMaterial(COLORS.CORONA, {
@@ -152,7 +132,7 @@ export class Corona {
         break;
       case CORONA_STATE.SEEK:
         if (prev === CORONA_STATE.IDLE) {
-          this.seekAlert = SEEK_ALERT_DURATION;
+          this.seekAlert = CORONA.SEEK_ALERT_DURATION;
           this.game.emit("coronaAlert", this);
         }
         break;
@@ -162,8 +142,8 @@ export class Corona {
         _dir.subVectors(eye, this.position).normalize();
         this.attackTarget
           .copy(this.position)
-          .addScaledVector(_dir, ATTACK_DISTANCE * 0.8)
-          .setY(Y_AXIS);
+          .addScaledVector(_dir, CORONA.ATTACK_DISTANCE * 0.8)
+          .setY(CORONA.Y_AXIS);
         this.attackHit = false;
         break;
       }
@@ -200,7 +180,7 @@ export class Corona {
   hit(damage, from) {
     if (!this.canBeHit) return false;
     this.life -= damage;
-    this.underAttack = UNDER_ATTACK_DURATION;
+    this.underAttack = CORONA.UNDER_ATTACK_DURATION;
     this.flash = 1;
     this.pow.setScale(2 * (0.5 + Math.random() / 2));
     const k = Math.random() * (Math.random() > 0.5 ? 1 : -1);
@@ -224,17 +204,18 @@ export class Corona {
     if (!this.awake || !this.alive) return;
     const s = this.state;
     if (s === CORONA_STATE.IDLE) {
-      if (distance < this.game.settings.seekDistance)
+      if (distance < CORONA.SEEK_DISTANCE)
         this.setState(CORONA_STATE.SEEK);
     } else if (s === CORONA_STATE.SEEK) {
-      if (distance <= ATTACK_DISTANCE) this.setState(CORONA_STATE.ATTACK);
+      if (distance <= CORONA.ATTACK_DISTANCE)
+        this.setState(CORONA_STATE.ATTACK);
       else if (
         distance >
-        this.game.settings.seekDistance * CORONA.LOSE_DISTANCE_FACTOR
+        CORONA.SEEK_DISTANCE * CORONA.LOSE_DISTANCE_FACTOR
       )
         this.setState(CORONA_STATE.IDLE);
     } else if (s === CORONA_STATE.PREATTACK) {
-      if (distance > ATTACK_DISTANCE) this.setState(CORONA_STATE.SEEK);
+      if (distance > CORONA.ATTACK_DISTANCE) this.setState(CORONA_STATE.SEEK);
     }
   }
 
@@ -243,15 +224,15 @@ export class Corona {
     const p = this.position;
     const o = this.orientation;
     const aheadOnGround = world.isGround(
-      p.x + o.x * LOOK_AHEAD,
-      p.z + o.z * LOOK_AHEAD
+      p.x + o.x * CORONA.LOOK_AHEAD,
+      p.z + o.z * CORONA.LOOK_AHEAD
     );
     if (this.state === CORONA_STATE.SEEK && aheadOnGround) {
       const eye = this.game.playerEye;
       const distance = eye.distanceTo(p);
-      if (distance > ATTACK_DISTANCE) {
+      if (distance > CORONA.ATTACK_DISTANCE) {
         _dir.set(eye.x - p.x, 0, eye.z - p.z).normalize();
-        if (_v.subVectors(_dir, o).length() > ORIENTATION_THRESHOLD)
+        if (_v.subVectors(_dir, o).length() > CORONA.ORIENTATION_THRESHOLD)
           o.copy(_dir);
       }
     } else if (!aheadOnGround) {
@@ -308,18 +289,18 @@ export class Corona {
 
     this.steerTimer -= dt;
     if (this.steerTimer <= 0) {
-      this.steerTimer = STEERING_INTERVAL;
+      this.steerTimer = CORONA.STEERING_INTERVAL;
       this.steer();
     }
 
     switch (this.state) {
       case CORONA_STATE.IDLE:
-        this.move(dt, IDLE_VELOCITY);
+        this.move(dt, CORONA.IDLE_VELOCITY);
         this.spawnTimer -= dt;
         if (this.awake && this.spawnTimer <= 0) this.startSpawn();
         break;
       case CORONA_STATE.SEEK:
-        this.move(dt, SEEK_VELOCITY);
+        this.move(dt, CORONA.SEEK_VELOCITY);
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0) this.startSpawn();
         break;
@@ -328,7 +309,7 @@ export class Corona {
         this.position.lerpVectors(this.attackOrigin, this.attackTarget, k);
         if (!this.attackHit && this.game.checkCoronaHitsPlayer(this))
           this.attackHit = true;
-        if (this.stateTime >= ATTACK_DURATION) {
+        if (this.stateTime >= CORONA.ATTACK_DURATION) {
           this.setState(CORONA_STATE.PREATTACK);
         }
         break;
@@ -343,11 +324,11 @@ export class Corona {
             easeOutCubic(k)
           );
         }
-        if (this.stateTime >= PREATTACK_DURATION)
+        if (this.stateTime >= CORONA.PREATTACK_DURATION)
           this.setState(CORONA_STATE.ATTACK);
         break;
       case CORONA_STATE.SPAWN:
-        if (this.stateTime >= SPAWN_ANIMATION_DURATION) {
+        if (this.stateTime >= CORONA.SPAWN_ANIMATION_DURATION) {
           this.game.reproduce(this);
           this.setState(CORONA_STATE.IDLE);
         }
@@ -366,13 +347,16 @@ export class Corona {
     this.velocity.y -= 40 * dt;
     this.position.addScaledVector(this.velocity, dt);
     // bounce on the islands
-    if (this.position.y < RADIUS * RENDER_SCALE * 2 && this.velocity.y < 0) {
+    if (
+      this.position.y < CORONA.RADIUS * CORONA.RENDER_SCALE * 2 &&
+      this.velocity.y < 0
+    ) {
       const ground = this.game.world.groundHeightAt(
         this.position.x,
         this.position.z
       );
       if (ground > -Infinity && this.position.y > ground - 1) {
-        this.position.y = ground + RADIUS * RENDER_SCALE * 2;
+        this.position.y = ground + CORONA.RADIUS * CORONA.RENDER_SCALE * 2;
         this.velocity.y *= -0.45;
         this.velocity.x *= 0.7;
         this.velocity.z *= 0.7;
@@ -382,7 +366,7 @@ export class Corona {
     this.rotationGroup.rotation.y += this.spin.y * dt;
     this.rotationGroup.rotation.z += this.spin.z * dt;
 
-    const t = this.stateTime / DEATH_DURATION;
+    const t = this.stateTime / CORONA.DEATH_DURATION;
     this.material.uniforms.uOpacity.value = Math.max(0, 1 - t);
     this.material.uniforms.uFlash.value = 0;
     this.group.position.copy(this.position);
@@ -415,14 +399,14 @@ export class Corona {
 
     this.exclamation.visible = this.seekAlert > 0;
     if (this.exclamation.visible) {
-      const a = Math.min(1, (SEEK_ALERT_DURATION - this.seekAlert) * 8);
+      const a = Math.min(1, (CORONA.SEEK_ALERT_DURATION - this.seekAlert) * 8);
       const pop = 1 + Math.sin(Math.min(1, a) * Math.PI) * 0.3;
-      this.exclamation.setScale(2 * RENDER_SCALE * pop);
+      this.exclamation.setScale(2 * CORONA.RENDER_SCALE * pop);
       this.exclamation.opacity = Math.min(1, this.seekAlert * 4);
     }
     this.pow.visible = this.underAttack > 0;
     if (this.pow.visible) {
-      const k = this.underAttack / UNDER_ATTACK_DURATION;
+      const k = this.underAttack / CORONA.UNDER_ATTACK_DURATION;
       this.pow.opacity = Math.min(1, k * 3);
     }
   }
@@ -430,7 +414,7 @@ export class Corona {
 
 // Pushes overlapping coronas apart (they used to be physic spheres).
 export function separateCoronas(coronas) {
-  const minDist = RADIUS * 2;
+  const minDist = CORONA.RADIUS * 2;
   for (let i = 0; i < coronas.length; i++) {
     const a = coronas[i];
     if (!a.alive) continue;
